@@ -17,10 +17,14 @@ export function QRCodeDisplay({ merchant, amount, orderId, disabled = false, tim
 
   const handleOpenUpiApp = () => {
     onInitiatePayment?.();
-    // Navigate directly to the UPI intent URI. Launching via a synthetic
-    // anchor click can strip the user gesture / mangle the URI on mobile,
-    // making the UPI app misread the amount ("exceeded the bank limit").
-    window.location.href = upiString;
+    // Launch the UPI intent via an invisible iframe. Some phones resolve
+    // this like a native app-to-app intent, unlike anchor clicks or
+    // location redirects which can mangle the URI.
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = upiString;
+    document.body.appendChild(iframe);
+    window.setTimeout(() => iframe.remove(), 1000);
   };
 
   return (
