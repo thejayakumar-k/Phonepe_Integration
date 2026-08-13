@@ -93,13 +93,7 @@ export function PaymentPage({
     }
   }, [countdown.isExpired, order.paymentStatus, order]);
 
-  // After payment verification screen, wait 3s then return home for vendor approval
-  useEffect(() => {
-    if (order.paymentStatus === 'CUSTOMER_SUBMITTED') {
-      const timer = setTimeout(() => navigate('/'), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [order.paymentStatus, navigate]);
+
 
   // AUTO-DETECT: When customer returns from UPI app, auto-show "Verifying payment..."
   // Only triggers if the customer actually started a UPI payment (tapped

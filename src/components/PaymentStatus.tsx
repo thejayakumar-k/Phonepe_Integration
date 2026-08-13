@@ -50,7 +50,7 @@ export function PaymentStatus({
               <p className="notice-title">Order Placed!</p>
               <p className="notice-text">
                 Your order is confirmed. Payment verification is pending -
-                redirecting to home for vendor approval.
+                the vendor will approve it shortly.
               </p>
             </div>
           </div>
