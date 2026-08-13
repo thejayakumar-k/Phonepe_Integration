@@ -12,8 +12,7 @@ import type { MerchantConfig } from '../types/payment';
 export function generateUpiString(
   merchant: MerchantConfig,
   amount?: number,
-  orderId?: string,
-  includeAmount = true
+  orderId?: string
 ): string {
   // UPI URI format: upi://pay?pa=...&pn=...&am=...&tn=...
   const params = new URLSearchParams({
@@ -23,10 +22,7 @@ export function generateUpiString(
   });
 
   // Add amount if provided (dynamic QR).
-  // For app-to-app deep links some merchant VPAs reject a pre-filled
-  // amount ("exceeded the bank limit"), so those omit it and the
-  // customer enters the amount manually - same as the static QR flow.
-  if (includeAmount && amount && amount > 0) {
+  if (amount && amount > 0) {
     params.set('am', Number.isInteger(amount) ? String(amount) : amount.toFixed(2));
   }
 
