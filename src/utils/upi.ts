@@ -21,9 +21,11 @@ export function generateUpiString(
     cu: 'INR',                 // Currency
   });
 
-  // Add amount if provided (dynamic QR)
+  // Add amount if provided (dynamic QR).
+  // Send as clean integer when possible - many UPI apps misread
+  // decimal amounts (e.g., "1.00") in upi:// links and reject them.
   if (amount && amount > 0) {
-    params.set('am', amount.toFixed(2));
+    params.set('am', Number.isInteger(amount) ? String(amount) : amount.toFixed(2));
   }
 
   // Add transaction note with order ID
