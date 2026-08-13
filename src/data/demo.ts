@@ -23,7 +23,7 @@ export const demoOrders: Order[] = [
     vendorName: 'OORUNII Store',
     customerId: 'CUST001',
     customerName: 'Ravi Kumar',
-    amount: 500,
+    amount: 1,
     currency: 'INR',
     description: 'Premium Subscription - Annual Plan',
     createdAt: Date.now(),
