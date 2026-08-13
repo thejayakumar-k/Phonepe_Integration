@@ -67,8 +67,11 @@ export function startFreshPayment(orderId?: string): Order {
     existing ||
     demoOrders.find((o) => o.orderId === orderId) ||
     demoOrders[0];
+  const demo = demoOrders.find((o) => o.orderId === base.orderId);
   const refreshed: Order = {
     ...base,
+    amount: demo?.amount ?? base.amount,
+    currency: demo?.currency ?? base.currency,
     paymentStatus: 'PENDING',
     expiresAt: Date.now() + sessionMinutes * 60 * 1000,
     paymentSubmittedAt: undefined,
