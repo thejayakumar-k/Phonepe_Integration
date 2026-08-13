@@ -26,7 +26,7 @@ export function OrderSummary({ order }: OrderSummaryProps) {
           <span className="detail-value">{order.currency}</span>
         </div>
 
-        {order.paymentMethod && (
+        {order.paymentMethod && order.paymentStatus !== 'PENDING' && (
           <div className="detail-row">
             <span className="detail-label">Payment Method</span>
             <span className="detail-value">{order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'UPI / Online'}</span>

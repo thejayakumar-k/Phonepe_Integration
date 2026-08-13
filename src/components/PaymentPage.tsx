@@ -24,9 +24,7 @@ export function PaymentPage({
   const navigate = useNavigate();
   const { order: storedOrder } = useOrderStatus(initialOrder.orderId);
   const [order, setOrder] = useState<Order>(initialOrder);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    initialOrder.paymentMethod || 'UPI'
-  );
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
 
   const hasReturnedRef = useRef(false);
   const hasLeftPageRef = useRef(false);
