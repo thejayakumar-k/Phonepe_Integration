@@ -9,12 +9,14 @@ interface QRCodeDisplayProps {
   orderId: string;
   disabled?: boolean;
   timer?: ReactNode;
+  onInitiatePayment?: () => void;
 }
 
-export function QRCodeDisplay({ merchant, amount, orderId, disabled = false, timer }: QRCodeDisplayProps) {
+export function QRCodeDisplay({ merchant, amount, orderId, disabled = false, timer, onInitiatePayment }: QRCodeDisplayProps) {
   const upiString = generateUpiString(merchant, amount, orderId);
 
   const handleOpenUpiApp = () => {
+    onInitiatePayment?.();
     // Create an invisible link and click it to open UPI app
     const link = document.createElement('a');
     link.href = upiString;

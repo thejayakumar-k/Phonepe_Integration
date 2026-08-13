@@ -21,14 +21,14 @@ export function Login() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) return;
+    if (isVendor && (!username.trim() || !password.trim())) return;
 
     const vendor = demoVendors.find((v) => v.id === vendorId);
     const customer = demoCustomers.find((c) => c.id === customerId);
 
     login({
       role: role as Role,
-      username: username.trim(),
+      username: isVendor ? username.trim() : customer?.name || 'Customer',
       vendorId: isVendor ? vendor?.id : undefined,
       vendorName: isVendor ? vendor?.name : undefined,
       customerId: isVendor ? undefined : customer?.id,
@@ -57,24 +57,52 @@ export function Login() {
         <div className="login-card">
           <span className="role-icon">{isVendor ? '🛍️' : '🛒'}</span>
           <h2>{isVendor ? 'Vendor Sign In' : 'Customer Sign In'}</h2>
-          <p className="login-note">Demo mode - any username & password work.</p>
+          <p className="login-note">
+            {isVendor
+              ? 'Demo mode - any username & password work.'
+              : 'Select your account to continue.'}
+          </p>
 
           <form onSubmit={handleSubmit}>
             {isVendor ? (
-              <div className="form-group">
-                <label className="form-label">Select Vendor Store</label>
-                <select
-                  className="form-input"
-                  value={vendorId}
-                  onChange={(e) => setVendorId(e.target.value)}
-                >
-                  {demoVendors.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} ({v.id})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="form-group">
+                  <label className="form-label">Select Vendor Store</label>
+                  <select
+                    className="form-input"
+                    value={vendorId}
+                    onChange={(e) => setVendorId(e.target.value)}
+                  >
+                    {demoVendors.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} ({v.id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Username</label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    placeholder="Enter username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Password</label>
+                  <input
+                    className="form-input"
+                    type="password"
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              </>
             ) : (
               <div className="form-group">
                 <label className="form-label">Select Customer Account</label>
@@ -91,28 +119,6 @@ export function Login() {
                 </select>
               </div>
             )}
-
-            <div className="form-group">
-              <label className="form-label">Username</label>
-              <input
-                className="form-input"
-                type="text"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Password</label>
-              <input
-                className="form-input"
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
 
             <button type="submit" className="btn btn-login">
               Sign In

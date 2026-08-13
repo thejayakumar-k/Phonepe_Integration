@@ -30,6 +30,7 @@ export function PaymentPage({
 
   const hasReturnedRef = useRef(false);
   const hasLeftPageRef = useRef(false);
+  const hasInitiatedRef = useRef(false);
 
   // Load order from storage on mount
   useEffect(() => {
@@ -101,8 +102,9 @@ export function PaymentPage({
   }, [order.paymentStatus, navigate]);
 
   // AUTO-DETECT: When customer returns from UPI app, auto-show "Verifying payment..."
-  // Only triggers if the user actually left the page first (blur / tab hidden),
-  // so the initial page load focus event doesn't falsely submit the order.
+  // Only triggers if the customer actually started a UPI payment (tapped
+  // "Pay via UPI App") AND left the page first, so login / initial load
+  // focus events never falsely place the order.
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -110,12 +112,13 @@ export function PaymentPage({
         return;
       }
       if (
+        hasInitiatedRef.current &&
         hasLeftPageRef.current &&
         order.paymentStatus === 'PENDING' &&
         paymentMethod === 'UPI' &&
         !hasReturnedRef.current
       ) {
-        // Customer returned to the page - assume they paid
+        // Customer returned to the page after starting a UPI payment
         hasReturnedRef.current = true;
         handleAutoSubmit();
       }
@@ -127,6 +130,7 @@ export function PaymentPage({
 
     const handleFocus = () => {
       if (
+        hasInitiatedRef.current &&
         hasLeftPageRef.current &&
         order.paymentStatus === 'PENDING' &&
         paymentMethod === 'UPI' &&
@@ -198,6 +202,7 @@ export function PaymentPage({
     saveOrder(updated);
     hasReturnedRef.current = false;
     hasLeftPageRef.current = false;
+    hasInitiatedRef.current = false;
     countdown.reset(sessionMinutes * 60);
   }, [order, sessionMinutes, countdown]);
 
@@ -244,6 +249,9 @@ export function PaymentPage({
             amount={order.amount}
             orderId={order.orderId}
             disabled={countdown.isExpired}
+            onInitiatePayment={() => {
+              hasInitiatedRef.current = true;
+            }}
             timer={
               <PaymentTimer
                 timeLeft={countdown.timeLeft}
