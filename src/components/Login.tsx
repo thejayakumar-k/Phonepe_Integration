@@ -8,9 +8,6 @@ export function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [vendorId, setVendorId] = useState(demoVendors[0].id);
   const [customerId, setCustomerId] = useState(demoCustomers[0].id);
 
   if (role !== 'vendor' && role !== 'customer') {
@@ -21,16 +18,15 @@ export function Login() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (isVendor && (!username.trim() || !password.trim())) return;
 
-    const vendor = demoVendors.find((v) => v.id === vendorId);
+    const vendor = demoVendors[0];
     const customer = demoCustomers.find((c) => c.id === customerId);
 
     login({
       role: role as Role,
-      username: isVendor ? username.trim() : customer?.name || 'Customer',
-      vendorId: isVendor ? vendor?.id : undefined,
-      vendorName: isVendor ? vendor?.name : undefined,
+      username: isVendor ? vendor.name : customer?.name || 'Customer',
+      vendorId: isVendor ? vendor.id : undefined,
+      vendorName: isVendor ? vendor.name : undefined,
       customerId: isVendor ? undefined : customer?.id,
       customerName: isVendor ? undefined : customer?.name,
     });
@@ -59,51 +55,12 @@ export function Login() {
           <h2>{isVendor ? 'Vendor Sign In' : 'Customer Sign In'}</h2>
           <p className="login-note">
             {isVendor
-              ? 'Demo mode - any username & password work.'
+              ? 'Signed in as OORUNII Store.'
               : 'Select your account to continue.'}
           </p>
 
           <form onSubmit={handleSubmit}>
-            {isVendor ? (
-              <>
-                <div className="form-group">
-                  <label className="form-label">Select Vendor Store</label>
-                  <select
-                    className="form-input"
-                    value={vendorId}
-                    onChange={(e) => setVendorId(e.target.value)}
-                  >
-                    {demoVendors.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.name} ({v.id})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Username</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    placeholder="Enter username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Password</label>
-                  <input
-                    className="form-input"
-                    type="password"
-                    placeholder="Enter password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-              </>
-            ) : (
+            {!isVendor && (
               <div className="form-group">
                 <label className="form-label">Select Customer Account</label>
                 <select

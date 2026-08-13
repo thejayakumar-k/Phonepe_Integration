@@ -7,7 +7,6 @@ export const sessionMinutes = parseFloat(
 
 export const demoVendors: Vendor[] = [
   { id: 'VENDOR001', name: 'OORUNII Store' },
-  { id: 'VENDOR002', name: 'Fresh Mart' },
 ];
 
 export const demoCustomers: Customer[] = [
@@ -34,8 +33,8 @@ export const demoOrders: Order[] = [
   },
   {
     orderId: 'ORDER1002',
-    vendorId: 'VENDOR002',
-    vendorName: 'Fresh Mart',
+    vendorId: 'VENDOR001',
+    vendorName: 'OORUNII Store',
     customerId: 'CUST002',
     customerName: 'Priya Sharma',
     amount: 250,
