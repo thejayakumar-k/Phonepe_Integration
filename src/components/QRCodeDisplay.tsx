@@ -14,12 +14,13 @@ interface QRCodeDisplayProps {
 
 export function QRCodeDisplay({ merchant, amount, orderId, disabled = false, timer, onInitiatePayment }: QRCodeDisplayProps) {
   const upiString = generateUpiString(merchant, amount, orderId);
+  const appLinkString = generateUpiString(merchant, amount, orderId, false);
 
   const handleOpenUpiApp = () => {
     onInitiatePayment?.();
     // Create an invisible link and click it to open UPI app
     const link = document.createElement('a');
-    link.href = upiString;
+    link.href = appLinkString;
     link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
