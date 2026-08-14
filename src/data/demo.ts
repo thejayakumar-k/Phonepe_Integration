@@ -7,6 +7,7 @@ export const sessionMinutes = parseFloat(
 
 export const demoVendors: Vendor[] = [
   { id: 'VENDOR001', name: 'OORUNII Store' },
+  { id: 'VENDOR002', name: 'GreenMart Fresh' },
 ];
 
 export const demoCustomers: Customer[] = [
@@ -56,6 +57,20 @@ export const demoOrders: Order[] = [
     description: 'Gift Card - Birthday',
     createdAt: Date.now() - minutes(10),
     expiresAt: Date.now() + sessionMinutes * minutes(1) - minutes(10),
+    paymentStatus: 'PENDING',
+    paymentMethod: 'UPI',
+  },
+  {
+    orderId: 'ORDER1004',
+    vendorId: 'VENDOR002',
+    vendorName: 'GreenMart Fresh',
+    customerId: 'CUST002',
+    customerName: 'Priya Sharma',
+    amount: 1,
+    currency: 'INR',
+    description: 'Fresh Vegetables Combo',
+    createdAt: Date.now() - minutes(2),
+    expiresAt: Date.now() + sessionMinutes * minutes(1) - minutes(2),
     paymentStatus: 'PENDING',
     paymentMethod: 'UPI',
   },

@@ -1,14 +1,24 @@
 import { useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
-import { PaymentPage } from './components';
+import { PaymentPage, TransactionHistory } from './components';
 import { Home } from './components/Home';
 import { Login } from './components/Login';
-import { VendorDashboard } from './components/VendorDashboard';
-import { CustomerDashboard } from './components/CustomerDashboard';
+import { VendorLayout } from './components/VendorLayout';
+import { VendorHome } from './components/VendorHome';
+import { VendorOrders } from './components/VendorOrders';
+import { VendorPayments } from './components/VendorPayments';
+import { VendorSettings } from './components/VendorSettings';
+import { CustomerLayout } from './components/CustomerLayout';
+import { CustomerHome } from './components/CustomerHome';
+import { CustomerCart } from './components/CustomerCart';
+import { CustomerAddMoney } from './components/CustomerAddMoney';
+import { PaymentVerification } from './components/PaymentVerification';
+import { CustomerOrders } from './components/CustomerOrders';
+import { CustomerSettings } from './components/CustomerSettings';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './auth/AuthContext';
-import { demoOrders, getAddFundsOrder, getDemoOrder, sessionMinutes } from './data/demo';
-import { seedDemoOrders } from './utils/storage';
+import { getAddFundsOrder, getDemoOrder, sessionMinutes } from './data/demo';
+import { clearDemoOrders, clearDemoItemOrders, linkItemOrderToPayment } from './utils/storage';
 import type { MerchantConfig } from './types/payment';
 import './App.css';
 
@@ -23,6 +33,24 @@ function PaymentRoute() {
   const { session } = useAuth();
 
   const order = useMemo(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'addfunds') {
+      const amountParam = searchParams.get('amount');
+      const parsedAmount = parseFloat(amountParam || '');
+      const amount = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0;
+      const order = getAddFundsOrder(
+        {
+          id: session?.customerId ?? 'CUST001',
+          name: session?.customerName ?? 'Customer',
+        },
+        amount
+      );
+      const itemOrderId = searchParams.get('io');
+      if (itemOrderId) {
+        linkItemOrderToPayment(itemOrderId, order.orderId);
+      }
+      return order;
+    }
     const amountParam = searchParams.get('amount');
     if (amountParam) {
       const amount = parseFloat(amountParam);
@@ -50,7 +78,8 @@ function PaymentRoute() {
 
 function App() {
   useEffect(() => {
-    seedDemoOrders(demoOrders);
+    clearDemoOrders();
+    clearDemoItemOrders();
   }, []);
 
   return (
@@ -66,25 +95,47 @@ function App() {
           {/* Payment Page */}
           <Route path="/pay" element={<PaymentRoute />} />
 
-          {/* Vendor Dashboard */}
+          {/* Payment Verification (full screen) */}
           <Route
-            path="/vendor"
+            path="/payment-verification"
             element={
-              <ProtectedRoute role="vendor">
-                <VendorDashboard />
+              <ProtectedRoute role="customer">
+                <PaymentVerification />
               </ProtectedRoute>
             }
           />
 
-          {/* Customer Dashboard */}
+          {/* Vendor Routes with Layout */}
+          <Route
+            path="/vendor"
+            element={
+              <ProtectedRoute role="vendor">
+                <VendorLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<VendorHome />} />
+            <Route path="orders" element={<VendorOrders />} />
+            <Route path="payments" element={<VendorPayments />} />
+            <Route path="settings" element={<VendorSettings />} />
+          </Route>
+
+          {/* Customer Routes with Layout */}
           <Route
             path="/customer"
             element={
               <ProtectedRoute role="customer">
-                <CustomerDashboard />
+                <CustomerLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<CustomerHome />} />
+            <Route path="cart" element={<CustomerCart />} />
+            <Route path="add-money" element={<CustomerAddMoney />} />
+            <Route path="orders" element={<CustomerOrders />} />
+            <Route path="history" element={<TransactionHistory />} />
+            <Route path="settings" element={<CustomerSettings />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

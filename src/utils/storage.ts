@@ -1,7 +1,9 @@
-import type { Order, PaymentStatus } from '../types/payment';
+import type { ItemOrder, ItemOrderStatus, Order, PaymentStatus } from '../types/payment';
 
 const STORAGE_KEY = 'oorunii_orders';
 const MARGIN_STORAGE_KEY = 'oorunii_margin';
+const ITEM_ORDERS_KEY = 'oorunii_item_orders';
+const ITEM_LINKS_KEY = 'oorunii_item_order_links';
 
 /**
  * Get the available margin for a customer (defaults to 0).
@@ -37,12 +39,91 @@ export function addMargin(customerId: string | undefined, amount: number): numbe
 }
 
 /**
- * Seed demo orders into localStorage if no orders exist yet.
+ * Remove previously seeded demo payment orders (if any) so only real
+ * payments remain.
  */
-export function seedDemoOrders(demoOrders: Order[]): void {
+export function clearDemoOrders(): void {
   const orders = getOrders();
-  if (Object.keys(orders).length === 0) {
-    demoOrders.forEach((order) => saveOrder(order));
+  let changed = false;
+  for (const id of ['ORDER1001', 'ORDER1002', 'ORDER1003', 'ORDER1004']) {
+    if (orders[id]) {
+      delete orders[id];
+      changed = true;
+    }
+  }
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  }
+}
+
+/* ========================================
+   Item Orders (product-level orders)
+   ======================================== */
+
+export function getItemOrders(): Record<string, ItemOrder> {
+  try {
+    const data = localStorage.getItem(ITEM_ORDERS_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveItemOrder(order: ItemOrder): void {
+  const orders = getItemOrders();
+  orders[order.id] = order;
+  localStorage.setItem(ITEM_ORDERS_KEY, JSON.stringify(orders));
+}
+
+export function updateItemOrderStatus(
+  id: string,
+  status: ItemOrderStatus
+): ItemOrder | null {
+  const orders = getItemOrders();
+  const order = orders[id];
+  if (!order) return null;
+  orders[id] = { ...order, status };
+  localStorage.setItem(ITEM_ORDERS_KEY, JSON.stringify(orders));
+  return orders[id];
+}
+
+function readItemLinks(): Record<string, string> {
+  try {
+    const data = localStorage.getItem(ITEM_LINKS_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function linkItemOrderToPayment(
+  itemOrderId: string,
+  paymentOrderId: string
+): void {
+  const links = readItemLinks();
+  links[paymentOrderId] = itemOrderId;
+  localStorage.setItem(ITEM_LINKS_KEY, JSON.stringify(links));
+}
+
+function getLinkedItemOrder(paymentOrderId: string): string | undefined {
+  return readItemLinks()[paymentOrderId];
+}
+
+/**
+ * Remove previously seeded demo item orders (if any) so the Orders page
+ * only shows real orders placed by the customer.
+ */
+export function clearDemoItemOrders(): void {
+  const orders = getItemOrders();
+  let changed = false;
+  for (const id of ['IO1001', 'IO1002']) {
+    if (orders[id]) {
+      delete orders[id];
+      changed = true;
+    }
+  }
+  if (changed) {
+    localStorage.setItem(ITEM_ORDERS_KEY, JSON.stringify(orders));
   }
 }
 
@@ -98,6 +179,12 @@ export function updateOrderStatus(
   // Credit the paid amount to the customer's available margin (only once per order).
   if (status === 'PAID' && order.paymentStatus !== 'PAID') {
     addMargin(updatedOrder.customerId, updatedOrder.amount);
+
+    // Mark the linked product-level item order as paid too.
+    const itemOrderId = getLinkedItemOrder(orderId);
+    if (itemOrderId) {
+      updateItemOrderStatus(itemOrderId, 'PAID');
+    }
   }
 
   return updatedOrder;

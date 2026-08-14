@@ -10,6 +10,30 @@ export type PaymentStatus =
 
 export type PaymentMethod = 'UPI' | 'COD';
 
+export type ItemOrderStatus = 'PENDING' | 'PAID' | 'NOT_PAID' | 'CANCELLED';
+
+export interface ItemOrderItem {
+  name: string;
+  qty: number;
+  price: number;
+  unit?: string;
+  image?: string;
+}
+
+export interface ItemOrder {
+  id: string;
+  customerId: string;
+  customerName?: string;
+  vendorId?: string;
+  vendorName?: string;
+  items: ItemOrderItem[];
+  total: number;
+  status: ItemOrderStatus;
+  paymentMethod?: PaymentMethod;
+  paymentOrderId?: string;
+  createdAt: number;
+}
+
 export interface Vendor {
   id: string;
   name: string;

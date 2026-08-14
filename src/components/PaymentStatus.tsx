@@ -114,6 +114,11 @@ export function PaymentStatus({
               Restart Payment
             </button>
           )}
+          {onReturnHome && (
+            <button className="btn btn-primary" onClick={onReturnHome}>
+              Return to Home
+            </button>
+          )}
         </div>
       )}
 
@@ -134,6 +139,11 @@ export function PaymentStatus({
               onClick={onRestartPayment}
             >
               Restart Payment
+            </button>
+          )}
+          {onReturnHome && (
+            <button className="btn btn-primary" onClick={onReturnHome}>
+              Return to Home
             </button>
           )}
         </div>
@@ -157,6 +167,11 @@ export function PaymentStatus({
               onClick={onRestartPayment}
             >
               Restart Payment
+            </button>
+          )}
+          {onReturnHome && (
+            <button className="btn btn-primary" onClick={onReturnHome}>
+              Return to Home
             </button>
           )}
         </div>

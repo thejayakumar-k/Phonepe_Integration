@@ -10,7 +10,11 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ role, children }: ProtectedRouteProps) {
   const { session } = useAuth();
 
-  if (!session || session.role !== role) {
+  if (!session) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (session.role !== role) {
     return <Navigate to={`/login/${role}`} replace />;
   }
 

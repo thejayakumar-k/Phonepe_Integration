@@ -4,13 +4,12 @@ import { useAuth } from '../auth/AuthContext';
 import { getMargin } from '../utils/storage';
 import { DateTimeDisplay } from './DateTimeDisplay';
 
-const APP_VERSION = 'v1.0.14';
+const APP_VERSION = 'v1.0';
 
 export function CustomerDashboard() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [margin, setMargin] = useState(() => getMargin(session?.customerId));
-  const [fundAmount, setFundAmount] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = () => {
@@ -22,12 +21,7 @@ export function CustomerDashboard() {
   };
 
   const handleAddFunds = () => {
-    const amount = parseFloat(fundAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      alert('Please enter a valid amount to add funds.');
-      return;
-    }
-    navigate(`/pay?amount=${amount}`);
+    navigate('/pay?mode=addfunds');
   };
 
   const handleWithdraw = () => {
@@ -66,20 +60,6 @@ export function CustomerDashboard() {
         <div className="margin-amount">₹{margin.toFixed(2)}</div>
       </div>
 
-      {/* Add Funds Input */}
-      <div className="fund-input-row">
-        <input
-          className="fund-input"
-          type="number"
-          min="1"
-          step="1"
-          placeholder="Enter amount to add"
-          value={fundAmount}
-          onChange={(e) => setFundAmount(e.target.value)}
-          aria-label="Amount to add funds"
-        />
-      </div>
-
       {/* Action Buttons */}
       <div className="action-buttons">
         <button className="btn-action btn-add-funds" onClick={handleAddFunds}>
@@ -91,6 +71,29 @@ export function CustomerDashboard() {
           Withdraw
         </button>
       </div>
+
+      {/* View Transaction History */}
+      <button
+        className="btn-history"
+        onClick={() => navigate('/transaction-history')}
+      >
+        <svg
+          className="btn-history-icon"
+          viewBox="0 0 24 24"
+          width="14"
+          height="14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 3v5h5" />
+          <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+          <path d="M12 7v5l4 2" />
+        </svg>
+        View Transaction History
+      </button>
     </div>
   );
 }
