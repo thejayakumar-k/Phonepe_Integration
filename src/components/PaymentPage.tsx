@@ -8,7 +8,7 @@ import { PaymentStatus } from './PaymentStatus';
 import { useCountdown } from '../hooks/useCountdown';
 import { useOrderStatus } from '../hooks/useOrderStatus';
 import { saveOrder, getOrder } from '../utils/storage';
-import { generateUpiString, formatCurrency } from '../utils/upi';
+import { generateUpiString, formatCurrency, openInUpiApp } from '../utils/upi';
 
 interface PaymentPageProps {
   order: Order;
@@ -222,20 +222,14 @@ export function PaymentPage({
 
   const handleOpenUpiApp = useCallback(() => {
     hasInitiatedRef.current = true;
-    const upiString = generateUpiString(
+    // Open Google Pay directly (like scanning the QR); falls back to
+    // the generic UPI app intent if GPay isn't available.
+    openInUpiApp(
       merchant,
       payAmount,
       order.orderId,
       `${order.customerName || 'Customer'} ${order.orderId}`
     );
-    // Launch the UPI intent via an invisible iframe. Some phones resolve
-    // this like a native app-to-app intent, unlike anchor clicks or
-    // location redirects which can mangle the URI.
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = upiString;
-    document.body.appendChild(iframe);
-    window.setTimeout(() => iframe.remove(), 1000);
   }, [merchant, payAmount, order.orderId]);
 
   const timer = (
