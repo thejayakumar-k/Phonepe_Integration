@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getMargin } from '../utils/storage';
@@ -6,7 +6,15 @@ import { getMargin } from '../utils/storage';
 export function CustomerSettings() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
-  const [margin] = useState(() => getMargin(session?.customerId));
+  const [margin, setMargin] = useState(() => getMargin(session?.customerId));
+
+  useEffect(() => {
+    setMargin(getMargin(session?.customerId));
+    const interval = setInterval(() => {
+      setMargin(getMargin(session?.customerId));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [session?.customerId]);
 
   const handleLogout = () => {
     logout();

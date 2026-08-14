@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getMargin, addMargin, saveItemOrder } from '../utils/storage';
+import { getMargin, subtractMargin, saveItemOrder } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus, PaymentMethod } from '../types/payment';
 
 const products = [
@@ -20,6 +20,8 @@ export function CustomerCart() {
     return saved ? (JSON.parse(saved) as {id: number; qty: number}[]) : [];
   });
   const [selectedPayment, setSelectedPayment] = useState<CartPaymentMethod>('upi');
+  const [paymentSuccess, setPaymentSuccess] = useState<{ amount: number; balance: number } | null>(null);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getProduct = (id: number) => products.find((p) => p.id === id);
 
@@ -59,13 +61,16 @@ export function CustomerCart() {
           alert('Insufficient wallet balance!');
           return;
         }
-        if (session?.customerId) {
-          addMargin(session.customerId, -totalAmount);
-        }
+        const newBalance = session?.customerId
+          ? subtractMargin(session.customerId, totalAmount)
+          : walletBalance;
         saveItemOrder(buildItemOrder('PAID'));
-        alert(`₹${totalAmount.toFixed(2)} deducted from wallet!`);
         localStorage.removeItem('customer_cart');
-        navigate('/customer/orders');
+        setPaymentSuccess({ amount: totalAmount, balance: newBalance });
+        if (redirectTimer.current) clearTimeout(redirectTimer.current);
+        redirectTimer.current = setTimeout(() => {
+          navigate('/customer/orders');
+        }, 1800);
       } else if (selectedPayment === 'qr') {
         const itemOrder = buildItemOrder('PENDING', 'UPI');
         saveItemOrder(itemOrder);
@@ -81,6 +86,12 @@ export function CustomerCart() {
     window.addEventListener('triggerCheckout', handleCheckout);
     return () => window.removeEventListener('triggerCheckout', handleCheckout);
   }, [selectedPayment, walletBalance, totalAmount, cart, navigate, session?.customerId, session?.customerName]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, []);
 
   const handleAdd = (productId: number) => {
     setCart((prev) => {
@@ -244,6 +255,27 @@ export function CustomerCart() {
 
 
       </div>
+
+      {paymentSuccess && (
+        <div className="pay-success-overlay">
+          <div className="pay-success-card">
+            <div className="pay-success-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <h2 className="pay-success-title">Payment Successful</h2>
+            <p className="pay-success-message">
+              ₹{paymentSuccess.amount.toFixed(2)} deducted from OORUNII Wallet
+            </p>
+            <div className="pay-success-balance">
+              <span className="psb-label">New Balance</span>
+              <span className="psb-value">₹{paymentSuccess.balance.toFixed(2)}</span>
+            </div>
+            <p className="pay-success-hint">Redirecting to your orders...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

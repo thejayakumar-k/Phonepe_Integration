@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import { useAuth } from '../auth/AuthContext';
 import { generateUpiString } from '../utils/upi';
 
 type PaymentMethod = 'upi' | 'qr' | 'virtual';
@@ -17,6 +18,7 @@ const virtualAccount = {
 
 export function CustomerAddMoney() {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [amount, setAmount] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('upi');
   const [copied, setCopied] = useState('');
@@ -38,16 +40,22 @@ export function CustomerAddMoney() {
 
   const handleSendRequest = () => {
     // Generate UPI string and navigate to payment app
+    const orderId = `AM${Date.now()}`;
     window.location.href = generateUpiString(
       { upiId: merchantUpiId, merchantName },
       parseFloat(amount) || 0,
-      `AM${Date.now()}`
+      orderId,
+      `${session?.customerName || 'Customer'} ${orderId}`
     );
   };
 
+  const qrOrderId = `QR${Date.now()}`;
+
   const upiString = generateUpiString(
     { upiId: merchantUpiId, merchantName },
-    parseFloat(amount) || 0
+    parseFloat(amount) || 0,
+    qrOrderId,
+    `${session?.customerName || 'Customer'} ${qrOrderId}`
   );
 
   return (
@@ -143,8 +151,7 @@ export function CustomerAddMoney() {
                 </div>
                 <p className="qr-instruction">Scan this QR code with any UPI app</p>
                 <button className="btn-payment-completed" onClick={() => {
-                  const orderId = `QR-${Date.now()}`;
-                  navigate(`/payment-verification?orderId=${orderId}&amount=${amount}`);
+                  navigate(`/payment-verification?orderId=${qrOrderId}&amount=${amount}`);
                 }}>
                   ✅ Payment Completed
                 </button>

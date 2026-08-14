@@ -39,6 +39,25 @@ export function addMargin(customerId: string | undefined, amount: number): numbe
 }
 
 /**
+ * Deduct `amount` from the customer's available margin. Returns the new balance.
+ */
+export function subtractMargin(customerId: string | undefined, amount: number): number {
+  if (!customerId || !Number.isFinite(amount) || amount <= 0) {
+    return getMargin(customerId);
+  }
+  const next = Math.max(0, Math.round((getMargin(customerId) - amount) * 100) / 100);
+  try {
+    const data = localStorage.getItem(MARGIN_STORAGE_KEY);
+    const margins: Record<string, number> = data ? JSON.parse(data) : {};
+    margins[customerId] = next;
+    localStorage.setItem(MARGIN_STORAGE_KEY, JSON.stringify(margins));
+  } catch {
+    // ignore storage errors
+  }
+  return next;
+}
+
+/**
  * Remove previously seeded demo payment orders (if any) so only real
  * payments remain.
  */

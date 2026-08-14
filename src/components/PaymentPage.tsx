@@ -222,7 +222,12 @@ export function PaymentPage({
 
   const handleOpenUpiApp = useCallback(() => {
     hasInitiatedRef.current = true;
-    const upiString = generateUpiString(merchant, payAmount, order.orderId);
+    const upiString = generateUpiString(
+      merchant,
+      payAmount,
+      order.orderId,
+      `${order.customerName || 'Customer'} ${order.orderId}`
+    );
     // Launch the UPI intent via an invisible iframe. Some phones resolve
     // this like a native app-to-app intent, unlike anchor clicks or
     // location redirects which can mangle the URI.
@@ -392,7 +397,12 @@ export function PaymentPage({
 
                         <div className="fund-qr">
                           <QRCodeSVG
-                            value={generateUpiString(merchant, payAmount, order.orderId)}
+                            value={generateUpiString(
+                              merchant,
+                              payAmount,
+                              order.orderId,
+                              `${order.customerName || 'Customer'} ${order.orderId}`
+                            )}
                             size={180}
                             bgColor="#ffffff"
                             fgColor="#1a1a2e"

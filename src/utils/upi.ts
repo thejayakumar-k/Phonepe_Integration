@@ -12,7 +12,8 @@ import type { MerchantConfig } from '../types/payment';
 export function generateUpiString(
   merchant: MerchantConfig,
   amount?: number,
-  orderId?: string
+  orderId?: string,
+  note?: string
 ): string {
   // UPI URI format: upi://pay?pa=...&pn=...&am=...&tn=...
   const params = new URLSearchParams({
@@ -26,9 +27,11 @@ export function generateUpiString(
     params.set('am', Number.isInteger(amount) ? String(amount) : amount.toFixed(2));
   }
 
-  // Add transaction note with order ID
-  if (orderId) {
-    params.set('tn', `Payment for Order ${orderId}`);
+  // Add transaction note (customer name + order number)
+  if (note) {
+    params.set('tn', note);
+  } else if (orderId) {
+    params.set('tn', orderId);
   }
 
   return `upi://pay?${params.toString()}`;
