@@ -104,15 +104,6 @@ export function CustomerSettings() {
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </button>
-          <button className="menu-item" onClick={() => navigate('/customer/manage-upi')}>
-            <div className="menu-left">
-              <span className="menu-icon">🏦</span>
-              <span className="menu-label">Manage UPI Numbers</span>
-            </div>
-            <svg className="menu-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
           <button className="menu-item" onClick={() => alert('Help & Support coming soon!')}>
             <div className="menu-left">
               <span className="menu-icon">❓</span>
