@@ -25,9 +25,10 @@ export function CustomerAddMoney() {
   const [copied, setCopied] = useState('');
 
   const amountValue = parseFloat(amount);
+  const minAmount = selectedPayment === 'upi' ? 1000 : 50;
   const amountError = amount
-    ? amountValue < 50
-      ? 'Minimum amount is ₹50'
+    ? amountValue < minAmount
+      ? `Minimum amount is ₹${minAmount}`
       : amountValue > 10000
         ? 'Maximum amount is ₹10,000'
         : ''
@@ -76,7 +77,7 @@ export function CustomerAddMoney() {
               type="number"
               className="amount-input"
               placeholder="100"
-              min="50"
+              min={minAmount}
               max="10000"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -86,7 +87,7 @@ export function CustomerAddMoney() {
           {amountError ? (
             <span className="amount-error-text">{amountError}</span>
           ) : (
-            <span className="amount-hint-text">Min: ₹50 - Max: ₹10,000</span>
+            <span className="amount-hint-text">Min: ₹{minAmount} - Max: ₹10,000</span>
           )}
         </div>
 
@@ -122,7 +123,7 @@ export function CustomerAddMoney() {
             <span className="payment-detail-title">Payment Method</span>
             <p className="upi-desc">Pay using UPI App</p>
             <p className="upi-hint">We will open your UPI app directly with the amount pre-filled (no UPI id needed).</p>
-            <button className="btn-send-request" onClick={handleSendRequest} disabled={!amount || parseFloat(amount) < 50}>
+            <button className="btn-send-request" onClick={handleSendRequest} disabled={!amount || amountValue < minAmount}>
               📤 Send Payment Request
             </button>
           </div>
