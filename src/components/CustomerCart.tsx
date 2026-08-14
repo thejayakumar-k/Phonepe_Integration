@@ -72,10 +72,16 @@ export function CustomerCart() {
           navigate('/customer/orders');
         }, 1800);
       } else if (selectedPayment === 'qr') {
+        if (session?.customerId) {
+          subtractMargin(session.customerId, totalAmount);
+        }
         const itemOrder = buildItemOrder('PENDING', 'UPI');
         saveItemOrder(itemOrder);
         navigate(`/pay?mode=addfunds&amount=${totalAmount}&io=${itemOrder.id}`);
       } else {
+        if (session?.customerId) {
+          subtractMargin(session.customerId, totalAmount);
+        }
         saveItemOrder(buildItemOrder('NOT_PAID', 'COD'));
         alert('Order placed with Cash on Delivery!');
         localStorage.removeItem('customer_cart');

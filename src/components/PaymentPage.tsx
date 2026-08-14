@@ -8,7 +8,7 @@ import { PaymentStatus } from './PaymentStatus';
 import { useCountdown } from '../hooks/useCountdown';
 import { useOrderStatus } from '../hooks/useOrderStatus';
 import { saveOrder, getOrder } from '../utils/storage';
-import { generateUpiString, formatCurrency, openInUpiApp } from '../utils/upi';
+import { generateUpiString, formatCurrency } from '../utils/upi';
 
 interface PaymentPageProps {
   order: Order;
@@ -222,15 +222,14 @@ export function PaymentPage({
 
   const handleOpenUpiApp = useCallback(() => {
     hasInitiatedRef.current = true;
-    // Open Google Pay directly (like scanning the QR); falls back to
-    // the generic UPI app intent if GPay isn't available.
-    openInUpiApp(
-      merchant,
-      payAmount,
-      order.orderId,
-      `${order.customerName || 'Customer'} ${order.orderId}`
-    );
-  }, [merchant, payAmount, order.orderId]);
+    // Launch the UPI app with the amount only (no reference note).
+    const upiString = generateUpiString(merchant, payAmount);
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = upiString;
+    document.body.appendChild(iframe);
+    window.setTimeout(() => iframe.remove(), 1000);
+  }, [merchant, payAmount]);
 
   const timer = (
     <PaymentTimer

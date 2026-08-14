@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../auth/AuthContext';
-import { generateUpiString, openInUpiApp } from '../utils/upi';
+import { generateUpiString } from '../utils/upi';
 
 type PaymentMethod = 'upi' | 'qr' | 'virtual';
 
@@ -39,13 +39,10 @@ export function CustomerAddMoney() {
   };
 
   const handleSendRequest = () => {
-    // Open Google Pay directly with the amount pre-filled
-    const orderId = `AM${Date.now()}`;
-    openInUpiApp(
+    // Generate UPI string with the amount only (no reference note)
+    window.location.href = generateUpiString(
       { upiId: merchantUpiId, merchantName },
-      parseFloat(amount) || 0,
-      orderId,
-      `${session?.customerName || 'Customer'} ${orderId}`
+      parseFloat(amount) || 0
     );
   };
 
@@ -122,10 +119,10 @@ export function CustomerAddMoney() {
         {selectedPayment === 'upi' && (
           <div className="payment-detail-section upi-detail">
             <span className="payment-detail-title">Payment Method</span>
-            <p className="upi-desc">Pay using Google Pay</p>
-            <p className="upi-hint">GPay opens automatically with the amount pre-filled (no manual scan needed).</p>
+            <p className="upi-desc">Pay using UPI App</p>
+            <p className="upi-hint">We will open your UPI app directly with the amount pre-filled (no UPI id needed).</p>
             <button className="btn-send-request" onClick={handleSendRequest} disabled={!amount || parseFloat(amount) < 50}>
-              📱 Pay with Google Pay
+              📤 Send Payment Request
             </button>
           </div>
         )}
@@ -150,19 +147,6 @@ export function CustomerAddMoney() {
                   <span className="qr-upi-value">{merchantUpiId}</span>
                 </div>
                 <p className="qr-instruction">Scan this QR code with any UPI app</p>
-                <button
-                  className="btn-send-request"
-                  onClick={() =>
-                    openInUpiApp(
-                      { upiId: merchantUpiId, merchantName },
-                      parseFloat(amount) || 0,
-                      qrOrderId,
-                      `${session?.customerName || 'Customer'} ${qrOrderId}`
-                    )
-                  }
-                >
-                  📱 Open in Google Pay
-                </button>
                 <button className="btn-payment-completed" onClick={() => {
                   navigate(`/payment-verification?orderId=${qrOrderId}&amount=${amount}`);
                 }}>

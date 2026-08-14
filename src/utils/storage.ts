@@ -195,15 +195,19 @@ export function updateOrderStatus(
 
   saveOrder(updatedOrder);
 
-  // Credit the paid amount to the customer's available margin (only once per order).
-  if (status === 'PAID' && order.paymentStatus !== 'PAID') {
-    addMargin(updatedOrder.customerId, updatedOrder.amount);
+  // Mark the linked product-level item order as paid too.
+  const itemOrderId = getLinkedItemOrder(orderId);
 
-    // Mark the linked product-level item order as paid too.
-    const itemOrderId = getLinkedItemOrder(orderId);
-    if (itemOrderId) {
-      updateItemOrderStatus(itemOrderId, 'PAID');
-    }
+  // Credit the paid amount to the customer's available margin ONLY for
+  // pure "add funds" orders. Orders linked to a product purchase already
+  // deducted the wallet balance at checkout, so crediting again would
+  // double-count.
+  if (status === 'PAID' && order.paymentStatus !== 'PAID' && !itemOrderId) {
+    addMargin(updatedOrder.customerId, updatedOrder.amount);
+  }
+
+  if (status === 'PAID' && itemOrderId) {
+    updateItemOrderStatus(itemOrderId, 'PAID');
   }
 
   return updatedOrder;
