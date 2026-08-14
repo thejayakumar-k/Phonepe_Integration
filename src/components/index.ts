@@ -4,6 +4,7 @@ export { QRCodeDisplay } from './QRCodeDisplay';
 export { PaymentTimer } from './PaymentTimer';
 export { PaymentStatus } from './PaymentStatus';
 export { Home } from './Home';
+export { DateTimeDisplay } from './DateTimeDisplay';
 export { Login } from './Login';
 export { VendorDashboard } from './VendorDashboard';
 export { OrdersPanel } from './OrdersPanel';

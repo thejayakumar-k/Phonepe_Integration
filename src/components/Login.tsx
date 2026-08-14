@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useAuth, type Role } from '../auth/AuthContext';
-import { demoVendors, demoCustomers, getCustomerOrderId, startFreshPayment } from '../data/demo';
+import { demoVendors, demoCustomers } from '../data/demo';
 
 export function Login() {
   const { role } = useParams<{ role: string }>();
@@ -36,10 +36,8 @@ export function Login() {
       return;
     }
 
-    // Customer: always start a fresh payment session on login
-    const orderId = getCustomerOrderId(customer?.id);
-    const freshOrder = startFreshPayment(orderId);
-    navigate(`/pay?orderId=${freshOrder.orderId}`, { replace: true });
+    // Customer: redirect to customer dashboard
+    navigate('/customer', { replace: true });
   };
 
   return (

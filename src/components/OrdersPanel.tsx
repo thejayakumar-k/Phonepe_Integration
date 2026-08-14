@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Order } from '../types/payment';
 import { getOrders, updateOrderStatus } from '../utils/storage';
-import { formatCurrency } from '../utils/upi';
+import { formatCurrency, formatDateTime } from '../utils/upi';
 
 interface OrdersPanelProps {
   vendorId?: string;
@@ -77,7 +77,7 @@ export function OrdersPanel({ vendorId }: OrdersPanelProps) {
                 </div>
                 <div className="order-meta">
                   {order.vendorName && <span>Vendor: {order.vendorName}</span>}
-                  <span>Submitted: {new Date(order.paymentSubmittedAt!).toLocaleTimeString()}</span>
+                  <span>Submitted: {formatDateTime(order.paymentSubmittedAt!)}</span>
                 </div>
 
                 <div className="verify-actions">
@@ -133,20 +133,21 @@ export function OrdersPanel({ vendorId }: OrdersPanelProps) {
                 </div>
                 <div className="order-meta">
                   {order.vendorName && <span>Vendor: {order.vendorName}</span>}
+                  <span>Created: {formatDateTime(order.createdAt)}</span>
                   {order.orderPlacedAt && (
-                    <span>Placed: {new Date(order.orderPlacedAt).toLocaleString()}</span>
+                    <span>Placed: {formatDateTime(order.orderPlacedAt)}</span>
                   )}
                   {order.paymentMethod && (
                     <span>Method: {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'UPI'}</span>
                   )}
                   {order.codPlacedAt && (
-                    <span>COD Placed: {new Date(order.codPlacedAt).toLocaleString()}</span>
+                    <span>COD Placed: {formatDateTime(order.codPlacedAt)}</span>
                   )}
                   {order.paymentSubmittedAt && (
-                    <span>Submitted: {new Date(order.paymentSubmittedAt).toLocaleString()}</span>
+                    <span>Submitted: {formatDateTime(order.paymentSubmittedAt)}</span>
                   )}
                   {order.paymentVerifiedAt && (
-                    <span>Verified: {new Date(order.paymentVerifiedAt).toLocaleString()}</span>
+                    <span>Verified: {formatDateTime(order.paymentVerifiedAt)}</span>
                   )}
                   {order.transactionId && (
                     <span>TXN: {order.transactionId}</span>

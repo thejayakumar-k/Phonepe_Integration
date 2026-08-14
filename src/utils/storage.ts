@@ -1,6 +1,40 @@
 import type { Order, PaymentStatus } from '../types/payment';
 
 const STORAGE_KEY = 'oorunii_orders';
+const MARGIN_STORAGE_KEY = 'oorunii_margin';
+
+/**
+ * Get the available margin for a customer (defaults to 0).
+ */
+export function getMargin(customerId?: string): number {
+  if (!customerId) return 0;
+  try {
+    const data = localStorage.getItem(MARGIN_STORAGE_KEY);
+    const margins: Record<string, number> = data ? JSON.parse(data) : {};
+    return typeof margins[customerId] === 'number' ? margins[customerId] : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Credit `amount` to the customer's available margin. Returns the new balance.
+ */
+export function addMargin(customerId: string | undefined, amount: number): number {
+  if (!customerId || !Number.isFinite(amount) || amount <= 0) {
+    return getMargin(customerId);
+  }
+  const next = Math.round((getMargin(customerId) + amount) * 100) / 100;
+  try {
+    const data = localStorage.getItem(MARGIN_STORAGE_KEY);
+    const margins: Record<string, number> = data ? JSON.parse(data) : {};
+    margins[customerId] = next;
+    localStorage.setItem(MARGIN_STORAGE_KEY, JSON.stringify(margins));
+  } catch {
+    // ignore storage errors
+  }
+  return next;
+}
 
 /**
  * Seed demo orders into localStorage if no orders exist yet.
@@ -60,6 +94,12 @@ export function updateOrderStatus(
   };
 
   saveOrder(updatedOrder);
+
+  // Credit the paid amount to the customer's available margin (only once per order).
+  if (status === 'PAID' && order.paymentStatus !== 'PAID') {
+    addMargin(updatedOrder.customerId, updatedOrder.amount);
+  }
+
   return updatedOrder;
 }
 

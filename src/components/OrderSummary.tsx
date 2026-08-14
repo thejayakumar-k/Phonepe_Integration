@@ -1,5 +1,5 @@
 import type { Order } from '../types/payment';
-import { formatCurrency } from '../utils/upi';
+import { formatCurrency, formatDateTime } from '../utils/upi';
 
 interface OrderSummaryProps {
   order: Order;
@@ -14,6 +14,11 @@ export function OrderSummary({ order }: OrderSummaryProps) {
         <div className="detail-row">
           <span className="detail-label">Order ID</span>
           <span className="detail-value order-id">{order.orderId}</span>
+        </div>
+
+        <div className="detail-row">
+          <span className="detail-label">Date &amp; Time</span>
+          <span className="detail-value">{formatDateTime(order.createdAt)}</span>
         </div>
         
         <div className="detail-row amount-row">

@@ -55,6 +55,22 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
+ * Format a date with date and time (en-IN locale)
+ */
+export function formatDateTime(date: Date | number | string): string {
+  const value = date instanceof Date ? date : new Date(date);
+  return value.toLocaleString('en-IN', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+/**
  * Get payment status display text
  */
 export function getPaymentStatusText(status: string): string {

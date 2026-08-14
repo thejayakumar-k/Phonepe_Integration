@@ -1,12 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
 import { PaymentPage } from './components';
 import { Home } from './components/Home';
 import { Login } from './components/Login';
 import { VendorDashboard } from './components/VendorDashboard';
+import { CustomerDashboard } from './components/CustomerDashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { AuthProvider } from './auth/AuthContext';
-import { demoOrders, getDemoOrder, sessionMinutes } from './data/demo';
+import { AuthProvider, useAuth } from './auth/AuthContext';
+import { demoOrders, getAddFundsOrder, getDemoOrder, sessionMinutes } from './data/demo';
 import { seedDemoOrders } from './utils/storage';
 import type { MerchantConfig } from './types/payment';
 import './App.css';
@@ -19,7 +20,24 @@ const merchant: MerchantConfig = {
 
 function PaymentRoute() {
   const [searchParams] = useSearchParams();
-  const order = getDemoOrder(searchParams.get('orderId') || undefined);
+  const { session } = useAuth();
+
+  const order = useMemo(() => {
+    const amountParam = searchParams.get('amount');
+    if (amountParam) {
+      const amount = parseFloat(amountParam);
+      if (Number.isFinite(amount) && amount > 0) {
+        return getAddFundsOrder(
+          {
+            id: session?.customerId ?? 'CUST001',
+            name: session?.customerName ?? 'Customer',
+          },
+          amount
+        );
+      }
+    }
+    return getDemoOrder(searchParams.get('orderId') || undefined);
+  }, [searchParams, session]);
 
   return (
     <PaymentPage
@@ -54,6 +72,16 @@ function App() {
             element={
               <ProtectedRoute role="vendor">
                 <VendorDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Customer Dashboard */}
+          <Route
+            path="/customer"
+            element={
+              <ProtectedRoute role="customer">
+                <CustomerDashboard />
               </ProtectedRoute>
             }
           />

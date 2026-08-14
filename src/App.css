@@ -1178,3 +1178,239 @@ body {
 /* ========================================
    Vendor Overview Cards (Admin)
    ======================================== */
+
+/* ========================================
+   Customer Dashboard
+   ======================================== */
+
+.customer-dashboard {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Version Tag */
+.version-tag {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Date & Time Display */
+.datetime-display {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-header .datetime-display {
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 0;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+/* Welcome Text */
+.welcome-text {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  padding: 8px 0 4px;
+}
+
+/* Margin Card */
+.margin-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.margin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.margin-label {
+  font-size: 15px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.refresh-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #2563eb;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.refresh-btn.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.margin-amount {
+  font-size: 36px;
+  font-weight: 700;
+  color: #10b981;
+  margin: 0;
+}
+
+/* Add Funds Input */
+.fund-input-row {
+  margin-bottom: 12px;
+}
+
+.fund-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  font-size: 16px;
+  color: #111827;
+  background: white;
+  box-sizing: border-box;
+}
+
+.fund-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.fund-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 16px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-icon-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.btn-add-funds {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-add-funds .btn-icon-circle {
+  background: white;
+  color: #2563eb;
+}
+
+.btn-add-funds:hover {
+  background: #1d4ed8;
+}
+
+.btn-withdraw {
+  background: white;
+  color: #2563eb;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.btn-withdraw .btn-icon-circle {
+  border: 2px solid #2563eb;
+  background: transparent;
+}
+
+.btn-withdraw:hover {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.04);
+}
+
+/* Mobile responsive */
+@media (max-width: 400px) {
+  .customer-dashboard {
+    padding: 12px;
+  }
+
+  .welcome-text {
+    font-size: 20px;
+  }
+
+  .margin-amount {
+    font-size: 30px;
+  }
+
+  .btn-action {
+    padding: 16px 12px;
+    font-size: 14px;
+  }
+
+  .btn-icon-circle {
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+  }
+}

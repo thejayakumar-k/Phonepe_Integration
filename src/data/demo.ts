@@ -89,6 +89,26 @@ export function getCustomerOrderId(customerId?: string): string | undefined {
   return order?.orderId;
 }
 
+/**
+ * Create a fresh "Add Funds" order for the given customer and amount.
+ */
+export function getAddFundsOrder(customer?: Customer, amount = 0): Order {
+  return {
+    orderId: `FUND${Date.now()}`,
+    vendorId: 'VENDOR001',
+    vendorName: 'OORUNII Store',
+    customerId: customer?.id,
+    customerName: customer?.name,
+    amount,
+    currency: 'INR',
+    description: 'Wallet Add Funds',
+    createdAt: Date.now(),
+    expiresAt: Date.now() + sessionMinutes * 60 * 1000,
+    paymentStatus: 'PENDING',
+    paymentMethod: 'UPI',
+  };
+}
+
 export function getDemoOrder(orderId?: string): Order {
   const base = demoOrders.find((o) => o.orderId === orderId) || demoOrders[0];
   return {

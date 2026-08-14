@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { OrdersPanel } from './OrdersPanel';
+import { DateTimeDisplay } from './DateTimeDisplay';
 
 export function VendorDashboard() {
   const { session, logout } = useAuth();
@@ -8,6 +9,7 @@ export function VendorDashboard() {
   return (
     <div className="admin-panel">
       <header className="admin-header">
+        <DateTimeDisplay />
         <div className="dashboard-nav">
           <span className="nav-user">
             🛍️ {session?.vendorName || 'Vendor'} ({session?.vendorId})
