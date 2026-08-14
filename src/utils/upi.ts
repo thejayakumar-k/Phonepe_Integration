@@ -69,15 +69,19 @@ export function generateGpayString(
 /**
  * Launch the payment in Google Pay first; if GPay isn't installed/doesn't
  * handle the scheme, fall back to the generic UPI app intent.
+ *
+ * NOTE: the amount is intentionally NOT included. A deep link with `am`
+ * makes the UPI app send a collect request (limited for personal VPAs),
+ * while a plain "pay to" screen behaves like a manually scanned QR.
  */
 export function openInUpiApp(
   merchant: MerchantConfig,
-  amount?: number,
+  _amount?: number,
   orderId?: string,
   note?: string
 ): void {
-  const gpayString = generateGpayString(merchant, amount, orderId, note);
-  const upiString = generateUpiString(merchant, amount, orderId, note);
+  const gpayString = generateGpayString(merchant, undefined, orderId, note);
+  const upiString = generateUpiString(merchant, undefined, orderId, note);
 
   let didOpen = false;
   const handleBlur = () => {
