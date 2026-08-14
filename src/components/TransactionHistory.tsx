@@ -224,7 +224,7 @@ export function TransactionHistory() {
                         })}
                       </span>
                     </div>
-                    <span className="th-item-amount">−₹{order.amount.toFixed(2)}</span>
+                    <span className="th-item-amount">₹{order.amount.toFixed(2)}</span>
                   </div>
                 );
               })}
