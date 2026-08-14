@@ -4,6 +4,63 @@ const STORAGE_KEY = 'oorunii_orders';
 const MARGIN_STORAGE_KEY = 'oorunii_margin';
 const ITEM_ORDERS_KEY = 'oorunii_item_orders';
 const ITEM_LINKS_KEY = 'oorunii_item_order_links';
+const UPI_IDS_KEY = 'oorunii_upi_ids';
+
+/**
+ * List of managed UPI IDs. The first entry is the active one.
+ */
+export function getUpiIds(): string[] {
+  try {
+    const data = localStorage.getItem(UPI_IDS_KEY);
+    const list: unknown = data ? JSON.parse(data) : [];
+    if (!Array.isArray(list)) return [];
+    return list.filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Add a UPI ID to the managed list (ignores duplicates).
+ */
+export function saveUpiId(id: string): void {
+  const trimmed = id.trim();
+  if (!trimmed) return;
+  const list = getUpiIds();
+  if (list.includes(trimmed)) return;
+  list.push(trimmed);
+  localStorage.setItem(UPI_IDS_KEY, JSON.stringify(list));
+}
+
+/**
+ * Remove a UPI ID from the managed list.
+ */
+export function removeUpiId(id: string): void {
+  const list = getUpiIds().filter((x) => x !== id);
+  localStorage.setItem(UPI_IDS_KEY, JSON.stringify(list));
+}
+
+/**
+ * Mark a UPI ID as active by moving it to the front of the list.
+ */
+export function setActiveUpiId(id: string): void {
+  const list = getUpiIds();
+  const idx = list.indexOf(id);
+  if (idx <= 0) return;
+  const [active] = list.splice(idx, 1);
+  list.unshift(active);
+  localStorage.setItem(UPI_IDS_KEY, JSON.stringify(list));
+}
+
+/**
+ * Active UPI ID used for payment deep links and QR codes.
+ * Falls back to the configured VITE_MERCHANT_UPI_ID.
+ */
+export function getActiveUpiId(): string {
+  const list = getUpiIds();
+  if (list.length > 0) return list[0];
+  return import.meta.env.VITE_MERCHANT_UPI_ID || 'merchant@phonepe';
+}
 
 /**
  * Get the available margin for a customer (defaults to 0).

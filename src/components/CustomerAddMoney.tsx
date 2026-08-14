@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../auth/AuthContext';
 import { generateUpiString } from '../utils/upi';
+import { getActiveUpiId } from '../utils/storage';
 
 type PaymentMethod = 'upi' | 'qr' | 'virtual';
 
-const merchantUpiId = import.meta.env.VITE_MERCHANT_UPI_ID || 'merchant@phonepe';
 const merchantName = import.meta.env.VITE_MERCHANT_NAME || 'OORUNII Store';
 
 const virtualAccount = {
@@ -19,6 +19,7 @@ const virtualAccount = {
 export function CustomerAddMoney() {
   const navigate = useNavigate();
   const { session } = useAuth();
+  const merchantUpiId = getActiveUpiId();
   const [amount, setAmount] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('upi');
   const [copied, setCopied] = useState('');

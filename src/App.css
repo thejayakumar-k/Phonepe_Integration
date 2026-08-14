@@ -4977,3 +4977,146 @@ body {
   background: #fef2f2;
   border-color: #fecaca;
 }
+
+/* Manage UPI Numbers */
+.manage-upi-note {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.upi-id-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.upi-id-empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+}
+
+.upi-id-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #f9fafb;
+}
+
+.upi-id-row.active {
+  border-color: #34d399;
+  background: #ecfdf5;
+}
+
+.upi-id-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.upi-id-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  word-break: break-all;
+}
+
+.upi-id-badge {
+  background: #10b981;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.upi-id-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.upi-id-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upi-id-btn.use {
+  background: #10b981;
+  color: white;
+}
+
+.upi-id-btn.use:hover {
+  background: #059669;
+}
+
+.upi-id-btn.remove {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.upi-id-btn.remove:hover {
+  background: #fecaca;
+}
+
+.upi-id-add {
+  display: flex;
+  gap: 10px;
+  padding: 16px;
+}
+
+.upi-id-input {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  background: white;
+  color: #111827;
+}
+
+.upi-id-input:focus {
+  border-color: #6366f1;
+}
+
+.upi-id-add-btn {
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upi-id-add-btn:hover {
+  background: #4f46e5;
+}
+
+.upi-id-error {
+  margin: 0;
+  padding: 0 16px 12px;
+  color: #ef4444;
+  font-size: 13px;
+}

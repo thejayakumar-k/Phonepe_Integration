@@ -15,22 +15,25 @@ import { CustomerAddMoney } from './components/CustomerAddMoney';
 import { PaymentVerification } from './components/PaymentVerification';
 import { CustomerOrders } from './components/CustomerOrders';
 import { CustomerSettings } from './components/CustomerSettings';
+import { ManageUpi } from './components/ManageUpi';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { getAddFundsOrder, getDemoOrder, sessionMinutes } from './data/demo';
-import { clearDemoOrders, clearDemoItemOrders, linkItemOrderToPayment } from './utils/storage';
+import { clearDemoOrders, clearDemoItemOrders, getActiveUpiId, linkItemOrderToPayment } from './utils/storage';
 import type { MerchantConfig } from './types/payment';
 import './App.css';
-
-// Configuration from environment variables
-const merchant: MerchantConfig = {
-  upiId: import.meta.env.VITE_MERCHANT_UPI_ID || 'merchant@phonepe',
-  merchantName: import.meta.env.VITE_MERCHANT_NAME || 'OORUNII Store',
-};
 
 function PaymentRoute() {
   const [searchParams] = useSearchParams();
   const { session } = useAuth();
+
+  const merchant = useMemo<MerchantConfig>(
+    () => ({
+      upiId: getActiveUpiId(),
+      merchantName: import.meta.env.VITE_MERCHANT_NAME || 'OORUNII Store',
+    }),
+    []
+  );
 
   const order = useMemo(() => {
     const mode = searchParams.get('mode');
@@ -135,6 +138,7 @@ function App() {
             <Route path="orders" element={<CustomerOrders />} />
             <Route path="history" element={<TransactionHistory />} />
             <Route path="settings" element={<CustomerSettings />} />
+            <Route path="manage-upi" element={<ManageUpi />} />
           </Route>
         </Routes>
       </BrowserRouter>
