@@ -25,7 +25,7 @@ export function CustomerAddMoney() {
   const [copied, setCopied] = useState('');
 
   const amountValue = parseFloat(amount);
-  const minAmount = selectedPayment === 'upi' ? 1000 : 50;
+  const minAmount = selectedPayment === 'upi' ? 1 : 50;
   const amountError = amount
     ? amountValue < minAmount
       ? `Minimum amount is ₹${minAmount}`
