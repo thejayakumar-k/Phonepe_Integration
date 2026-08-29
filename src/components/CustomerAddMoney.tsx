@@ -132,7 +132,7 @@ export function CustomerAddMoney() {
         {/* QR Code Section */}
         {selectedPayment === 'qr' && (
           <div className="payment-detail-section qr-detail">
-            {amount && parseFloat(amount) >= 50 ? (
+            {amount && parseFloat(amount) >= minAmount ? (
               <>
                 <div className="qr-code-box">
                   <QRCodeSVG
