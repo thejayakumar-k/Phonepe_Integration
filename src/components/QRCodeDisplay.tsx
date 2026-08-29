@@ -17,14 +17,7 @@ export function QRCodeDisplay({ merchant, amount, orderId, disabled = false, tim
 
   const handleOpenUpiApp = () => {
     onInitiatePayment?.();
-    // Launch the UPI intent via an invisible iframe. Some phones resolve
-    // this like a native app-to-app intent, unlike anchor clicks or
-    // location redirects which can mangle the URI.
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = upiString;
-    document.body.appendChild(iframe);
-    window.setTimeout(() => iframe.remove(), 1000);
+    window.location.href = upiString;
   };
 
   return (

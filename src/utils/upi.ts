@@ -15,26 +15,29 @@ export function generateUpiString(
   orderId?: string,
   note?: string
 ): string {
-  // UPI URI format: upi://pay?pa=...&pn=...&am=...&tn=...
-  const params = new URLSearchParams({
-    pa: merchant.upiId,        // Payee (merchant) UPI ID
-    pn: merchant.merchantName, // Payee name
-    cu: 'INR',                 // Currency
-  });
+  // UPI URI format per NPCI spec: upi://pay?pa=...&pn=...&am=...&tn=...
+  // IMPORTANT: UPI apps expect literal '@' in pa and literal spaces in pn.
+  // Do NOT use URLSearchParams — it encodes '@' → '%40' and spaces → '+',
+  // which causes GPay/PhonePe to reject the VPA.
+  const pairs: string[] = [
+    `pa=${merchant.upiId}`,
+    `pn=${encodeURIComponent(merchant.merchantName)}`,
+    `cu=INR`,
+  ];
 
   // Add amount if provided (dynamic QR).
   if (amount && amount > 0) {
-    params.set('am', Number.isInteger(amount) ? String(amount) : amount.toFixed(2));
+    pairs.push(`am=${Number.isInteger(amount) ? String(amount) : amount.toFixed(2)}`);
   }
 
   // Add transaction note (customer name + order number)
   if (note) {
-    params.set('tn', note);
+    pairs.push(`tn=${encodeURIComponent(note)}`);
   } else if (orderId) {
-    params.set('tn', orderId);
+    pairs.push(`tn=${orderId}`);
   }
 
-  return `upi://pay?${params.toString()}`;
+  return `upi://pay?${pairs.join('&')}`;
 }
 
 /**
@@ -44,6 +47,26 @@ export function generateUpiString(
 export function isValidUpiId(upiId: string): boolean {
   const upiRegex = /^[\w.\-]+@[\w]+$/;
   return upiRegex.test(upiId);
+}
+
+/**
+ * Known valid UPI PSP handles (Payment Service Provider suffixes).
+ * Used to warn if the configured UPI ID might not be valid.
+ */
+const KNOWN_UPI_HANDLES = [
+  '@okaxis', '@okhdfcbank', '@okicici', '@okbank', '@okbis',
+  '@ybl', '@ibl', '@axl', '@sbi', '@paytm', '@phonepe',
+  '@gokwik', '@icici', '@hdfcbank', '@axisbank', '@kotak',
+  '@upi', '@nsdl', '@jio', '@fam', '@slice', '@cub',
+];
+
+/**
+ * Check if a UPI ID looks like it uses a known PSP handle.
+ * Returns true if recognized, false if the handle is unknown (but may still be valid).
+ */
+export function isKnownUpiHandle(upiId: string): boolean {
+  const lower = upiId.toLowerCase();
+  return KNOWN_UPI_HANDLES.some((h) => lower.endsWith(h));
 }
 
 /**

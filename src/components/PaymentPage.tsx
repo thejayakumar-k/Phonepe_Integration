@@ -8,7 +8,7 @@ import { PaymentStatus } from './PaymentStatus';
 import { useCountdown } from '../hooks/useCountdown';
 import { useOrderStatus } from '../hooks/useOrderStatus';
 import { saveOrder, getOrder } from '../utils/storage';
-import { generateUpiString, formatCurrency } from '../utils/upi';
+import { generateUpiString, formatCurrency, isKnownUpiHandle } from '../utils/upi';
 
 interface PaymentPageProps {
   order: Order;
@@ -211,6 +211,7 @@ export function PaymentPage({
   }, [amountInput, order.amount]);
 
   const amountValid = payAmount > 0;
+  const upiIdLooksValid = isKnownUpiHandle(merchant.upiId);
 
   const handleAmountChange = (value: string) => {
     setAmountInput(value);
@@ -224,11 +225,7 @@ export function PaymentPage({
     hasInitiatedRef.current = true;
     // Launch the UPI app with the amount only (no reference note).
     const upiString = generateUpiString(merchant, payAmount);
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = upiString;
-    document.body.appendChild(iframe);
-    window.setTimeout(() => iframe.remove(), 1000);
+    window.location.href = upiString;
   }, [merchant, payAmount]);
 
   const timer = (
@@ -409,6 +406,11 @@ export function PaymentPage({
                             <span className="upi-label">Merchant UPI ID</span>
                             <span className="upi-id">{merchant.upiId}</span>
                           </div>
+                          {!upiIdLooksValid && (
+                            <p className="payment-warning" style={{fontSize: '0.75rem', color: '#e67e22', marginTop: '4px'}}>
+                              ⚠️ UPI ID "{merchant.upiId}" uses an uncommon handle. If payment fails, check your UPI ID in Vendor Settings.
+                            </p>
+                          )}
                           <div className="amount-display">
                             <span className="pay-amount">{formatCurrency(payAmount)}</span>
                           </div>
