@@ -37,6 +37,13 @@ export function generateUpiString(
     pairs.push(`tn=${orderId}`);
   }
 
+  // Add unique transaction reference to help banks identify legitimate
+  // business transactions and reduce "risky" fraud detection flags.
+  const tr = orderId
+    ? `TXN${orderId}${Date.now()}`
+    : `TXN${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+  pairs.push(`tr=${encodeURIComponent(tr)}`);
+
   return `upi://pay?${pairs.join('&')}`;
 }
 
