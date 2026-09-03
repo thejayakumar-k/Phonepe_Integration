@@ -29,7 +29,7 @@ export function PaymentStatus({
       {status === 'PENDING' && (
         <div className="status-actions">
           <p className="status-message">
-            Scan the QR code or tap "Pay via UPI App" to complete payment.
+            Scan the QR code or tap "Pay with PhonePe" to complete payment.
           </p>
           {onCancelPayment && (
             <button
@@ -157,7 +157,7 @@ export function PaymentStatus({
               <p className="notice-title">Session Expired</p>
               <p className="notice-text">
                 The payment session has expired. If you have already made a payment,
-                please contact support with your UPI transaction reference.
+                please contact support with your transaction reference.
               </p>
             </div>
           </div>

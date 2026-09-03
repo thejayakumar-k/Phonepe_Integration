@@ -49,28 +49,28 @@ export function QRCodeDisplay({ merchant, amount, orderId, disabled = false, tim
         </div>
       </div>
 
-      {/* Open UPI App Button */}
+      {/* Open Payment App Button */}
       <button 
         className="btn btn-upi"
         onClick={handleOpenUpiApp}
         disabled={disabled}
       >
         <span className="upi-icon">📱</span>
-        Pay via UPI App
+        Pay with PhonePe
       </button>
 
       <div className="payment-instructions">
         <p className="instruction-step">
           <span className="step-number">1</span>
-          Tap "Pay via UPI App" or scan QR
+          Tap "Pay with PhonePe" or scan QR
         </p>
         <p className="instruction-step">
           <span className="step-number">2</span>
-          Select your UPI app (PhonePe, GPay, Paytm)
+          PhonePe opens with the amount pre-filled
         </p>
         <p className="instruction-step">
           <span className="step-number">3</span>
-          Enter amount: <strong>{formatCurrency(amount)}</strong>
+          Check the amount: <strong>{formatCurrency(amount)}</strong>
         </p>
         <p className="instruction-step">
           <span className="step-number">4</span>

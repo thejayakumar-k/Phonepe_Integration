@@ -98,7 +98,7 @@ export function CustomerAddMoney() {
               className={`payment-method-option ${selectedPayment === 'upi' ? 'active' : ''}`}
               onClick={() => setSelectedPayment('upi')}
             >
-              <span className="payment-method-name">UPI</span>
+              <span className="payment-method-name">PhonePe</span>
             </button>
 
             <button 
@@ -121,8 +121,8 @@ export function CustomerAddMoney() {
         {selectedPayment === 'upi' && (
           <div className="payment-detail-section upi-detail">
             <span className="payment-detail-title">Payment Method</span>
-            <p className="upi-desc">Pay using UPI App</p>
-            <p className="upi-hint">We will open your UPI app directly with the amount pre-filled (no UPI id needed).</p>
+            <p className="upi-desc">Pay using PhonePe</p>
+            <p className="upi-hint">We will open PhonePe directly with the amount pre-filled (no UPI ID needed).</p>
             <button className="btn-send-request" onClick={handleSendRequest} disabled={!amount || amountValue < minAmount}>
               📤 Send Payment Request
             </button>
@@ -148,7 +148,7 @@ export function CustomerAddMoney() {
                   <span className="qr-upi-label">UPI ID</span>
                   <span className="qr-upi-value">{merchantUpiId}</span>
                 </div>
-                <p className="qr-instruction">Scan this QR code with any UPI app</p>
+                <p className="qr-instruction">Scan this QR code with PhonePe</p>
                 <button className="btn-payment-completed" onClick={() => {
                   navigate(`/payment-verification?orderId=${qrOrderId}&amount=${amount}`);
                 }}>

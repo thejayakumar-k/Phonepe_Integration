@@ -5,7 +5,7 @@ export function Home() {
     <div className="home-page">
       <header className="home-header">
         <h1 className="brand-title">OORUNII</h1>
-        <p className="brand-subtitle">UPI Payment Platform</p>
+        <p className="brand-subtitle">PhonePe Payment Platform</p>
       </header>
 
       <main className="home-content">

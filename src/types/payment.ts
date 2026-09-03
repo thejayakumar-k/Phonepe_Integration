@@ -8,7 +8,7 @@ export type PaymentStatus =
   | 'COD_PLACED'      // Order placed with Cash on Delivery
   | 'CANCELLED';      // Customer cancelled the payment
 
-export type PaymentMethod = 'UPI' | 'COD';
+export type PaymentMethod = 'PHONEPE' | 'COD';
 
 export type ItemOrderStatus = 'PENDING' | 'PAID' | 'NOT_PAID' | 'CANCELLED';
 
@@ -56,10 +56,10 @@ export interface Order {
   vendorName?: string;     // Display name of the vendor
   customerId?: string;     // Customer who placed the order
   customerName?: string;   // Display name of the customer
-  paymentMethod?: PaymentMethod;   // 'UPI' or 'COD'
+  paymentMethod?: PaymentMethod;   // 'PHONEPE' or 'COD'
   paymentSubmittedAt?: number;  // When customer clicked "I Have Paid"
   paymentVerifiedAt?: number;   // When admin verified
-  transactionId?: string;       // UPI transaction reference (manual entry by admin)
+  transactionId?: string;       // Payment transaction reference (manual entry by admin)
   orderPlacedAt?: number;       // When the order was placed by the customer
   codPlacedAt?: number;         // When COD order was placed
 }

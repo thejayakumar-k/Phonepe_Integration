@@ -32,7 +32,7 @@ export function PaymentVerification() {
           createdAt: Date.now(),
           expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes
           paymentStatus: 'CUSTOMER_SUBMITTED',
-          paymentMethod: 'UPI',
+          paymentMethod: 'PHONEPE',
           paymentSubmittedAt: Date.now(),
         };
         saveOrder(newOrder);

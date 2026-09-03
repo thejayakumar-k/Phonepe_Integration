@@ -83,7 +83,7 @@ export function OrdersPanel({ vendorId }: OrdersPanelProps) {
                 <div className="verify-actions">
                   <input
                     type="text"
-                    placeholder="UPI Transaction ID (optional)"
+                    placeholder="Transaction ID (optional)"
                     value={selectedOrderId === order.orderId ? transactionId : ''}
                     onChange={(e) => {
                       setSelectedOrderId(order.orderId);
@@ -138,7 +138,7 @@ export function OrdersPanel({ vendorId }: OrdersPanelProps) {
                     <span>Placed: {formatDateTime(order.orderPlacedAt)}</span>
                   )}
                   {order.paymentMethod && (
-                    <span>Method: {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'UPI'}</span>
+                    <span>Method: {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'PhonePe'}</span>
                   )}
                   {order.codPlacedAt && (
                     <span>COD Placed: {formatDateTime(order.codPlacedAt)}</span>

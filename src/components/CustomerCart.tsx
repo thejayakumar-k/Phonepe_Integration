@@ -75,7 +75,7 @@ export function CustomerCart() {
         if (session?.customerId) {
           subtractMargin(session.customerId, totalAmount);
         }
-        const itemOrder = buildItemOrder('PENDING', 'UPI');
+        const itemOrder = buildItemOrder('PENDING', 'PHONEPE');
         saveItemOrder(itemOrder);
         navigate(`/pay?mode=addfunds&amount=${totalAmount}&io=${itemOrder.id}`);
       } else {
@@ -204,7 +204,7 @@ export function CustomerCart() {
           >
             <span className="payment-icon">📱</span>
             <div className="payment-details">
-              <span className="payment-name">Pay by UPI</span>
+              <span className="payment-name">Pay by PhonePe</span>
               <span className="payment-desc">Coming soon</span>
             </div>
             <span className="coming-soon-badge">Coming Soon</span>
@@ -220,7 +220,7 @@ export function CustomerCart() {
             <span className="payment-icon">📷</span>
             <div className="payment-details">
               <span className="payment-name">Pay via QR Code</span>
-              <span className="payment-desc">Scan & pay with any UPI app</span>
+              <span className="payment-desc">Scan & pay with PhonePe</span>
             </div>
             <span className="payment-check">{selectedPayment === 'qr' && '✓'}</span>
           </button>

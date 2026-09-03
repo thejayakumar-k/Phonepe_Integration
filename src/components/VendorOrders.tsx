@@ -166,7 +166,7 @@ export function VendorOrders() {
                   })}
                 </span>
                 <span className="v-order-method">
-                  {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'UPI'}
+                  {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'PhonePe'}
                 </span>
               </div>
 

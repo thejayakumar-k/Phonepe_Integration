@@ -30,7 +30,7 @@ export const demoOrders: Order[] = [
     createdAt: Date.now(),
     expiresAt: Date.now() + sessionMinutes * minutes(1),
     paymentStatus: 'PENDING',
-    paymentMethod: 'UPI',
+    paymentMethod: 'PHONEPE',
   },
   {
     orderId: 'ORDER1002',
@@ -44,7 +44,7 @@ export const demoOrders: Order[] = [
     createdAt: Date.now() - minutes(5),
     expiresAt: Date.now() + sessionMinutes * minutes(1) - minutes(5),
     paymentStatus: 'PENDING',
-    paymentMethod: 'UPI',
+    paymentMethod: 'PHONEPE',
   },
   {
     orderId: 'ORDER1003',
@@ -58,7 +58,7 @@ export const demoOrders: Order[] = [
     createdAt: Date.now() - minutes(10),
     expiresAt: Date.now() + sessionMinutes * minutes(1) - minutes(10),
     paymentStatus: 'PENDING',
-    paymentMethod: 'UPI',
+    paymentMethod: 'PHONEPE',
   },
   {
     orderId: 'ORDER1004',
@@ -72,7 +72,7 @@ export const demoOrders: Order[] = [
     createdAt: Date.now() - minutes(2),
     expiresAt: Date.now() + sessionMinutes * minutes(1) - minutes(2),
     paymentStatus: 'PENDING',
-    paymentMethod: 'UPI',
+    paymentMethod: 'PHONEPE',
   },
 ];
 
@@ -120,7 +120,7 @@ export function getAddFundsOrder(customer?: Customer, amount = 0): Order {
     createdAt: Date.now(),
     expiresAt: Date.now() + sessionMinutes * 60 * 1000,
     paymentStatus: 'PENDING',
-    paymentMethod: 'UPI',
+    paymentMethod: 'PHONEPE',
   };
 }
 

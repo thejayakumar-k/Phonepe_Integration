@@ -96,9 +96,9 @@ export function PaymentPage({
     }
   }, [countdown.isExpired, order.paymentStatus, order]);
 
-  // AUTO-DETECT: When customer returns from UPI app, auto-show "Verifying payment..."
-  // Only triggers if the customer actually started a UPI payment (tapped
-  // "Pay via UPI App") AND left the page first, so login / initial load
+  // AUTO-DETECT: When customer returns from PhonePe, auto-show "Verifying payment..."
+  // Only triggers if the customer actually started a PhonePe payment (tapped
+  // "Pay with PhonePe") AND left the page first, so login / initial load
   // focus events never falsely place the order.
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -112,7 +112,7 @@ export function PaymentPage({
         order.paymentStatus === 'PENDING' &&
         !hasReturnedRef.current
       ) {
-        // Customer returned to the page after starting a UPI payment
+        // Customer returned to the page after starting a PhonePe payment
         hasReturnedRef.current = true;
         handleAutoSubmit();
       }
@@ -223,7 +223,7 @@ export function PaymentPage({
 
   const handleOpenUpiApp = useCallback(() => {
     hasInitiatedRef.current = true;
-    // Launch the UPI app with the amount only (no reference note).
+    // Launch PhonePe with the amount only (no reference note).
     const upiString = generateUpiString(merchant, payAmount);
     window.location.href = upiString;
   }, [merchant, payAmount]);
@@ -242,7 +242,7 @@ export function PaymentPage({
     <div className="payment-page">
       <header className="payment-header">
         <h1 className="brand-title">OORUNII</h1>
-        <p className="brand-subtitle">Secure UPI Payment</p>
+        <p className="brand-subtitle">Secure PhonePe Payment</p>
       </header>
 
       <main className="payment-content">
@@ -273,7 +273,7 @@ export function PaymentPage({
               </div>
             </div>
 
-            {/* UPI / QR Tabs */}
+            {/* PhonePe / QR Tabs */}
             <div className="fund-tabs" role="tablist">
               <button
                 className={`fund-tab ${payTab === 'upi' ? 'active' : ''}`}
@@ -281,7 +281,7 @@ export function PaymentPage({
                 aria-selected={payTab === 'upi'}
                 onClick={() => setPayTab('upi')}
               >
-                UPI App
+                PhonePe
               </button>
               <button
                 className={`fund-tab ${payTab === 'qr' ? 'active' : ''}`}
@@ -324,7 +324,7 @@ export function PaymentPage({
                         </div>
                         <div className="detail-row">
                           <span className="detail-label">Sent to:</span>
-                          <span className="detail-value">UPI intent link</span>
+                          <span className="detail-value">PhonePe</span>
                         </div>
                         <div className="detail-row">
                           <span className="detail-label">Order ID:</span>
@@ -332,7 +332,7 @@ export function PaymentPage({
                         </div>
                       </div>
                       <div className="request-status">
-                        <p>Please accept the request in your UPI app.</p>
+                        <p>Please accept the request in your PhonePe app.</p>
                         <div className="status-timer">{timer}</div>
                         <p className="checking-status">Checking for payment status...</p>
                       </div>
@@ -344,7 +344,7 @@ export function PaymentPage({
                     {payTab === 'upi' && (
                       <div className="qr-section">
                         <div className="scan-header">
-                          <h3 className="scan-title">Pay with UPI</h3>
+                          <h3 className="scan-title">Pay with PhonePe</h3>
                           <div className="scan-timer">{timer}</div>
                         </div>
 
@@ -354,21 +354,21 @@ export function PaymentPage({
                           disabled={countdown.isExpired}
                         >
                           <span className="upi-icon">📱</span>
-                          Pay via UPI App
+                          Pay with PhonePe
                         </button>
 
                         <div className="payment-instructions">
                           <p className="instruction-step">
                             <span className="step-number">1</span>
-                            Tap "Pay via UPI App"
+                            Tap "Pay with PhonePe"
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">2</span>
-                            Select your UPI app (PhonePe, GPay, Paytm)
+                            PhonePe opens with the amount pre-filled
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">3</span>
-                            Enter amount: <strong>{formatCurrency(payAmount)}</strong>
+                            Check the amount: <strong>{formatCurrency(payAmount)}</strong>
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">4</span>
@@ -422,7 +422,7 @@ export function PaymentPage({
                           disabled={countdown.isExpired}
                         >
                           <span className="upi-icon">📱</span>
-                          Pay via UPI App
+                          Pay with PhonePe
                         </button>
                       </div>
                     )}
