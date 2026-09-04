@@ -419,31 +419,26 @@ export function PaymentPage({
                           </div>
                         )}
 
-                        {/* UPI ID Display with Copy */}
-                        <div className="upi-id-display-box">
-                          <div className="upi-id-row">
-                            <div className="upi-id-text-wrap">
-                              <span className="upi-id-label">Merchant UPI ID</span>
-                              <span className="upi-id-value">{merchant.upiId}</span>
+                        {/* UPI ID Display — same style as QR tab */}
+                        <div className="qr-details">
+                          <div className="merchant-upi">
+                            <span className="upi-label">Merchant UPI ID</span>
+                            <div className="upi-id-row-inline">
+                              <span className="upi-id">{merchant.upiId}</span>
+                              <button
+                                className="upi-copy-btn-sm"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(merchant.upiId);
+                                  setCopiedUpi(true);
+                                  setTimeout(() => setCopiedUpi(false), 2000);
+                                }}
+                              >
+                                {copiedUpi ? '✓ Copied' : '📋 Copy'}
+                              </button>
                             </div>
-                            <button
-                              className="upi-copy-btn"
-                              onClick={() => {
-                                navigator.clipboard.writeText(merchant.upiId);
-                                setCopiedUpi(true);
-                                setTimeout(() => setCopiedUpi(false), 2000);
-                              }}
-                            >
-                              {copiedUpi ? (
-                                <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
-                              ) : (
-                                <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</>
-                              )}
-                            </button>
                           </div>
-                          <div className="upi-id-amount-row">
-                            <span className="upi-id-label">Amount</span>
-                            <span className="upi-id-amount">{formatCurrency(payAmount)}</span>
+                          <div className="amount-display">
+                            <span className="pay-amount">{formatCurrency(payAmount)}</span>
                           </div>
                         </div>
 
