@@ -151,7 +151,6 @@ export function CustomerAddMoney() {
               )}
             </div>
 
-            <p className="upi-desc">Open any UPI app with amount pre-filled</p>
             <p className="upi-hint">Tap below to open your UPI app, or copy the UPI ID and pay manually.</p>
             <button className="btn-send-request" onClick={handleSendRequest} disabled={!amount || amountValue < minAmount}>
               📱 Pay via UPI App
