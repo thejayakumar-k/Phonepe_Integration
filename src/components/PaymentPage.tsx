@@ -34,6 +34,10 @@ export function PaymentPage({
   const [paymentRequestSent, setPaymentRequestSent] = useState(false);
   const [payTab, setPayTab] = useState<'upi' | 'qr'>('upi');
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [showGpayGuide, setShowGpayGuide] = useState(false);
+  const [guideStep, setGuideStep] = useState(0);
+  const guideTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [guideCountdown, setGuideCountdown] = useState(120);
 
   const hasReturnedRef = useRef(false);
   const hasLeftPageRef = useRef(false);
@@ -203,6 +207,54 @@ export function PaymentPage({
     hasInitiatedRef.current = false;
     countdown.reset(sessionMinutes * 60);
   }, [order, sessionMinutes, countdown]);
+
+  // GPay Guide overlay
+  const openGpayWithGuide = useCallback(() => {
+    // Copy UPI ID to clipboard
+    navigator.clipboard.writeText(merchant.upiId).catch(() => {});
+    setCopiedUpi(true);
+    setTimeout(() => setCopiedUpi(false), 2000);
+
+    // Show guide overlay
+    setShowGpayGuide(true);
+    setGuideStep(0);
+    setGuideCountdown(120);
+
+    // Start countdown
+    if (guideTimerRef.current) clearInterval(guideTimerRef.current);
+    guideTimerRef.current = setInterval(() => {
+      setGuideCountdown((prev) => {
+        if (prev <= 1) {
+          if (guideTimerRef.current) clearInterval(guideTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Open GPay via Android Intent (better compatibility) or gpay:// fallback
+    const isAndroid = /android/i.test(navigator.userAgent);
+    if (isAndroid) {
+      // Android Intent URI — opens GPay directly
+      window.location.href =
+        'intent://upi-pay#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end';
+    } else {
+      window.location.href = 'gpay://';
+    }
+  }, [merchant.upiId]);
+
+  const closeGpayGuide = useCallback(() => {
+    setShowGpayGuide(false);
+    setGuideStep(0);
+    if (guideTimerRef.current) clearInterval(guideTimerRef.current);
+  }, []);
+
+  // Cleanup guide timer on unmount
+  useEffect(() => {
+    return () => {
+      if (guideTimerRef.current) clearInterval(guideTimerRef.current);
+    };
+  }, []);
 
   const canRestart =
     order.paymentStatus === 'EXPIRED' ||
@@ -408,13 +460,7 @@ export function PaymentPage({
                         {/* Copy & Open GPay / Any UPI App */}
                         <button
                           className="btn btn-upi-copy"
-                          onClick={() => {
-                            navigator.clipboard.writeText(merchant.upiId);
-                            setCopiedUpi(true);
-                            // Open GPay on Android, generic UPI on others
-                            window.location.href = 'gpay://';
-                            setTimeout(() => setCopiedUpi(false), 2000);
-                          }}
+                          onClick={openGpayWithGuide}
                           disabled={countdown.isExpired}
                         >
                           <span className="upi-icon">💬</span>
@@ -535,6 +581,133 @@ export function PaymentPage({
           Need help? Contact us at support@oorunii.com
         </p>
       </footer>
+
+      {/* Clipboard Toast — persists while user is in GPay */}
+      {copiedUpi && !showGpayGuide && (
+        <div className="upi-clipboard-toast">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <span>UPI ID <strong>{merchant.upiId}</strong> copied to clipboard</span>
+        </div>
+      )}
+
+      {/* GPay Guide Overlay */}
+      {showGpayGuide && (
+        <div className="gpay-guide-overlay" onClick={closeGpayGuide}>
+          <div className="gpay-guide-card" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="gpay-guide-header">
+              <div className="gpay-guide-title-row">
+                <h3>Complete Payment in GPay</h3>
+                <button className="gpay-guide-close" onClick={closeGpayGuide}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              {/* Timer */}
+              <div className="gpay-guide-timer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>{Math.floor(guideCountdown / 60)}:{(guideCountdown % 60).toString().padStart(2, '0')}</span>
+                <span className="gpay-guide-timer-label">remaining</span>
+              </div>
+            </div>
+
+            {/* UPI ID Box (copied) */}
+            <div className="gpay-guide-upi-box">
+              <span className="gpay-guide-upi-label">UPI ID (copied to clipboard)</span>
+              <div className="gpay-guide-upi-value">
+                <span>{merchant.upiId}</span>
+                <button
+                  className="gpay-guide-copy-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(merchant.upiId).catch(() => {});
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 2000);
+                  }}
+                >
+                  {copiedUpi ? '✓ Copied' : '📋 Copy'}
+                </button>
+              </div>
+              <span className="gpay-guide-upi-amount">Amount: {formatCurrency(payAmount)}</span>
+            </div>
+
+            {/* Steps */}
+            <div className="gpay-guide-steps">
+              {[
+                {
+                  icon: '📱',
+                  title: 'GPay is opening...',
+                  desc: 'If it didn\'t open, open GPay manually',
+                },
+                {
+                  icon: '👆',
+                  title: 'Tap "Pay anyone"',
+                  desc: 'In GPay home screen, find the "Pay anyone" button',
+                },
+                {
+                  icon: '📋',
+                  title: 'Paste UPI ID',
+                  desc: 'Tap the search field and paste the UPI ID from clipboard',
+                },
+                {
+                  icon: '💰',
+                  title: `Enter amount: ${formatCurrency(payAmount)}`,
+                  desc: 'Type the exact amount shown above',
+                 },
+                {
+                  icon: '🏦',
+                  title: preferredBank ? `Select ${preferredBank.bankName}` : 'Select your bank',
+                  desc: preferredBank
+                    ? `Choose ${preferredBank.bankName} ${preferredBank.maskedAccountNumber}`
+                    : 'Pick the bank account you want to pay from',
+                },
+                {
+                  icon: '✅',
+                  title: 'Enter PIN & Pay',
+                  desc: 'Complete the payment with your UPI PIN',
+                },
+              ].map((step, idx) => (
+                <div
+                  key={idx}
+                  className={`gpay-guide-step ${idx <= guideStep ? 'active' : ''} ${idx < guideStep ? 'done' : ''}`}`
+                  onClick={() => setGuideStep(idx + 1)}
+                >
+                  <div className="gpay-guide-step-num">
+                    {idx < guideStep ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    ) : (
+                      <span>{idx + 1}</span>
+                    )}
+                  </div>
+                  <div className="gpay-guide-step-content">
+                    <div className="gpay-guide-step-title">
+                      <span>{step.icon}</span> {step.title}
+                    </div>
+                    <div className="gpay-guide-step-desc">{step.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="gpay-guide-footer">
+              <p>UPI ID is in your clipboard — paste it in GPay</p>
+              <button className="gpay-guide-done-btn" onClick={closeGpayGuide}>
+                Done — I've Completed Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5653,3 +5653,279 @@ body {
 .btn-upi-copy:hover {
   background: linear-gradient(135deg, #1557b0, #3367d6);
 }
+
+/* Clipboard Toast */
+.upi-clipboard-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 24px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  animation: toastSlideUp 0.3s ease;
+  white-space: nowrap;
+}
+
+.upi-clipboard-toast strong {
+  color: #a5b4fc;
+  font-family: var(--font-mono, monospace);
+}
+
+@keyframes toastSlideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* GPay Guide Overlay */
+.gpay-guide-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gpay-guide-card {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 360px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Guide Header */
+.gpay-guide-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.gpay-guide-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.gpay-guide-title-row h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.gpay-guide-close {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.gpay-guide-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.gpay-guide-timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+}
+
+.gpay-guide-timer-label {
+  font-family: var(--font-sans, sans-serif);
+  font-weight: 400;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+/* UPI ID Box in Guide */
+.gpay-guide-upi-box {
+  margin: 12px 16px;
+  background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.gpay-guide-upi-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6366f1;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.gpay-guide-upi-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  color: #312e81;
+  margin-bottom: 6px;
+}
+
+.gpay-guide-copy-btn {
+  background: white;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4338ca;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.gpay-guide-copy-btn:hover {
+  background: #eef2ff;
+  border-color: #818cf8;
+}
+
+.gpay-guide-upi-amount {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Guide Steps */
+.gpay-guide-steps {
+  padding: 8px 16px;
+}
+
+.gpay-guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.gpay-guide-step:last-child {
+  border-bottom: none;
+}
+
+.gpay-guide-step:hover {
+  background: #fafafa;
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 8px;
+}
+
+.gpay-guide-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.gpay-guide-step.active .gpay-guide-step-num {
+  background: #6366f1;
+  color: white;
+}
+
+.gpay-guide-step.done .gpay-guide-step-num {
+  background: #10b981;
+  color: white;
+}
+
+.gpay-guide-step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.gpay-guide-step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.gpay-guide-step-desc {
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.gpay-guide-step.active .gpay-guide-step-title {
+  color: #4338ca;
+}
+
+/* Guide Footer */
+.gpay-guide-footer {
+  padding: 12px 16px 16px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.gpay-guide-footer p {
+  font-size: 11px;
+  color: #6b7280;
+  margin: 0 0 10px;
+}
+
+.gpay-guide-done-btn {
+  width: 100%;
+  padding: 12px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.gpay-guide-done-btn:hover {
+  background: #059669;
+}
