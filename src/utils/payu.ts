@@ -63,7 +63,7 @@ export async function generatePayUHash(
     params.firstname,
     params.email,
     udf1, udf2, udf3, udf4, udf5,
-    '', '', '', '', '', '', '', '', '', // udf6–udf10 (empty)
+    '', '', '', '', '', // udf6–udf10 (empty)
     config.salt,
   ].join('|');
 
@@ -83,7 +83,7 @@ export async function generatePayUResponseHash(
   const hashString = [
     config.salt,
     params.status,
-    '', '', '', '', // reverse order of empty udf6–udf10
+    '', '', '', '', '', // udf10–udf6 (reverse, empty)
     params.udf5 ?? '',
     params.udf4 ?? '',
     params.udf3 ?? '',
