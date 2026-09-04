@@ -8,11 +8,14 @@ import { VendorHome } from './components/VendorHome';
 import { VendorOrders } from './components/VendorOrders';
 import { VendorPayments } from './components/VendorPayments';
 import { VendorSettings } from './components/VendorSettings';
+import { VendorRefunds } from './components/VendorRefunds';
 import { CustomerLayout } from './components/CustomerLayout';
 import { CustomerHome } from './components/CustomerHome';
 import { CustomerCart } from './components/CustomerCart';
 import { CustomerAddMoney } from './components/CustomerAddMoney';
 import { PaymentVerification } from './components/PaymentVerification';
+import { PayUCheckout } from './components/PayUCheckout';
+import { PayUCallback } from './components/PayUCallback';
 import { CustomerOrders } from './components/CustomerOrders';
 import { CustomerSettings } from './components/CustomerSettings';
 import { ManageUpi } from './components/ManageUpi';
@@ -96,7 +99,7 @@ function App() {
           {/* Login */}
           <Route path="/login/:role" element={<Login />} />
 
-          {/* Payment Page */}
+          {/* Payment Page (PhonePe direct UPI) */}
           <Route path="/pay" element={<PaymentRoute />} />
 
           {/* Payment Verification (full screen) */}
@@ -108,6 +111,18 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* PayU Payment Gateway */}
+          <Route
+            path="/payu/checkout"
+            element={
+              <ProtectedRoute role="customer">
+                <PayUCheckout />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/payu/success" element={<PayUCallback />} />
+          <Route path="/payu/failure" element={<PayUCallback />} />
 
           {/* Vendor Routes with Layout */}
           <Route
@@ -122,6 +137,14 @@ function App() {
             <Route path="orders" element={<VendorOrders />} />
             <Route path="payments" element={<VendorPayments />} />
             <Route path="settings" element={<VendorSettings />} />
+            <Route
+              path="refunds"
+              element={
+                <ProtectedRoute role="vendor">
+                  <VendorRefunds />
+                </ProtectedRoute>
+              }
+            />
           </Route>
 
           {/* Customer Routes with Layout */}

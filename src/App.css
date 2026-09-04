@@ -5929,3 +5929,789 @@ body {
 .gpay-guide-done-btn:hover {
   background: #059669;
 }
+
+/* ========================================
+   PayU Payment Gateway
+   ======================================== */
+
+.payu-checkout {
+  width: 380px;
+  max-width: 95vw;
+  margin: 0 auto;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.payu-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+.payu-header h1 {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.payu-header .back-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+}
+
+.payu-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.payu-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payu-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.payu-optional {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.payu-amount-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.payu-amount-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.payu-amount-input-wrap:focus-within {
+  border-color: var(--primary-color);
+}
+
+.payu-currency {
+  padding: 12px 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+.payu-amount-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  font-weight: 700;
+  padding: 12px;
+  outline: none;
+  min-width: 0;
+  color: var(--text-primary);
+}
+
+.payu-amount-input::placeholder {
+  color: var(--text-muted);
+}
+
+.payu-range-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.payu-method-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.payu-method-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.payu-method-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-primary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.payu-method-tab:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.payu-method-tab.active {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.payu-method-icon {
+  font-size: 20px;
+}
+
+.payu-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.payu-input:focus {
+  border-color: var(--primary-color);
+}
+
+.payu-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.payu-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--danger-light);
+  border-radius: var(--border-radius-sm);
+  color: var(--danger-color);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.payu-summary {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: 12px;
+}
+
+.payu-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.payu-summary-row.payu-total {
+  border-top: 1px solid var(--border-color);
+  margin-top: 6px;
+  padding-top: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.payu-free {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.payu-pay-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+
+.payu-pay-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.payu-pay-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.payu-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.payu-spinner-large {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 16px auto 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.payu-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-sm);
+}
+
+.payu-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.payu-env-badge {
+  background: var(--warning-color);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ========================================
+   PayU Callback (Success / Failure)
+   ======================================== */
+
+.payu-callback {
+  width: 400px;
+  max-width: 95vw;
+  margin: 0 auto;
+}
+
+.payu-callback-card {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.payu-callback-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.payu-callback-icon.success {
+  font-size: 56px;
+}
+
+.payu-callback-icon.failed {
+  font-size: 56px;
+}
+
+.payu-callback-card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.payu-callback-msg {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.payu-callback-details {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.payu-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.payu-detail-label {
+  color: var(--text-muted);
+}
+
+.payu-detail-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.payu-paid {
+  color: var(--success-color);
+}
+
+.payu-callback-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px;
+  background: var(--warning-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  color: #92400e;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.payu-callback-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payu-btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.payu-btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.payu-btn-secondary {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.payu-btn-secondary:hover {
+  background: var(--bg-tertiary);
+}
+
+.payu-btn-danger {
+  width: 100%;
+  padding: 12px;
+  background: var(--danger-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.payu-btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.payu-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   PayU Modal
+   ======================================== */
+
+.payu-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.payu-modal {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.payu-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.payu-modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.payu-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-muted);
+}
+
+.payu-modal-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payu-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.payu-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.payu-textarea:focus {
+  border-color: var(--primary-color);
+}
+
+.payu-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.payu-modal-actions .payu-btn-secondary,
+.payu-modal-actions .payu-btn-danger {
+  flex: 1;
+}
+
+/* ========================================
+   Vendor Refunds
+   ======================================== */
+
+.vendor-refunds {
+  padding: 0 0 24px;
+}
+
+.v-ref-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.v-ref-head .back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-secondary);
+  display: flex;
+}
+
+.v-ref-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.v-ref-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.v-ref-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.v-ref-summary-item {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.v-ref-summary-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.v-ref-summary-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.v-ref-section {
+  padding: 0 16px;
+  margin-top: 16px;
+}
+
+.v-ref-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.v-ref-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v-ref-order-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+}
+
+.v-ref-order-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.v-ref-order-customer {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.v-ref-order-id {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.v-ref-order-date {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.v-ref-order-amount {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.v-ref-btn {
+  padding: 6px 12px;
+  background: var(--danger-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.v-ref-btn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.v-ref-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.v-ref-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.v-ref-card {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.v-ref-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.v-ref-card-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.v-ref-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.refund-initiated {
+  background: var(--warning-light);
+  color: #92400e;
+}
+
+.refund-processing {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4338ca;
+}
+
+.refund-completed {
+  background: var(--success-light);
+  color: #065f46;
+}
+
+.refund-failed {
+  background: var(--danger-light);
+  color: #991b1b;
+}
+
+.v-ref-card-body {
+  padding: 10px 12px;
+}
+
+.v-ref-card-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.v-ref-card-row span:first-child {
+  color: var(--text-muted);
+}
+
+.v-ref-card-row span:last-child {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.v-ref-amount {
+  color: var(--danger-color) !important;
+}
+
+.v-ref-payu-id {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--primary-color) !important;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 32px;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}

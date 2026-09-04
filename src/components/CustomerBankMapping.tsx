@@ -35,6 +35,7 @@ const POPULAR_BANKS = [
   'City Union Bank',
   'Dhanlaxmi Bank',
   'Tamilnad Mercantile Bank',
+  'USCNB',
   'Other',
 ];
 
