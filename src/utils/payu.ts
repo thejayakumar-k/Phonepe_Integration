@@ -19,8 +19,8 @@ import type { PayUConfig, PayUPaymentParams, PayUCallbackParams } from '../types
 export const PAYU_TEST_CONFIG: PayUConfig = {
   key: import.meta.env.VITE_PAYU_MERCHANT_KEY || 'GvCowP',
   salt: import.meta.env.VITE_PAYU_MERCHANT_SALT || 'c7XPAxKOyDUEd72Qs7FdO057doJuYru4',
-  // UAT / Sandbox endpoint
-  paymentUrl: 'https://sandbox.payu.in/_payment',
+  // UAT / Test endpoint
+  paymentUrl: 'https://test.payu.in/_payment',
   // Production endpoint (uncomment for live)
   // paymentUrl: 'https://secure.payu.in/_payment',
 };
