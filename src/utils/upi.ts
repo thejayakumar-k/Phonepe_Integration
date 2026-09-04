@@ -62,9 +62,12 @@ export function isValidUpiId(upiId: string): boolean {
  */
 const KNOWN_UPI_HANDLES = [
   '@okaxis', '@okhdfcbank', '@okicici', '@okbank', '@okbis',
+  '@okicici', '@oksbi', '@okubi', '@okpunjab',
   '@ybl', '@ibl', '@axl', '@sbi', '@paytm', '@phonepe',
   '@gokwik', '@icici', '@hdfcbank', '@axisbank', '@kotak',
   '@upi', '@nsdl', '@jio', '@fam', '@slice', '@cub',
+  '@aubank', '@indus', '@bob', '@pnb', '@canara',
+  '@federal', '@southindian', '@karurvysya', '@cityunion',
 ];
 
 /**

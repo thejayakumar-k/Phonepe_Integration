@@ -5537,3 +5537,28 @@ body {
   color: #d1d5db;
   font-style: italic;
 }
+
+/* UPI Limit Note */
+.upi-limit-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+
+.upi-limit-note svg {
+  flex-shrink: 0;
+  color: #f59e0b;
+  margin-top: 1px;
+}
+
+.upi-limit-note p {
+  font-size: 11px;
+  color: #92400e;
+  line-height: 1.5;
+  margin: 0;
+}
