@@ -7,8 +7,9 @@ import { PaymentTimer } from './PaymentTimer';
 import { PaymentStatus } from './PaymentStatus';
 import { useCountdown } from '../hooks/useCountdown';
 import { useOrderStatus } from '../hooks/useOrderStatus';
-import { saveOrder, getOrder } from '../utils/storage';
+import { saveOrder, getOrder, getPreferredBankAccount } from '../utils/storage';
 import { generateUpiString, formatCurrency, isKnownUpiHandle } from '../utils/upi';
+import { useAuth } from '../auth/AuthContext';
 
 interface PaymentPageProps {
   order: Order;
@@ -23,7 +24,9 @@ export function PaymentPage({
 }: PaymentPageProps) {
   const countdown = useCountdown();
   const navigate = useNavigate();
+  const { session } = useAuth();
   const { order: storedOrder } = useOrderStatus(initialOrder.orderId);
+  const preferredBank = getPreferredBankAccount(session?.customerId || initialOrder.customerId || '');
   const [order, setOrder] = useState<Order>(initialOrder);
   const [amountInput, setAmountInput] = useState(() =>
     String(initialOrder.amount || '')
@@ -348,6 +351,21 @@ export function PaymentPage({
                           <div className="scan-timer">{timer}</div>
                         </div>
 
+                        {preferredBank && (
+                          <div className="preferred-bank-banner">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="1" y="3" width="22" height="18" rx="2" ry="2"/>
+                              <line x1="1" y1="9" x2="23" y2="9"/>
+                            </svg>
+                            <div className="preferred-bank-info">
+                              <span className="preferred-bank-label">Linked Bank</span>
+                              <span className="preferred-bank-name">
+                                {preferredBank.bankName} {preferredBank.maskedAccountNumber}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
                         <button
                           className="btn btn-upi"
                           onClick={handleOpenUpiApp}
@@ -358,9 +376,15 @@ export function PaymentPage({
                         </button>
 
                         <div className="payment-instructions">
+                          {preferredBank && (
+                            <p className="instruction-step instruction-info">
+                              <span className="step-number">ℹ</span>
+                              Please complete the UPI payment using your linked bank account ({preferredBank.bankName} {preferredBank.maskedAccountNumber}).
+                            </p>
+                          )}
                           <p className="instruction-step">
                             <span className="step-number">1</span>
-                            Tap "Pay with PhonePe"
+                            Tap &quot;Pay with PhonePe&quot;
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">2</span>
@@ -368,7 +392,7 @@ export function PaymentPage({
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">3</span>
-                            Check the amount: <strong>{formatCurrency(payAmount)}</strong>
+                            Select your linked bank account in the UPI app
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">4</span>

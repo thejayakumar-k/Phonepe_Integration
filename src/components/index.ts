@@ -19,3 +19,4 @@ export { VendorHome } from './VendorHome';
 export { VendorOrders } from './VendorOrders';
 export { VendorPayments } from './VendorPayments';
 export { VendorSettings } from './VendorSettings';
+export { CustomerBankMapping } from './CustomerBankMapping';

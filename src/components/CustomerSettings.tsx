@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getMargin } from '../utils/storage';
+import { getMargin, getPreferredBankAccount } from '../utils/storage';
 
 export function CustomerSettings() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
   const [margin, setMargin] = useState(() => getMargin(session?.customerId));
+  const [preferredBank, setPreferredBank] = useState(() => getPreferredBankAccount(session?.customerId || ''));
 
   useEffect(() => {
     setMargin(getMargin(session?.customerId));
+    setPreferredBank(getPreferredBankAccount(session?.customerId || ''));
     const interval = setInterval(() => {
       setMargin(getMargin(session?.customerId));
+      setPreferredBank(getPreferredBankAccount(session?.customerId || ''));
     }, 1000);
     return () => clearInterval(interval);
   }, [session?.customerId]);
@@ -77,6 +80,22 @@ export function CustomerSettings() {
 
         {/* Menu Items */}
         <div className="settings-section menu-no-padding">
+          <button className="menu-item" onClick={() => navigate('/customer/bank-mapping')}>
+            <div className="menu-left">
+              <span className="menu-icon">🏦</span>
+              <div className="menu-label-wrap">
+                <span className="menu-label">Bank Accounts</span>
+                {preferredBank ? (
+                  <span className="menu-sublabel">{preferredBank.bankName} ••••{preferredBank.accountNumber.slice(-4)}</span>
+                ) : (
+                  <span className="menu-sublabel menu-sublabel-empty">No bank linked</span>
+                )}
+              </div>
+            </div>
+            <svg className="menu-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
           <button className="menu-item" onClick={() => alert('Edit Profile coming soon!')}>
             <div className="menu-left">
               <span className="menu-icon">✏️</span>

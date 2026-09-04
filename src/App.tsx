@@ -16,6 +16,7 @@ import { PaymentVerification } from './components/PaymentVerification';
 import { CustomerOrders } from './components/CustomerOrders';
 import { CustomerSettings } from './components/CustomerSettings';
 import { ManageUpi } from './components/ManageUpi';
+import { CustomerBankMapping } from './components/CustomerBankMapping';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { getAddFundsOrder, getDemoOrder, sessionMinutes } from './data/demo';
@@ -139,6 +140,7 @@ function App() {
             <Route path="history" element={<TransactionHistory />} />
             <Route path="settings" element={<CustomerSettings />} />
             <Route path="manage-upi" element={<ManageUpi />} />
+            <Route path="bank-mapping" element={<CustomerBankMapping />} />
           </Route>
         </Routes>
       </BrowserRouter>

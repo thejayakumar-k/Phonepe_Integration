@@ -5120,3 +5120,420 @@ body {
   color: #ef4444;
   font-size: 13px;
 }
+
+/* ========================================
+   Customer Bank Mapping
+   ======================================== */
+
+.bank-success-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #059669;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.bank-info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.bank-info-note svg {
+  flex-shrink: 0;
+  color: #3b82f6;
+  margin-top: 2px;
+}
+
+.bank-info-note p {
+  font-size: 12px;
+  color: #1e40af;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.bank-empty-state {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.bank-empty-icon {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.bank-empty-state p {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.bank-empty-sub {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: #6b7280 !important;
+}
+
+/* Bank Account Card */
+.bank-account-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+}
+
+.bank-account-card.preferred {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.bank-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.bank-card-info {
+  flex: 1;
+}
+
+.bank-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.bank-card-account {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.bank-preferred-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.bank-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.bank-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bank-detail-label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.bank-detail-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.bank-detail-value.bank-ifsc {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-weight: 600;
+}
+
+/* Bank Card Actions */
+.bank-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bank-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bank-action-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.bank-action-btn.set-preferred {
+  color: #6366f1;
+  border-color: #6366f1;
+}
+
+.bank-action-btn.set-preferred:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.bank-action-btn.delete {
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.bank-action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.bank-action-btn.delete-yes {
+  color: white;
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.bank-action-btn.delete-yes:hover {
+  background: #dc2626;
+}
+
+.bank-action-btn.delete-no {
+  color: #6b7280;
+}
+
+.bank-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* Bank Add Button */
+.bank-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  color: #6366f1;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bank-add-btn:hover {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.04);
+}
+
+/* Bank Form */
+.bank-form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.bank-form-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 14px;
+}
+
+.bank-form-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.bank-form-group {
+  margin-bottom: 12px;
+}
+
+.bank-form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 5px;
+}
+
+.bank-form-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+  background: white;
+  color: #111827;
+  transition: border-color 0.15s ease;
+}
+
+.bank-form-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.bank-form-input::placeholder {
+  color: #9ca3af;
+}
+
+.bank-form-ifsc {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.bank-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.bank-form-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.bank-form-btn-primary {
+  background: #6366f1;
+  color: white;
+}
+
+.bank-form-btn-primary:hover {
+  background: #4f46e5;
+}
+
+.bank-form-btn-cancel {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.bank-form-btn-cancel:hover {
+  background: #e5e7eb;
+}
+
+/* Preferred Bank Banner (on Payment Page) */
+.preferred-bank-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.preferred-bank-banner svg {
+  flex-shrink: 0;
+  color: #6366f1;
+}
+
+.preferred-bank-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.preferred-bank-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.preferred-bank-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Instruction Info (bank instruction) */
+.instruction-step.instruction-info {
+  background: rgba(99, 102, 241, 0.06);
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #4338ca;
+}
+
+.instruction-step.instruction-info .step-number {
+  background: #6366f1;
+}
+
+/* Menu Sublabel for bank mapping */
+.menu-label-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.menu-sublabel {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.menu-sublabel-empty {
+  color: #d1d5db;
+  font-style: italic;
+}

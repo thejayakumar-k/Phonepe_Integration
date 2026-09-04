@@ -68,3 +68,25 @@ export interface MerchantConfig {
   upiId: string;           // e.g., 'merchant@phonepe'
   merchantName: string;    // Display name for merchant
 }
+
+/**
+ * Customer bank account for UPI payment mapping.
+ * Sensitive fields (accountNumber) are stored securely and never exposed
+ * in frontend responses in full — only masked versions are displayed.
+ *
+ * Architecture is ready for future TPV (Third Party Validation) integration
+ * when a payment provider is added.
+ */
+export interface BankAccount {
+  id: string;              // Unique ID for this bank account
+  customerId: string;       // Owner customer ID
+  bankName: string;         // e.g., 'HDFC Bank', 'SBI', 'Indian Bank'
+  accountHolderName: string;// Account holder's full name
+  accountNumber: string;    // Full account number (stored securely)
+  ifscCode: string;         // IFSC code (e.g., 'HDFC0001234')
+  maskedAccountNumber: string; // Masked display (e.g., '••••0703')
+  isPreferred: boolean;     // Whether this is the preferred payment bank
+  createdAt: number;        // Timestamp
+  // Future: tpvStatus?: 'PENDING' | 'VERIFIED' | 'FAILED';
+  // Future: linkedUpiId?: string;
+}

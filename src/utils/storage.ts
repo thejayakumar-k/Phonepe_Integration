@@ -1,10 +1,11 @@
-import type { ItemOrder, ItemOrderStatus, Order, PaymentStatus } from '../types/payment';
+import type { ItemOrder, ItemOrderStatus, Order, PaymentStatus, BankAccount } from '../types/payment';
 
 const STORAGE_KEY = 'oorunii_orders';
 const MARGIN_STORAGE_KEY = 'oorunii_margin';
 const ITEM_ORDERS_KEY = 'oorunii_item_orders';
 const ITEM_LINKS_KEY = 'oorunii_item_order_links';
 const UPI_IDS_KEY = 'oorunii_upi_ids';
+const BANK_ACCOUNTS_KEY = 'oorunii_bank_accounts';
 
 /**
  * List of managed UPI IDs. The first entry is the active one.
@@ -62,6 +63,134 @@ export function getActiveUpiId(): string {
   return import.meta.env.VITE_MERCHANT_UPI_ID || 'merchant@phonepe';
 }
 
+/* ========================================
+   Bank Accounts (Customer Bank Mapping)
+   ======================================== */
+
+/**
+ * Mask an account number: show only last 4 digits.
+ * e.g., '50100123456703' → '••••6703'
+ */
+function maskAccountNumber(accountNumber: string): string {
+  const last4 = accountNumber.slice(-4);
+  return `••••${last4}`;
+}
+
+/**
+ * Get all bank accounts for a customer.
+ */
+export function getBankAccounts(customerId: string): BankAccount[] {
+  if (!customerId) return [];
+  try {
+    const data = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const allAccounts: BankAccount[] = data ? JSON.parse(data) : [];
+    return allAccounts.filter((acc) => acc.customerId === customerId);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get the preferred bank account for a customer.
+ * Falls back to the first account if no preferred is set.
+ */
+export function getPreferredBankAccount(customerId: string): BankAccount | null {
+  const accounts = getBankAccounts(customerId);
+  if (accounts.length === 0) return null;
+  return accounts.find((a) => a.isPreferred) || accounts[0];
+}
+
+/**
+ * Save a new bank account for a customer.
+ */
+export function saveBankAccount(
+  account: Omit<BankAccount, 'id' | 'maskedAccountNumber' | 'createdAt'>
+): BankAccount {
+  const newAccount: BankAccount = {
+    ...account,
+    id: `BANK${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+    maskedAccountNumber: maskAccountNumber(account.accountNumber),
+    createdAt: Date.now(),
+  };
+
+  try {
+    const data = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const allAccounts: BankAccount[] = data ? JSON.parse(data) : [];
+    allAccounts.push(newAccount);
+    localStorage.setItem(BANK_ACCOUNTS_KEY, JSON.stringify(allAccounts));
+  } catch {
+    // ignore storage errors
+  }
+
+  return newAccount;
+}
+
+/**
+ * Remove a bank account by ID.
+ */
+export function removeBankAccount(customerId: string, accountId: string): void {
+  try {
+    const data = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const allAccounts: BankAccount[] = data ? JSON.parse(data) : [];
+    const filtered = allAccounts.filter(
+      (acc) => !(acc.customerId === customerId && acc.id === accountId)
+    );
+    localStorage.setItem(BANK_ACCOUNTS_KEY, JSON.stringify(filtered));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Set a bank account as preferred. Unsets any previously preferred account.
+ */
+export function setPreferredBankAccount(
+  customerId: string,
+  accountId: string
+): void {
+  try {
+    const data = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const allAccounts: BankAccount[] = data ? JSON.parse(data) : [];
+    const updated = allAccounts.map((acc) => {
+      if (acc.customerId === customerId) {
+        return { ...acc, isPreferred: acc.id === accountId };
+      }
+      return acc;
+    });
+    localStorage.setItem(BANK_ACCOUNTS_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Validate bank account fields. Returns null if valid, or an error message.
+ */
+export function validateBankAccount(fields: {
+  bankName: string;
+  accountHolderName: string;
+  accountNumber: string;
+  confirmAccountNumber: string;
+  ifscCode: string;
+}): string | null {
+  const { bankName, accountHolderName, accountNumber, confirmAccountNumber, ifscCode } = fields;
+
+  if (!bankName.trim()) return 'Bank name is required.';
+  if (!accountHolderName.trim()) return 'Account holder name is required.';
+  if (!accountNumber.trim()) return 'Account number is required.';
+  if (accountNumber.length < 8 || accountNumber.length > 20) {
+    return 'Account number must be between 8 and 20 digits.';
+  }
+  if (!/^\d+$/.test(accountNumber)) return 'Account number must contain only digits.';
+  if (accountNumber !== confirmAccountNumber) return 'Account numbers do not match.';
+  if (!ifscCode.trim()) return 'IFSC code is required.';
+  if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.toUpperCase())) {
+    return 'Enter a valid IFSC code (e.g., HDFC0001234).';
+  }
+
+  return null; // valid
+}
+
 /**
  * Get the available margin for a customer (defaults to 0).
  */
@@ -112,6 +241,18 @@ export function subtractMargin(customerId: string | undefined, amount: number): 
     // ignore storage errors
   }
   return next;
+}
+
+/**
+ * Get all bank accounts (for admin/debug use). Do NOT expose account numbers to frontend.
+ */
+export function getAllBankAccounts(): BankAccount[] {
+  try {
+    const data = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
 }
 
 /**
