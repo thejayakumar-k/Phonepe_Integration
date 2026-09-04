@@ -5562,3 +5562,94 @@ body {
   line-height: 1.5;
   margin: 0;
 }
+
+/* UPI ID Display Box */
+.upi-id-display-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.upi-id-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.upi-id-row:last-child {
+  margin-bottom: 0;
+}
+
+.upi-id-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.upi-id-label {
+  font-size: 9px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.upi-id-value {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.upi-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.upi-copy-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.upi-id-amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.upi-id-amount {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Copy & Open GPay Button */
+.btn-upi-copy {
+  background: linear-gradient(135deg, #1a73e8, #4285f4);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btn-upi-copy:hover {
+  background: linear-gradient(135deg, #1557b0, #3367d6);
+}

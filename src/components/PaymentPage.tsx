@@ -33,6 +33,7 @@ export function PaymentPage({
   );
   const [paymentRequestSent, setPaymentRequestSent] = useState(false);
   const [payTab, setPayTab] = useState<'upi' | 'qr'>('upi');
+  const [copiedUpi, setCopiedUpi] = useState(false);
 
   const hasReturnedRef = useRef(false);
   const hasLeftPageRef = useRef(false);
@@ -347,7 +348,7 @@ export function PaymentPage({
                     {payTab === 'upi' && (
                       <div className="qr-section">
                         <div className="scan-header">
-                          <h3 className="scan-title">Pay with PhonePe</h3>
+                          <h3 className="scan-title">Pay with UPI</h3>
                           <div className="scan-timer">{timer}</div>
                         </div>
 
@@ -366,6 +367,35 @@ export function PaymentPage({
                           </div>
                         )}
 
+                        {/* UPI ID Display with Copy */}
+                        <div className="upi-id-display-box">
+                          <div className="upi-id-row">
+                            <div className="upi-id-text-wrap">
+                              <span className="upi-id-label">Merchant UPI ID</span>
+                              <span className="upi-id-value">{merchant.upiId}</span>
+                            </div>
+                            <button
+                              className="upi-copy-btn"
+                              onClick={() => {
+                                navigator.clipboard.writeText(merchant.upiId);
+                                setCopiedUpi(true);
+                                setTimeout(() => setCopiedUpi(false), 2000);
+                              }}
+                            >
+                              {copiedUpi ? (
+                                <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
+                              ) : (
+                                <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</>
+                              )}
+                            </button>
+                          </div>
+                          <div className="upi-id-amount-row">
+                            <span className="upi-id-label">Amount</span>
+                            <span className="upi-id-amount">{formatCurrency(payAmount)}</span>
+                          </div>
+                        </div>
+
+                        {/* Direct UPI Link Button */}
                         <button
                           className="btn btn-upi"
                           onClick={handleOpenUpiApp}
@@ -373,6 +403,22 @@ export function PaymentPage({
                         >
                           <span className="upi-icon">📱</span>
                           Pay with PhonePe
+                        </button>
+
+                        {/* Copy & Open GPay / Any UPI App */}
+                        <button
+                          className="btn btn-upi-copy"
+                          onClick={() => {
+                            navigator.clipboard.writeText(merchant.upiId);
+                            setCopiedUpi(true);
+                            // Open GPay on Android, generic UPI on others
+                            window.location.href = 'gpay://';
+                            setTimeout(() => setCopiedUpi(false), 2000);
+                          }}
+                          disabled={countdown.isExpired}
+                        >
+                          <span className="upi-icon">💬</span>
+                          Copy UPI ID & Open GPay
                         </button>
 
                         <div className="payment-instructions">
@@ -384,19 +430,19 @@ export function PaymentPage({
                           )}
                           <p className="instruction-step">
                             <span className="step-number">1</span>
-                            Tap &quot;Pay with PhonePe&quot;
+                            Tap &quot;Copy UPI ID &amp; Open GPay&quot;
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">2</span>
-                            PhonePe opens with the amount pre-filled
+                            In GPay, tap <strong>Pay anyone</strong>
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">3</span>
-                            Select your linked bank account in the UPI app
+                            Paste the UPI ID and enter amount: <strong>{formatCurrency(payAmount)}</strong>
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">4</span>
-                            Complete the payment
+                            Select your linked bank and complete payment
                           </p>
                         </div>
                       </div>
