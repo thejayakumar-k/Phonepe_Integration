@@ -644,12 +644,12 @@ export function PaymentPage({
                 {
                   icon: '📱',
                   title: 'GPay is opening...',
-                  desc: 'If it didn\'t open, open GPay manually',
+                  desc: "If it didn't open, open GPay manually",
                 },
                 {
                   icon: '👆',
-                  title: 'Tap "Pay anyone"',
-                  desc: 'In GPay home screen, find the "Pay anyone" button',
+                  title: "Tap 'Pay anyone'",
+                  desc: "In GPay home screen, find the 'Pay anyone' button",
                 },
                 {
                   icon: '📋',
@@ -676,7 +676,7 @@ export function PaymentPage({
               ].map((step, idx) => (
                 <div
                   key={idx}
-                  className={`gpay-guide-step ${idx <= guideStep ? 'active' : ''} ${idx < guideStep ? 'done' : ''}`}`
+                  className={`gpay-guide-step ${idx <= guideStep ? 'active' : ''} ${idx < guideStep ? 'done' : ''}`}
                   onClick={() => setGuideStep(idx + 1)}
                 >
                   <div className="gpay-guide-step-num">
