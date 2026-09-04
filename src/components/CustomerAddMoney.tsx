@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { generateUpiString } from '../utils/upi';
 import { getActiveUpiId } from '../utils/storage';
 
-type PaymentMethod = 'upi' | 'qr' | 'virtual';
+type PaymentMethod = 'upi' | 'qr' | 'virtual' | 'payu';
 
 const merchantName = import.meta.env.VITE_MERCHANT_NAME || 'OORUNII Store';
 
@@ -114,6 +114,13 @@ export function CustomerAddMoney() {
             >
               <span className="payment-method-name">Virtual Account</span>
             </button>
+
+            <button 
+              className={`payment-method-option ${selectedPayment === 'payu' ? 'active' : ''}`}
+              onClick={() => setSelectedPayment('payu')}
+            >
+              <span className="payment-method-name">💳 PayU Gateway</span>
+            </button>
           </div>
         </div>
 
@@ -181,6 +188,22 @@ export function CustomerAddMoney() {
             ) : (
               <p className="qr-placeholder">Enter amount to generate QR code</p>
             )}
+          </div>
+        )}
+
+        {/* PayU Gateway Section */}
+        {selectedPayment === 'payu' && (
+          <div className="payment-detail-section payu-detail">
+            <span className="payment-detail-title">Pay via PayU Gateway</span>
+            <p className="upi-desc">Pay securely using UPI, Credit/Debit Card, or Net Banking through PayU.</p>
+            <p className="upi-hint">You will be redirected to PayU's secure payment page. Test mode — no real money deducted.</p>
+            <button
+              className="btn-send-request"
+              onClick={() => navigate(`/payu/checkout?amount=${amount || '0'}`)}
+              disabled={!amount || amountValue < minAmount}
+            >
+              💳 Open PayU Checkout
+            </button>
           </div>
         )}
 
