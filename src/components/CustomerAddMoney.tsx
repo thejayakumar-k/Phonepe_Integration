@@ -98,7 +98,7 @@ export function CustomerAddMoney() {
               className={`payment-method-option ${selectedPayment === 'upi' ? 'active' : ''}`}
               onClick={() => setSelectedPayment('upi')}
             >
-              <span className="payment-method-name">PhonePe</span>
+              <span className="payment-method-name">Pay via App</span>
             </button>
 
             <button 
@@ -120,11 +120,34 @@ export function CustomerAddMoney() {
         {/* UPI Section */}
         {selectedPayment === 'upi' && (
           <div className="payment-detail-section upi-detail">
-            <span className="payment-detail-title">Payment Method</span>
-            <p className="upi-desc">Pay using PhonePe</p>
-            <p className="upi-hint">We will open PhonePe directly with the amount pre-filled (no UPI ID needed).</p>
+            <span className="payment-detail-title">Pay via UPI App</span>
+
+            {/* UPI ID Display with Copy */}
+            <div className="upi-id-display-box" style={{ marginBottom: '12px' }}>
+              <div className="upi-id-row">
+                <div className="upi-id-text-wrap">
+                  <span className="upi-id-label">Merchant UPI ID</span>
+                  <span className="upi-id-value">{merchantUpiId}</span>
+                </div>
+                <button
+                  className="upi-copy-btn"
+                  onClick={() => handleCopy(merchantUpiId, 'upi')}
+                >
+                  {copied === 'upi' ? '✓ Copied' : '📋 Copy'}
+                </button>
+              </div>
+              {amount && parseFloat(amount) >= minAmount && (
+                <div className="upi-id-amount-row">
+                  <span className="upi-id-label">Amount</span>
+                  <span className="upi-id-amount">₹{parseFloat(amount).toLocaleString('en-IN')}</span>
+                </div>
+              )}
+            </div>
+
+            <p className="upi-desc">Open any UPI app with amount pre-filled</p>
+            <p className="upi-hint">Tap below to open your UPI app, or copy the UPI ID and pay manually.</p>
             <button className="btn-send-request" onClick={handleSendRequest} disabled={!amount || amountValue < minAmount}>
-              📤 Send Payment Request
+              📱 Pay via UPI App
             </button>
           </div>
         )}
@@ -148,7 +171,7 @@ export function CustomerAddMoney() {
                   <span className="qr-upi-label">UPI ID</span>
                   <span className="qr-upi-value">{merchantUpiId}</span>
                 </div>
-                <p className="qr-instruction">Scan this QR code with PhonePe</p>
+                <p className="qr-instruction">Scan this QR code with any UPI app</p>
                 <button className="btn-payment-completed" onClick={() => {
                   navigate(`/payment-verification?orderId=${qrOrderId}&amount=${amount}`);
                 }}>
