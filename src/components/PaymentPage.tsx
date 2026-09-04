@@ -298,7 +298,7 @@ export function PaymentPage({
     <div className="payment-page">
       <header className="payment-header">
         <h1 className="brand-title">OORUNII</h1>
-        <p className="brand-subtitle">Secure PhonePe Payment</p>
+        <p className="brand-subtitle">Secure UPI Payment</p>
       </header>
 
       <main className="payment-content">
@@ -329,7 +329,7 @@ export function PaymentPage({
               </div>
             </div>
 
-            {/* PhonePe / QR Tabs */}
+            {/* Pay via App / QR Tabs */}
             <div className="fund-tabs" role="tablist">
               <button
                 className={`fund-tab ${payTab === 'upi' ? 'active' : ''}`}
@@ -337,7 +337,7 @@ export function PaymentPage({
                 aria-selected={payTab === 'upi'}
                 onClick={() => setPayTab('upi')}
               >
-                PhonePe
+                Pay via App
               </button>
               <button
                 className={`fund-tab ${payTab === 'qr' ? 'active' : ''}`}
@@ -380,7 +380,7 @@ export function PaymentPage({
                         </div>
                         <div className="detail-row">
                           <span className="detail-label">Sent to:</span>
-                          <span className="detail-value">PhonePe</span>
+                          <span className="detail-value">UPI App</span>
                         </div>
                         <div className="detail-row">
                           <span className="detail-label">Order ID:</span>
@@ -388,7 +388,7 @@ export function PaymentPage({
                         </div>
                       </div>
                       <div className="request-status">
-                        <p>Please accept the request in your PhonePe app.</p>
+                        <p>Please accept the request in your UPI app.</p>
                         <div className="status-timer">{timer}</div>
                         <p className="checking-status">Checking for payment status...</p>
                       </div>
@@ -400,7 +400,7 @@ export function PaymentPage({
                     {payTab === 'upi' && (
                       <div className="qr-section">
                         <div className="scan-header">
-                          <h3 className="scan-title">Pay with UPI</h3>
+                          <h3 className="scan-title">Pay via UPI App</h3>
                           <div className="scan-timer">{timer}</div>
                         </div>
 
@@ -454,7 +454,7 @@ export function PaymentPage({
                           disabled={countdown.isExpired}
                         >
                           <span className="upi-icon">📱</span>
-                          Pay with PhonePe
+                          Pay via UPI App
                         </button>
 
                         {/* Copy & Open GPay / Any UPI App */}
@@ -464,7 +464,7 @@ export function PaymentPage({
                           disabled={countdown.isExpired}
                         >
                           <span className="upi-icon">💬</span>
-                          Copy UPI ID & Open GPay
+                          Copy UPI ID & Open Any UPI App
                         </button>
 
                         <div className="payment-instructions">
@@ -476,15 +476,15 @@ export function PaymentPage({
                           )}
                           <p className="instruction-step">
                             <span className="step-number">1</span>
-                            Tap &quot;Copy UPI ID &amp; Open GPay&quot;
+                            Tap &quot;Pay via UPI App&quot; to open any UPI app
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">2</span>
-                            In GPay, tap <strong>Pay anyone</strong>
+                            Or copy the UPI ID above and paste in your UPI app
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">3</span>
-                            Paste the UPI ID and enter amount: <strong>{formatCurrency(payAmount)}</strong>
+                            Enter amount: <strong>{formatCurrency(payAmount)}</strong>
                           </p>
                           <p className="instruction-step">
                             <span className="step-number">4</span>
@@ -538,7 +538,7 @@ export function PaymentPage({
                           disabled={countdown.isExpired}
                         >
                           <span className="upi-icon">📱</span>
-                          Pay with PhonePe
+                          Pay via UPI App
                         </button>
                       </div>
                     )}
