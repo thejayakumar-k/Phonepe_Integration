@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { generateTxnId, submitPayUPayment, getPayUConfig, getAppUrl } from '../utils/payu';
 import { formatCurrency } from '../utils/upi';
-import { saveOrder, getActiveUpiId } from '../utils/storage';
+import { saveOrder } from '../utils/storage';
 import type { Order } from '../types/payment';
 
 type PayMethod = 'upi' | 'card' | 'netbanking';

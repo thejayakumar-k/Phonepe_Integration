@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
+
 import { getOrder, updateOrderStatus } from '../utils/storage';
 import { generatePayUResponseHash, getPayUConfig } from '../utils/payu';
 import { formatCurrency } from '../utils/upi';
@@ -15,7 +15,6 @@ interface VerifyResult {
 export function PayUCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { session } = useAuth();
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerifyResult | null>(null);
