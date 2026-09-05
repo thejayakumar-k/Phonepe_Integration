@@ -10,7 +10,7 @@ const PRODUCT_ID_BY_NAME: Record<string, number> = {
   Kinley: 3,
 };
 
-type OrderFilter = 'all' | 'paid' | 'unpaid';
+type OrderFilter = 'pending' | 'history';
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   PAID: { label: 'Paid', cls: 'cstatus-paid' },
@@ -19,13 +19,11 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   CANCELLED: { label: 'Cancelled', cls: 'cstatus-expired' },
 };
 
-const isPaid = (status: ItemOrderStatus) => status === 'PAID';
-
 export function CustomerOrders() {
   const { session } = useAuth();
   const [orders, setOrders] = useState<ItemOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<OrderFilter>('all');
+  const [filter, setFilter] = useState<OrderFilter>('pending');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const flash = (type: 'success' | 'error', text: string) => {
@@ -91,13 +89,13 @@ export function CustomerOrders() {
     };
   }, [session?.customerId]);
 
-  const paidCount = orders.filter((o) => isPaid(o.status)).length;
-  const unpaidCount = orders.length - paidCount;
+  const pendingCount = orders.filter((o) => o.status === 'PENDING').length;
+  const historyCount = orders.length - pendingCount;
 
   const filteredOrders = orders.filter((order) => {
-    if (filter === 'paid') return isPaid(order.status);
-    if (filter === 'unpaid') return !isPaid(order.status);
-    return true;
+    if (filter === 'pending') return order.status === 'PENDING';
+    // History: paid, COD (not paid), and cancelled orders.
+    return order.status !== 'PENDING';
   });
 
   const formatDate = (timestamp: number) => {
@@ -127,25 +125,19 @@ export function CustomerOrders() {
         <h1>My Orders</h1>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Tabs: Pending / History */}
       <div className="filter-tabs">
         <button
-          className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-          onClick={() => setFilter('all')}
+          className={`filter-tab ${filter === 'pending' ? 'active' : ''}`}
+          onClick={() => setFilter('pending')}
         >
-          All ({orders.length})
+          Pending ({pendingCount})
         </button>
         <button
-          className={`filter-tab ${filter === 'paid' ? 'active' : ''}`}
-          onClick={() => setFilter('paid')}
+          className={`filter-tab ${filter === 'history' ? 'active' : ''}`}
+          onClick={() => setFilter('history')}
         >
-          Paid ({paidCount})
-        </button>
-        <button
-          className={`filter-tab ${filter === 'unpaid' ? 'active' : ''}`}
-          onClick={() => setFilter('unpaid')}
-        >
-          Not Paid ({unpaidCount})
+          History ({historyCount})
         </button>
       </div>
 
@@ -157,8 +149,12 @@ export function CustomerOrders() {
         {filteredOrders.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon">📋</span>
-            <p>No orders yet</p>
-            <p className="empty-subtext">Your orders will appear here</p>
+            <p>{filter === 'pending' ? 'No pending orders' : 'No orders in history yet'}</p>
+            <p className="empty-subtext">
+              {filter === 'pending'
+                ? 'Orders waiting for payment will appear here'
+                : 'Paid, COD, and cancelled orders will appear here'}
+            </p>
           </div>
         ) : (
           <div className="orders-list">
