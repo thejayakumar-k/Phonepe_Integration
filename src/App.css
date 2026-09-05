@@ -6873,3 +6873,18 @@ body {
   cursor: pointer;
   font-size: 15px;
 }
+
+/* Mobile: center the float + panel at the bottom of the screen.
+   Desktop stays anchored bottom-right. */
+@media (max-width: 640px) {
+  .chat-widget {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    align-items: center;
+  }
+
+  .chat-panel {
+    width: min(340px, calc(100vw - 32px));
+  }
+}
