@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { getChatLang } from '../utils/chatLang';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -37,13 +38,19 @@ export function ChatWidget() {
     }
   }, [speakEnabled]);
 
-  // Speak assistant replies aloud when enabled.
+  // Speak assistant replies aloud when enabled, using the selected language's voice.
   useEffect(() => {
     if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
       const last = messages[messages.length - 1];
       if (speakEnabledRef.current && 'speechSynthesis' in window) {
+        const lang = getChatLang();
         const utterance = new SpeechSynthesisUtterance(last.content);
         utterance.rate = 1;
+        utterance.lang = lang === 'ta' ? 'ta-IN' : 'en-IN';
+        // Prefer a voice matching the selected language.
+        const voices = window.speechSynthesis.getVoices();
+        const voice = voices.find((v) => v.lang.toLowerCase().startsWith(lang === 'ta' ? 'ta' : 'en'));
+        if (voice) utterance.voice = voice;
         window.speechSynthesis.speak(utterance);
       }
     }
@@ -69,6 +76,7 @@ export function ChatWidget() {
           customerName: session?.customerName,
           vendorId: session?.vendorId,
           vendorName: session?.vendorName,
+          lang: getChatLang(),
         }),
       });
       const data = (await res.json()) as { reply?: string; error?: string };
@@ -144,7 +152,7 @@ export function ChatWidget() {
       const res = await fetch(`${CHAT_API_URL}/api/transcribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: base64 }),
+        body: JSON.stringify({ audio: base64, lang: getChatLang() }),
       });
       const data = (await res.json()) as { text?: string; error?: string };
       const text = (data.text || '').trim();

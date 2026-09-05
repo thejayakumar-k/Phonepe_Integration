@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getOrders } from '../utils/storage';
+import { ChatLanguagePicker } from './ChatLanguagePicker';
 import type { Order } from '../types/payment';
 
 export function VendorSettings() {
@@ -95,6 +96,11 @@ export function VendorSettings() {
           <span className="v-set-menu-label">Help & Support</span>
           <span className="v-set-menu-arrow">›</span>
         </button>
+      </div>
+
+      {/* Chatbot Language */}
+      <div className="v-set-chat-lang">
+        <ChatLanguagePicker />
       </div>
 
       {/* Logout */}

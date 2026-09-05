@@ -6853,6 +6853,46 @@ body {
   }
 }
 
+/* Chatbot language picker (settings pages) */
+.chat-lang-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-lang-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.chat-lang-options {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-lang-option {
+  flex: 1;
+  padding: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.chat-lang-option.active {
+  background: var(--primary-color, #863bff);
+  border-color: var(--primary-color, #863bff);
+  color: #fff;
+}
+
+.v-set-chat-lang {
+  padding: 14px;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;

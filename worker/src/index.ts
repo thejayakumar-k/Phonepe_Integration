@@ -32,12 +32,15 @@ export default {
       const body = (await request.json()) as {
         message?: string;
         audio?: string;
+        lang?: string;
         role?: string;
         customerId?: string;
         customerName?: string;
         vendorId?: string;
         vendorName?: string;
       };
+
+      const lang = body.lang === 'ta' ? 'ta' : 'en';
 
       // ── Speech-to-text: transcribe recorded audio with Whisper ────────
       if (path === '/api/transcribe') {
@@ -51,9 +54,13 @@ export default {
         const ai = env.AI as {
           run: (model: string, inputs: unknown) => Promise<unknown>;
         };
-        const out = await ai.run('@cf/openai/whisper-large-v3-turbo', {
-          audio,
-        });
+        // English: force transcription/translation into English so replies
+        // never come back in Tamil. Tamil: auto-detect and keep the script.
+        const whisperInput =
+          lang === 'en'
+            ? { audio, language: 'en', task: 'translate' }
+            : { audio };
+        const out = await ai.run('@cf/openai/whisper-large-v3-turbo', whisperInput);
         const text = ((out as { text?: string })?.text || '').trim();
         return new Response(JSON.stringify({ text }), {
           status: 200,
@@ -96,7 +103,7 @@ export default {
         }
       }
 
-      const reply = await answerQuestion(env, identity, message, actionContext);
+      const reply = await answerQuestion(env, identity, message, actionContext, lang);
 
       return new Response(JSON.stringify({ reply }), {
         status: 200,

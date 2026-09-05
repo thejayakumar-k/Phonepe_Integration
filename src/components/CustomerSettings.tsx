@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getMargin, getPreferredBankAccount } from '../utils/storage';
+import { ChatLanguagePicker } from './ChatLanguagePicker';
 import type { BankAccount } from '../types/payment';
 
 export function CustomerSettings() {
@@ -143,6 +144,11 @@ export function CustomerSettings() {
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </button>
+        </div>
+
+        {/* Chatbot Language */}
+        <div className="settings-section">
+          <ChatLanguagePicker />
         </div>
 
         {/* Logout */}
