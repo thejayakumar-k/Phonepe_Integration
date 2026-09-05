@@ -17,9 +17,16 @@ const normalize = (s: string) =>
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/** Common synonyms / typos mapped to catalog names. */
+const ALIASES: Record<string, string> = {
+  Aquafina: 'aqua',
+  Bisleri: 'bislery',
+  Kinley: 'kinly',
+};
+
 /**
  * Find a product by name, case-insensitively, wherever it appears in the
- * sentence (e.g. "order one bisleri" or "aquafina 1 qty").
+ * sentence (e.g. "order one bisleri", "i want a kinly please").
  */
 export function findProduct(input: string): Product | null {
   const needle = normalize(input);
@@ -29,11 +36,15 @@ export function findProduct(input: string): Product | null {
   const exact = PRODUCTS.find((p) => normalize(p.name) === needle);
   if (exact) return exact;
 
-  // 2) Word-boundary match anywhere in the message, on the original text
-  //    so spaces stay intact: "order one bisleri" → \bbisleri\b matches.
+  // 2) Word-boundary match on the original text (spaces intact):
+  //    "order one bisleri" → \bbisleri\b matches. Also checks aliases
+  //    so typos like "bislery" or "kinly" still resolve.
   const lower = input.toLowerCase();
-  return (
-    PRODUCTS.find((p) => new RegExp(`\\b${escapeRegExp(p.name)}\\b`, 'i').test(lower)) ||
-    null
-  );
+  for (const p of PRODUCTS) {
+    const names = [p.name, ALIASES[p.name]].filter(Boolean) as string[];
+    if (names.some((n) => new RegExp(`\\b${escapeRegExp(n)}\\b`, 'i').test(lower))) {
+      return p;
+    }
+  }
+  return null;
 }

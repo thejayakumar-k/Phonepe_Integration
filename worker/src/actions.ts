@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ChatIdentity } from './context';
+import type { Env } from './env';
 import { PRODUCTS, findProduct } from './products';
 
 export type ChatIntent =
@@ -14,6 +15,7 @@ const LIST_KEYWORDS = [
   'what do you have',
   'list products',
   'available products',
+  'available to order',
   'product catalog',
   'product list',
   'catalog',
@@ -21,6 +23,11 @@ const LIST_KEYWORDS = [
   'what products',
   'show products',
   'your products',
+  'what can i order',
+  'what to order',
+  'can i order',
+  'order today',
+  'what can i buy',
 ];
 
 /**
@@ -58,6 +65,102 @@ export function detectIntent(message: string): ChatIntent {
   }
 
   return { intent: 'ask' };
+}
+
+const CATALOG_LINE = 'Products: Aquafina (₹20), Bisleri (₹40), Kinley (₹25)';
+
+const INTENT_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'place_order',
+      description:
+        'Place an order for a product. Call ONLY when the user clearly wants to buy/order a product (e.g. "buy bisleri", "order 2 aquafina", "one kinley please"). ' + CATALOG_LINE + '. If the product is not clear, do NOT call this function.',
+      parameters: {
+        type: 'object',
+        properties: {
+          product: { type: 'string', description: 'Exact product name (Aquafina, Bisleri, or Kinley).' },
+          qty: { type: 'integer', description: 'Quantity, default 1.' },
+        },
+        required: ['product'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'list_products',
+      description: 'List the available products when the user asks what is available to order.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+];
+
+/**
+ * Natural-language intent detection via LLM function calling. Handles
+ * paraphrases and typos that the deterministic matcher misses (e.g.
+ * "I would like two bottles", "one bislery please"). Returns null when
+ * the model decides not to act (plain question).
+ */
+export async function detectIntentWithLLM(
+  env: Env,
+  message: string
+): Promise<ChatIntent | null> {
+  const model = env.AI_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+  const ai = env.AI as {
+    run: (model: string, inputs: unknown) => Promise<unknown>;
+  };
+
+  try {
+    const out = await ai.run(model, {
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You help the OORUNII assistant decide what the user wants. ' +
+            'Use place_order when the user clearly asks to order/buy/purchase a specific product; ' +
+            'use list_products when they ask what they can order or what products are available ' +
+            '(e.g. "what can i order", "what do you sell"). ' +
+            'Otherwise call no function. ' + CATALOG_LINE,
+        },
+        { role: 'user', content: message },
+      ],
+      tools: INTENT_TOOLS as never,
+      max_tokens: 200,
+    });
+
+    const result = out as {
+      tool_calls?: Array<{
+        function?: { name?: string; arguments?: string | Record<string, unknown> };
+      }>;
+    };
+    const call = result.tool_calls?.[0]?.function;
+    if (!call?.name) return null;
+
+    if (call.name === 'list_products') return { intent: 'list_products' };
+
+    if (call.name === 'place_order') {
+      let args: Record<string, unknown> = {};
+      if (typeof call.arguments === 'string') {
+        try {
+          args = JSON.parse(call.arguments) as Record<string, unknown>;
+        } catch {
+          args = {};
+        }
+      } else if (call.arguments && typeof call.arguments === 'object') {
+        args = call.arguments as Record<string, unknown>;
+      }
+      const product = typeof args.product === 'string' ? args.product : undefined;
+      const qty =
+        typeof args.qty === 'number' && Number.isFinite(args.qty)
+          ? Math.min(99, Math.max(1, Math.round(args.qty)))
+          : 1;
+      return { intent: 'place_order', product, qty };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export interface ActionResult {
