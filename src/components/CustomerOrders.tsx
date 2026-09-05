@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { getItemOrders } from '../utils/storage';
+import { getItemOrders, updateItemOrderStatus } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus } from '../types/payment';
+
+// Product IDs match the catalog in CustomerCart.tsx.
+const PRODUCT_ID_BY_NAME: Record<string, number> = {
+  Aquafina: 1,
+  Bisleri: 2,
+  Kinley: 3,
+};
 
 type OrderFilter = 'all' | 'paid' | 'unpaid';
 
@@ -19,6 +26,50 @@ export function CustomerOrders() {
   const [orders, setOrders] = useState<ItemOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OrderFilter>('all');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const flash = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  // Reorder: add this order's items back to the cart (merging quantities).
+  const handleReorder = (order: ItemOrder) => {
+    try {
+      const saved = localStorage.getItem('customer_cart');
+      const cart = saved ? (JSON.parse(saved) as { id: number; qty: number }[]) : [];
+      const next = [...cart];
+      for (const item of order.items) {
+        const productId = PRODUCT_ID_BY_NAME[item.name];
+        if (!productId) continue;
+        const existing = next.find((c) => c.id === productId);
+        if (existing) {
+          existing.qty += item.qty;
+        } else {
+          next.push({ id: productId, qty: item.qty });
+        }
+      }
+      localStorage.setItem('customer_cart', JSON.stringify(next));
+      const count = order.items.reduce((s, i) => s + i.qty, 0);
+      flash('success', `Added ${count} item(s) to your cart. Open Cart to checkout.`);
+    } catch {
+      flash('error', 'Could not reorder. Please try again.');
+    }
+  };
+
+  // Cancel: only allowed while the order is not yet paid.
+  const handleCancel = async (orderId: string) => {
+    const updated = await updateItemOrderStatus(orderId, 'CANCELLED');
+    if (updated) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      flash('success', `Order ${orderId} cancelled.`);
+    } else {
+      flash('error', 'Could not cancel this order.');
+    }
+  };
+
+  const canCancel = (status: ItemOrderStatus) =>
+    status === 'PENDING' || status === 'NOT_PAID';
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +150,10 @@ export function CustomerOrders() {
       </div>
 
       <div className="orders-content">
+        {message && (
+          <div className={`order-action-msg ${message.type}`}>{message.text}</div>
+        )}
+
         {filteredOrders.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon">📋</span>
@@ -138,6 +193,16 @@ export function CustomerOrders() {
                       <span className="item-order-total-value">₹{order.total.toFixed(2)}</span>
                     </div>
                     <p className="order-date">{formatDate(order.createdAt)}</p>
+                  </div>
+                  <div className="order-actions">
+                    <button className="order-btn reorder" onClick={() => handleReorder(order)}>
+                      Reorder
+                    </button>
+                    {canCancel(order.status) && (
+                      <button className="order-btn cancel" onClick={() => handleCancel(order.id)}>
+                        Cancel
+                      </button>
+                    )}
                   </div>
                 </div>
               );

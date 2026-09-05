@@ -6853,6 +6853,53 @@ body {
   }
 }
 
+/* Order actions (reorder / cancel) on My Orders */
+.order-action-msg {
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.order-action-msg.success {
+  background: #e6f7ee;
+  color: #0b7a43;
+  border: 1px solid #b7e4c9;
+}
+
+.order-action-msg.error {
+  background: #fdecec;
+  color: #c0392b;
+  border: 1px solid #f5c6c6;
+}
+
+.order-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.order-btn {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.order-btn.reorder {
+  background: var(--primary-color, #863bff);
+  color: #fff;
+}
+
+.order-btn.cancel {
+  background: #fff;
+  color: #c0392b;
+  border-color: #f0c4c4;
+}
+
 /* Chatbot language picker (settings pages) */
 .chat-lang-picker {
   display: flex;
