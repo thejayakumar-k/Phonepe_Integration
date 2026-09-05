@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getMargin, subtractMargin, saveItemOrder } from '../utils/storage';
+import { getMargin, subtractMargin, saveItemOrder, generateItemOrderId } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus, PaymentMethod } from '../types/payment';
 
 const products = [
@@ -43,8 +43,8 @@ export function CustomerCart() {
     };
   }, [session?.customerId, totalAmount]);
 
-  const buildItemOrder = (status: ItemOrderStatus, method?: PaymentMethod): ItemOrder => ({
-    id: `IO${Date.now()}`,
+  const buildItemOrder = (id: string, status: ItemOrderStatus, method?: PaymentMethod): ItemOrder => ({
+    id,
     customerId: session?.customerId || 'CUST001',
     customerName: session?.customerName,
     vendorId: 'VENDOR001',
@@ -74,7 +74,7 @@ export function CustomerCart() {
         const newBalance = session?.customerId
           ? await subtractMargin(session.customerId, totalAmount)
           : walletBalance;
-        await saveItemOrder(buildItemOrder('PAID'));
+        await saveItemOrder(buildItemOrder(await generateItemOrderId(), 'PAID'));
         localStorage.removeItem('customer_cart');
         setWalletBalance(newBalance);
         setPaymentSuccess({ amount: totalAmount, balance: newBalance });
@@ -86,14 +86,14 @@ export function CustomerCart() {
         if (session?.customerId) {
           await subtractMargin(session.customerId, totalAmount);
         }
-        const itemOrder = buildItemOrder('PENDING', 'PHONEPE');
+        const itemOrder = buildItemOrder(await generateItemOrderId(), 'PENDING', 'PHONEPE');
         await saveItemOrder(itemOrder);
         navigate(`/pay?mode=addfunds&amount=${totalAmount}&io=${itemOrder.id}`);
       } else {
         if (session?.customerId) {
           await subtractMargin(session.customerId, totalAmount);
         }
-        await saveItemOrder(buildItemOrder('NOT_PAID', 'COD'));
+        await saveItemOrder(buildItemOrder(await generateItemOrderId(), 'NOT_PAID', 'COD'));
         alert('Order placed with Cash on Delivery!');
         localStorage.removeItem('customer_cart');
         navigate('/customer/orders');

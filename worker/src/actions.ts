@@ -189,7 +189,17 @@ export async function placeOrder(
   }
 
   const total = Math.round(product.price * qty * 100) / 100;
-  const id = `IO${Date.now()}`;
+  // 5-digit order number (e.g. "IO28471"), avoiding collisions with
+  // existing item orders.
+  const { data: existingRows } = await supabase.from('item_orders').select('id');
+  const existing = new Set((existingRows ?? []).map((r) => (r as { id: string }).id));
+  let id = '';
+  for (let i = 0; i < 20 && !id; i++) {
+    const candidate = `IO${10000 + Math.floor(Math.random() * 90000)}`;
+    if (!existing.has(candidate)) id = candidate;
+  }
+  if (!id) id = `IO${Date.now() % 100000}`;
+
   const order = {
     id,
     customer_id: identity.customerId,
