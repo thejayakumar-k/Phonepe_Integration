@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 interface ChatMessage {
@@ -10,6 +11,7 @@ const CHAT_API_URL = (import.meta.env.VITE_CHAT_API_URL || '').replace(/\/$/, ''
 
 export function ChatWidget() {
   const { session } = useAuth();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -65,6 +67,14 @@ export function ChatWidget() {
     }
   };
 
+  // Hidden before login and on settings screens.
+  const HIDDEN_PATHS = [
+    '/customer/settings',
+    '/vendor/settings',
+    '/customer/manage-upi',
+    '/customer/bank-mapping',
+  ];
+  if (HIDDEN_PATHS.includes(location.pathname)) return null;
   if (!session) return null;
 
   return (
