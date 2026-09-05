@@ -1,11 +1,12 @@
-export type ChatLang = 'en' | 'ta';
+export type ChatLang = 'en' | 'ta' | 'thanglish';
 
 const STORAGE_KEY = 'oorunii_chat_lang';
 
 /** Chat language preference. Defaults to English. */
 export function getChatLang(): ChatLang {
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'ta' ? 'ta' : 'en';
+    const v = localStorage.getItem(STORAGE_KEY);
+    return v === 'ta' || v === 'thanglish' ? v : 'en';
   } catch {
     return 'en';
   }

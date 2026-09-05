@@ -4,6 +4,7 @@ import { getChatLang, setChatLang, type ChatLang } from '../utils/chatLang';
 const OPTIONS: { value: ChatLang; label: string }[] = [
   { value: 'en', label: 'English' },
   { value: 'ta', label: 'தமிழ்' },
+  { value: 'thanglish', label: 'Thanglish' },
 ];
 
 export function ChatLanguagePicker() {
@@ -25,6 +26,7 @@ export function ChatLanguagePicker() {
             onClick={() => choose(o.value)}
           >
             {o.label}
+            {o.value === 'thanglish' && <span className="chat-lang-hint"> (Tamil in English letters)</span>}
           </button>
         ))}
       </div>

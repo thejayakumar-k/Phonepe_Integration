@@ -17,11 +17,11 @@ const normalize = (s: string) =>
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Common synonyms / typos / Tamil names mapped to catalog names. */
+/** Common synonyms / typos / Tamil / Thanglish names mapped to catalog names. */
 const ALIASES: Record<string, string[]> = {
-  Aquafina: ['aqua', 'அக்வாஃபைனா', 'அக்வாபைனா', 'அக்வாஃபினா'],
-  Bisleri: ['bislery', 'பிஸ்லரி', 'பிஸ்லேரி'],
-  Kinley: ['kinly', 'கின்லி', 'கிண்லி'],
+  Aquafina: ['aqua', 'அக்வாஃபைனா', 'அக்வாபைனா', 'அக்வாஃபினா', 'thanneer', 'thannir', 'tanneer', 'aquafina water'],
+  Bisleri: ['bislery', 'bisleri water', 'பிஸ்லரி', 'பிஸ்லேரி', 'pisleri', 'besleri', 'bisleri'],
+  Kinley: ['kinly', 'kinli', 'கின்லி', 'கிண்லி', 'kinley water'],
 };
 
 /**

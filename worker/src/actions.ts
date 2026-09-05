@@ -35,6 +35,24 @@ const LIST_KEYWORDS = [
   'என்ன கிடைக்கும்',
   'பொருட்கள்',
   'பட்டியல்',
+  // Thanglish catalog questions (Tamil in English letters)
+  'enna irukku',
+  'enna iruku',
+  'enna vilkireergal',
+  'enna vendaikkirreergal',
+  'enna kidaikkum',
+  'enna kidaikum',
+  'porulgal',
+  'pattiyal',
+  'list podunga',
+  'products kamikka',
+  'en products',
+  'un products',
+  'unnga products',
+  'unbar products',
+  'ethai order pannalam',
+  'enna order pannalam',
+  'etha order panrathu',
 ];
 
 /** Tamil number words → quantity (digits like "2" are also handled). */
@@ -51,7 +69,37 @@ const TA_NUMBERS: Record<string, number> = {
   பத்து: 10,
 };
 
-/** Extract quantity: Arabic digits first, then Tamil number words. */
+/** Thanglish (Romanized Tamil) number words — multiple common spellings. */
+const THANGlish_NUMBERS: Record<string, number> = {
+  onnu: 1,
+  ondru: 1,
+  oru: 1,
+  rendu: 2,
+  irandu: 2,
+  erandu: 2,
+  moonu: 3,
+  moondru: 3,
+  moonru: 3,
+  naalu: 4,
+  naangu: 4,
+  nangu: 4,
+  anju: 5,
+  aindhu: 5,
+  ainthu: 5,
+  aaru: 6,
+  ezhu: 7,
+  elu: 7,
+  ettu: 8,
+  enn: 8,
+  onbadhu: 9,
+  onbathu: 9,
+  ompathu: 9,
+  pathu: 10,
+  pattu: 10,
+  patthu: 10,
+};
+
+/** Extract quantity: Arabic digits first, then Tamil / Thanglish number words. */
 function extractQty(lower: string): number {
   const qtyMatch = lower.match(/(\d+)/);
   if (qtyMatch) {
@@ -60,6 +108,12 @@ function extractQty(lower: string): number {
   }
   for (const [word, n] of Object.entries(TA_NUMBERS)) {
     if (lower.includes(word)) return n;
+  }
+  // Thanglish: match whole words only (e.g. "oru" in "oru bisleri"), so
+  // stray substrings inside English words don't trigger a false quantity.
+  const words = lower.split(/[^a-z]+/);
+  for (const [word, n] of Object.entries(THANGlish_NUMBERS)) {
+    if (words.includes(word)) return n;
   }
   return 1;
 }
@@ -75,9 +129,13 @@ export function detectIntent(message: string): ChatIntent {
   if (!lower) return { intent: 'ask' };
 
   // Cancel intent: "cancel all orders" / "cancel my orders" / "cancel order #12345"
-  // / "cancel order 99901" (last digits), Tamil "ஆர்டர் ரத்து". Checked
-  // first so phrases like "cancel the bisleri order" don't re-order.
-  if (/cancel|ரத்து|கேன்சல்/.test(lower) && /order|ஆர்டர்/.test(lower)) {
+  // / "cancel order 99901" (last digits), Tamil "ஆர்டர் ரத்து", Thanglish
+  // "order cancel pannu" / "orders rathu pannu". Checked first so phrases
+  // like "cancel the bisleri order" don't re-order.
+  if (
+    /cancel|ரத்து|கேன்சல்|rathu|raththu|rattu|otthu/.test(lower) &&
+    /order|ஆர்டர்|aader|aardar|ardr/.test(lower)
+  ) {
     const fullMatch = lower.match(/(?:io|#)\d+/i);
     let orderId: string | undefined = fullMatch
       ? fullMatch[0].toUpperCase()
@@ -91,14 +149,16 @@ export function detectIntent(message: string): ChatIntent {
     return { intent: 'cancel_orders', orderId };
   }
 
-  // Order intent: message mentions a known product (Latin or Tamil name).
+  // Order intent: message mentions a known product (Latin, Tamil, or
+  // Thanglish name).
   const product = findProduct(lower);
   if (product) {
-    // Price questions ("how much is aquafina?", "பிஸ்லரி எவ்வளவு?") are not orders.
+    // Price questions ("how much is aquafina?", "பிஸ்லரி எவ்வளவு?",
+    // "bisleri ethana") are not orders.
     const priceQuestion =
-      /how much|price|cost|rate|whats the price|what is the price|எவ்வளவு|விலை/.test(lower);
+      /how much|price|cost|rate|whats the price|what is the price|எவ்வளவு|விலை|ethana|evlo|evalo|ellaam|vilai|villa ethana/.test(lower);
     const wantsToOrder =
-      /order|buy|place|purchase|get|want|qty|quantity|piece|bottle|can|pack|need|ஆர்டர்|வாங்க|போடு|வேண்டும்|ஒரு|வாங்கி/.test(lower);
+      /order|buy|place|purchase|get|want|qty|quantity|piece|bottle|can|pack|need|ஆர்டர்|வாங்க|போடு|வேண்டும்|ஒரு|வாங்கி|aader|podu|podunga|pannu|venum|venam|vaangi|vaanganum/.test(lower);
     if (!priceQuestion || wantsToOrder) {
       // Quantity: first Arabic number ("2", "2 qty", "3 bottles") or
       // Tamil number word ("இரண்டு பிஸ்லரி").
@@ -167,7 +227,7 @@ const INTENT_TOOLS = [
 export async function detectIntentWithLLM(
   env: Env,
   message: string,
-  lang: 'en' | 'ta' = 'en'
+  lang: 'en' | 'ta' | 'thanglish' = 'en'
 ): Promise<ChatIntent | null> {
   const model = env.AI_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
   const ai = env.AI as {
@@ -187,7 +247,16 @@ export async function detectIntentWithLLM(
                 '"இரண்டு கின்லி" = two Kinley) and Tamil product names: ' +
                 'பிஸ்லரி = Bisleri, கின்லி = Kinley, அக்வாஃபைனா = Aquafina. ' +
                 'Call place_order with the English product name. '
-              : '') +
+              : lang === 'thanglish'
+                ? 'The user writes in Thanglish — Tamil spoken through English/Latin letters, ' +
+                  'often mixed with real English words. Translate common phrases: ' +
+                  '"venum/vaanganum/vaangi" = want/buy, "podu/poduunga/pannu" = put/place/order, ' +
+                  '"rendu/erandu" = two, "moonu" = three, "onnu/oru" = one, "anju" = five, "pathu" = ten. ' +
+                  'Thanglish product names: "bisleri/pisleri/besleri" = Bisleri, ' +
+                  '"kinley/kinli/kinly" = Kinley, "aquafina/aquafina water/thanneer" = Aquafina. ' +
+                  '"order podu rendu bisleri" = order two Bisleri. ' +
+                  'Call place_order with the ENGLISH product name and numeric qty. '
+                : '') +
             'Use place_order when the user clearly asks to order/buy/purchase a specific product; ' +
             'use list_products when they ask what they can order or what products are available ' +
             '(e.g. "what can i order", "what do you sell"). ' +

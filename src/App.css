@@ -6940,6 +6940,18 @@ body {
   color: #fff;
 }
 
+.chat-lang-hint {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.chat-lang-option.active .chat-lang-hint {
+  opacity: 0.95;
+}
+
 .v-set-chat-lang {
   padding: 14px;
 }

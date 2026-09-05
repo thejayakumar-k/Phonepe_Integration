@@ -40,7 +40,7 @@ export default {
         vendorName?: string;
       };
 
-      const lang = body.lang === 'ta' ? 'ta' : 'en';
+      const lang = body.lang === 'ta' || body.lang === 'thanglish' ? body.lang : 'en';
 
       // ── Speech-to-text: transcribe recorded audio with Whisper ────────
       if (path === '/api/transcribe') {
@@ -55,7 +55,9 @@ export default {
           run: (model: string, inputs: unknown) => Promise<unknown>;
         };
         // English: force transcription/translation into English so replies
-        // never come back in Tamil. Tamil: auto-detect and keep the script.
+        // never come back in Tamil. Tamil/Thanglish: auto-detect and keep
+        // the Tamil script — the LLM layer understands Thanglish too, so a
+        // Tamil-script transcript still answers correctly in Tamil script.
         const whisperInput =
           lang === 'en'
             ? { audio, language: 'en', task: 'translate' }
