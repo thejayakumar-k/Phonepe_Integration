@@ -65,8 +65,6 @@ export function ChatWidget() {
     }
   };
 
-  if (!session) return null;
-
   return (
     <div className="chat-widget">
       {open && (
@@ -85,7 +83,9 @@ export function ChatWidget() {
           <div className="chat-messages" ref={listRef}>
             {messages.length === 0 && (
               <div className="chat-empty">
-                Ask me about your orders, wallet balance, payments, or refunds.
+                {session
+                  ? 'Ask me about your orders, wallet balance, payments, or refunds.'
+                  : 'Log in as a customer or vendor to ask about your account — I can still answer general questions.'}
               </div>
             )}
             {messages.map((m, i) => (
