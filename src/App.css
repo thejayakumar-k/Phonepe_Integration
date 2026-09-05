@@ -6747,10 +6747,14 @@ body {
 /* ═══════════ Chat Assistant Widget ═══════════ */
 .chat-widget {
   position: fixed;
-  right: 16px;
-  /* Sit above the fixed bottom navigation bar (~60px) with breathing room.
+  /* Anchor to the right edge of the centered app frame (max-width 420px):
+     (100vw - 420px)/2 is the empty margin on each side of the frame,
+     +20px places the button inside the frame's right edge. Falls back to
+     20px from the screen edge on narrow/mobile screens. */
+  right: max(20px, calc((100vw - 420px) / 2 + 20px));
+  /* 80px above the bottom navigation bar (~60px tall).
      env(safe-area-inset-bottom) keeps it clear of the iOS home indicator. */
-  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   z-index: 1000;
   display: flex;
   flex-direction: column;
