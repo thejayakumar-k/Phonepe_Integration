@@ -6748,7 +6748,9 @@ body {
 .chat-widget {
   position: fixed;
   left: 50%;
-  bottom: 16px;
+  /* Sit above the fixed bottom navigation bar (~60px) with breathing room.
+     env(safe-area-inset-bottom) keeps it clear of the iOS home indicator. */
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 1000;
   display: flex;
