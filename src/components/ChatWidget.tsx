@@ -16,7 +16,13 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [speakEnabled, setSpeakEnabled] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const speakEnabledRef = useRef(false);
 
   useEffect(() => {
     if (listRef.current) {
@@ -24,11 +30,30 @@ export function ChatWidget() {
     }
   }, [messages, loading, open]);
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
+  useEffect(() => {
+    speakEnabledRef.current = speakEnabled;
+    if (!speakEnabled) {
+      window.speechSynthesis?.cancel();
+    }
+  }, [speakEnabled]);
 
-    const next: ChatMessage[] = [...messages, { role: 'user', content: text }];
+  // Speak assistant replies aloud when enabled.
+  useEffect(() => {
+    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+      const last = messages[messages.length - 1];
+      if (speakEnabledRef.current && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(last.content);
+        utterance.rate = 1;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  }, [messages]);
+
+  const send = async (text?: string) => {
+    const content = (text ?? input).trim();
+    if (!content || loading) return;
+
+    const next: ChatMessage[] = [...messages, { role: 'user', content }];
     setMessages(next);
     setInput('');
     setLoading(true);
@@ -38,7 +63,7 @@ export function ChatWidget() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
+          message: content,
           role: session?.role,
           customerId: session?.customerId,
           customerName: session?.customerName,
@@ -67,6 +92,86 @@ export function ChatWidget() {
     }
   };
 
+  const startRecording = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        transcribeRecording();
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+    } catch {
+      alert('Microphone access was denied. Please allow mic access and try again.');
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setRecording(false);
+  };
+
+  const transcribeRecording = async () => {
+    const blob = new Blob(audioChunksRef.current, {
+      type: mediaRecorderRef.current?.mimeType || 'audio/webm',
+    });
+    if (blob.size === 0) return;
+
+    setTranscribing(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result || '');
+          const idx = result.indexOf(',');
+          resolve(idx >= 0 ? result.slice(idx + 1) : result);
+        };
+        reader.onerror = () => reject(new Error('read failed'));
+        reader.readAsDataURL(blob);
+      });
+
+      const res = await fetch(`${CHAT_API_URL}/api/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio: base64 }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string };
+      const text = (data.text || '').trim();
+      if (text) {
+        await send(text);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: data.error || 'Sorry, I could not hear you clearly. Please try again.',
+          },
+        ]);
+      }
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Voice input failed. Please try again.',
+        },
+      ]);
+    } finally {
+      setTranscribing(false);
+    }
+  };
+
   // Hidden before login and on settings screens.
   const HIDDEN_PATHS = [
     '/customer/settings',
@@ -83,19 +188,29 @@ export function ChatWidget() {
         <div className="chat-panel">
           <div className="chat-header">
             <span className="chat-title">OORUNII Assistant</span>
-            <button
-              className="chat-close"
-              onClick={() => setOpen(false)}
-              aria-label="Close chat"
-            >
-              ✕
-            </button>
+            <div className="chat-header-actions">
+              <button
+                className={`chat-speak-toggle ${speakEnabled ? 'active' : ''}`}
+                onClick={() => setSpeakEnabled((v) => !v)}
+                aria-label="Toggle voice replies"
+                title={speakEnabled ? 'Voice replies: ON' : 'Voice replies: OFF'}
+              >
+                {speakEnabled ? '🔊' : '🔇'}
+              </button>
+              <button
+                className="chat-close"
+                onClick={() => setOpen(false)}
+                aria-label="Close chat"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="chat-messages" ref={listRef}>
             {messages.length === 0 && (
               <div className="chat-empty">
-                Ask me about your orders, wallet balance, payments, or refunds.
+                Ask me about your orders, wallet balance, payments, or refunds — or use the 🎤 to speak.
               </div>
             )}
             {messages.map((m, i) => (
@@ -103,10 +218,21 @@ export function ChatWidget() {
                 {m.content}
               </div>
             ))}
-            {loading && <div className="chat-msg assistant chat-typing">…</div>}
+            {(loading || transcribing) && (
+              <div className="chat-msg assistant chat-typing">…</div>
+            )}
           </div>
 
           <div className="chat-input-row">
+            <button
+              className={`chat-mic ${recording ? 'recording' : ''}`}
+              onClick={recording ? stopRecording : startRecording}
+              disabled={transcribing}
+              aria-label={recording ? 'Stop recording' : 'Start voice input'}
+              title={recording ? 'Stop recording' : 'Voice input'}
+            >
+              {recording ? '⏹' : '🎤'}
+            </button>
             <input
               className="chat-input"
               type="text"
@@ -117,7 +243,7 @@ export function ChatWidget() {
                 if (e.key === 'Enter') send();
               }}
             />
-            <button className="chat-send" onClick={send} disabled={loading || !input.trim()}>
+            <button className="chat-send" onClick={() => send()} disabled={loading || !input.trim()}>
               ➤
             </button>
           </div>

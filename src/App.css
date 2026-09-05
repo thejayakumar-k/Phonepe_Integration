@@ -6805,6 +6805,54 @@ body {
   cursor: pointer;
 }
 
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-speak-toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.chat-speak-toggle.active {
+  opacity: 1;
+}
+
+.chat-mic {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.chat-mic.recording {
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+  color: #fff;
+  animation: chat-mic-pulse 1s ease-in-out infinite;
+}
+
+@keyframes chat-mic-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;

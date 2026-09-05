@@ -15,6 +15,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('Origin');
     const headers = corsHeaders(origin);
+    const path = new URL(request.url).pathname;
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers });
@@ -30,12 +31,35 @@ export default {
     try {
       const body = (await request.json()) as {
         message?: string;
+        audio?: string;
         role?: string;
         customerId?: string;
         customerName?: string;
         vendorId?: string;
         vendorName?: string;
       };
+
+      // ── Speech-to-text: transcribe recorded audio with Whisper ────────
+      if (path === '/api/transcribe') {
+        const audio = body.audio;
+        if (!audio) {
+          return new Response(JSON.stringify({ error: 'audio is required' }), {
+            status: 400,
+            headers: { ...headers, 'Content-Type': 'application/json' },
+          });
+        }
+        const ai = env.AI as {
+          run: (model: string, inputs: unknown) => Promise<unknown>;
+        };
+        const out = await ai.run('@cf/openai/whisper-large-v3-turbo', {
+          audio,
+        });
+        const text = ((out as { text?: string })?.text || '').trim();
+        return new Response(JSON.stringify({ text }), {
+          status: 200,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+        });
+      }
 
       const message = (body.message || '').trim();
       if (!message) {
