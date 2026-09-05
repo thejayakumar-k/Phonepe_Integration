@@ -1,7 +1,7 @@
 import { getSupabase } from './supabase';
 import { buildContext, type ChatIdentity } from './context';
 import { answerQuestion } from './chat';
-import { detectIntent, placeOrder } from './actions';
+import { detectIntent, detectIntentWithLLM, placeOrder, cancelOrders } from './actions';
 import { PRODUCTS } from './products';
 import type { Env } from './env';
 
@@ -91,9 +91,18 @@ export default {
       // the action result included in its context.
       let actionContext = context;
       if (identity.role === 'customer') {
-        const intent = detectIntent(message);
+        // Fast deterministic path first (product name mentioned directly),
+        // then LLM function-calling for natural-language phrasings.
+        let intent = detectIntent(message);
+        if (intent.intent === 'ask') {
+          const llmIntent = await detectIntentWithLLM(env, message);
+          if (llmIntent) intent = llmIntent;
+        }
         if (intent.intent === 'place_order') {
           const result = await placeOrder(supabase, identity, intent.product, intent.qty ?? 1);
+          actionContext += `\n\nACTION RESULT: ${result.message}`;
+        } else if (intent.intent === 'cancel_orders') {
+          const result = await cancelOrders(supabase, identity, intent.orderId);
           actionContext += `\n\nACTION RESULT: ${result.message}`;
         } else if (intent.intent === 'list_products') {
           const catalog = PRODUCTS.map(

@@ -6,6 +6,7 @@ import { PRODUCTS, findProduct } from './products';
 export type ChatIntent =
   | { intent: 'place_order'; product?: string; qty?: number }
   | { intent: 'list_products' }
+  | { intent: 'cancel_orders'; orderId?: string }
   | { intent: 'ask' };
 
 const inr = (n: number) => `₹${Number(n).toFixed(2)}`;
@@ -39,6 +40,16 @@ const LIST_KEYWORDS = [
 export function detectIntent(message: string): ChatIntent {
   const lower = message.toLowerCase().trim();
   if (!lower) return { intent: 'ask' };
+
+  // Cancel intent: "cancel all orders" / "cancel my orders" / "cancel order IO12345".
+  // Checked first so phrases like "cancel the bisleri order" don't re-order.
+  if (/cancel/.test(lower) && /order/.test(lower)) {
+    const idMatch = lower.match(/\bio\d+\b/i);
+    return {
+      intent: 'cancel_orders',
+      orderId: idMatch ? idMatch[0].toUpperCase() : undefined,
+    };
+  }
 
   // Order intent: message mentions a known product.
   const product = findProduct(lower);
@@ -94,6 +105,20 @@ const INTENT_TOOLS = [
       parameters: { type: 'object', properties: {} },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'cancel_orders',
+      description:
+        'Cancel orders. Call when the user asks to cancel their order(s), e.g. "cancel all orders", "cancel my orders", "cancel order IO12345". Only unpaid orders can be cancelled.',
+      parameters: {
+        type: 'object',
+        properties: {
+          order_id: { type: 'string', description: 'Optional specific order id (e.g. IO12345). Omit to cancel all unpaid orders.' },
+        },
+      },
+    },
+  },
 ];
 
 /**
@@ -138,6 +163,21 @@ export async function detectIntentWithLLM(
     if (!call?.name) return null;
 
     if (call.name === 'list_products') return { intent: 'list_products' };
+
+    if (call.name === 'cancel_orders') {
+      let args: Record<string, unknown> = {};
+      if (typeof call.arguments === 'string') {
+        try {
+          args = JSON.parse(call.arguments) as Record<string, unknown>;
+        } catch {
+          args = {};
+        }
+      } else if (call.arguments && typeof call.arguments === 'object') {
+        args = call.arguments as Record<string, unknown>;
+      }
+      const orderId = typeof args.order_id === 'string' ? args.order_id : undefined;
+      return { intent: 'cancel_orders', orderId };
+    }
 
     if (call.name === 'place_order') {
       let args: Record<string, unknown> = {};
@@ -221,5 +261,47 @@ export async function placeOrder(
   return {
     ok: true,
     message: `Order placed successfully. Order number: ${id}. Item: ${product.name} x ${qty} (${inr(total)}). Status: payment pending.`,
+  };
+}
+
+/**
+ * Cancel unpaid orders for the customer. With orderId, cancels just that
+ * order; without it, cancels ALL unpaid (PENDING / NOT_PAID) orders.
+ */
+export async function cancelOrders(
+  supabase: SupabaseClient,
+  identity: ChatIdentity,
+  orderId?: string
+): Promise<ActionResult> {
+  if (!identity.customerId) {
+    return { ok: false, message: 'You must be logged in as a customer to cancel orders.' };
+  }
+
+  let query = supabase
+    .from('item_orders')
+    .update({ status: 'CANCELLED' })
+    .eq('customer_id', identity.customerId)
+    .in('status', ['PENDING', 'NOT_PAID'])
+    .select('id');
+  if (orderId) query = query.eq('id', orderId);
+
+  const { data, error } = await query;
+  if (error) {
+    return { ok: false, message: `Could not cancel orders (${error.message}). Please try again.` };
+  }
+
+  const ids = (data ?? []).map((r) => (r as { id: string }).id);
+  if (ids.length === 0) {
+    return {
+      ok: false,
+      message: orderId
+        ? `Order ${orderId} was not found or is already paid/cancelled, so it cannot be cancelled.`
+        : 'You have no unpaid orders to cancel.',
+    };
+  }
+
+  return {
+    ok: true,
+    message: `Cancelled ${ids.length} order(s): ${ids.join(', ')}.`,
   };
 }

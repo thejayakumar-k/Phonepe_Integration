@@ -29,6 +29,7 @@ export async function answerQuestion(
     languageRule,
     'Be concise and friendly. Use ₹ for currency (e.g. ₹500.00).',
     'If the data does not contain the answer, say so and suggest what the user can do next.',
+    'An "ACTION RESULT:" line in APP DATA is authoritative and always true, even if the order list looks empty — report it as-is (e.g. the order number).',
     'Do not reveal raw technical details like database column names or IDs unless asked.',
     '',
     'APP DATA:',
