@@ -458,7 +458,7 @@ export async function clearDemoOrders(): Promise<void> {
    ======================================== */
 
 /**
- * Generate a short 5-digit item order number (e.g. "IO28471"), avoiding
+ * Generate a short 5-digit item order number (e.g. "#28471"), avoiding
  * collisions with existing orders. Falls back to a timestamp-derived id
  * if collisions keep occurring (extremely unlikely).
  */
@@ -470,10 +470,10 @@ export async function generateItemOrderId(): Promise<string> {
     // ignore — fall back to empty set
   }
   for (let i = 0; i < 20; i++) {
-    const id = `IO${10000 + Math.floor(Math.random() * 90000)}`;
+    const id = `#${10000 + Math.floor(Math.random() * 90000)}`;
     if (!existing.has(id)) return id;
   }
-  return `IO${Date.now() % 100000}`;
+  return `#${Date.now() % 100000}`;
 }
 
 interface ItemOrderRow {

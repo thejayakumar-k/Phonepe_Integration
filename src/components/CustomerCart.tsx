@@ -88,7 +88,9 @@ export function CustomerCart() {
         }
         const itemOrder = buildItemOrder(await generateItemOrderId(), 'PENDING', 'PHONEPE');
         await saveItemOrder(itemOrder);
-        navigate(`/pay?mode=addfunds&amount=${totalAmount}&io=${itemOrder.id}`);
+        // encodeURIComponent: order ids now start with "#", which would
+        // otherwise be read as a URL fragment and lost.
+        navigate(`/pay?mode=addfunds&amount=${totalAmount}&io=${encodeURIComponent(itemOrder.id)}`);
       } else {
         if (session?.customerId) {
           await subtractMargin(session.customerId, totalAmount);

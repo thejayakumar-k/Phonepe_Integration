@@ -41,17 +41,17 @@ export function detectIntent(message: string): ChatIntent {
   const lower = message.toLowerCase().trim();
   if (!lower) return { intent: 'ask' };
 
-  // Cancel intent: "cancel all orders" / "cancel my orders" / "cancel order IO12345"
+  // Cancel intent: "cancel all orders" / "cancel my orders" / "cancel order #12345"
   // / "cancel order 99901" (last digits). Checked first so phrases like
   // "cancel the bisleri order" don't re-order.
   if (/cancel/.test(lower) && /order/.test(lower)) {
-    const fullMatch = lower.match(/\bio\d+\b/i);
+    const fullMatch = lower.match(/(?:io|#)\d+/i);
     let orderId: string | undefined = fullMatch
       ? fullMatch[0].toUpperCase()
       : undefined;
     if (!orderId) {
-      // No IO prefix — treat a 3+ digit number as the last digits of the
-      // order number (e.g. "cancel order 99901" → IO99901).
+      // No prefix — treat a 3+ digit number as the last digits of the
+      // order number (e.g. "cancel order 99901" → #99901).
       const digitsMatch = lower.match(/\b\d{3,}\b/);
       if (digitsMatch) orderId = digitsMatch[0];
     }
@@ -117,11 +117,11 @@ const INTENT_TOOLS = [
     function: {
       name: 'cancel_orders',
       description:
-        'Cancel orders. Call when the user asks to cancel their order(s), e.g. "cancel all orders", "cancel my orders", "cancel order IO12345", or "cancel order 99901" (last digits of the order number). Only unpaid orders can be cancelled.',
+        'Cancel orders. Call when the user asks to cancel their order(s), e.g. "cancel all orders", "cancel my orders", "cancel order #12345", or "cancel order 99901" (last digits of the order number). Only unpaid orders can be cancelled.',
       parameters: {
         type: 'object',
         properties: {
-          order_id: { type: 'string', description: 'Optional specific order id (e.g. IO12345). Omit to cancel all unpaid orders.' },
+          order_id: { type: 'string', description: 'Optional specific order id (e.g. #12345, or just 12345). Omit to cancel all unpaid orders.' },
         },
       },
     },
@@ -236,16 +236,16 @@ export async function placeOrder(
   }
 
   const total = Math.round(product.price * qty * 100) / 100;
-  // 5-digit order number (e.g. "IO28471"), avoiding collisions with
+  // 5-digit order number (e.g. "#28471"), avoiding collisions with
   // existing item orders.
   const { data: existingRows } = await supabase.from('item_orders').select('id');
   const existing = new Set((existingRows ?? []).map((r) => (r as { id: string }).id));
   let id = '';
   for (let i = 0; i < 20 && !id; i++) {
-    const candidate = `IO${10000 + Math.floor(Math.random() * 90000)}`;
+    const candidate = `#${10000 + Math.floor(Math.random() * 90000)}`;
     if (!existing.has(candidate)) id = candidate;
   }
-  if (!id) id = `IO${Date.now() % 100000}`;
+  if (!id) id = `#${Date.now() % 100000}`;
 
   const order = {
     id,
@@ -291,9 +291,9 @@ export async function cancelOrders(
     .in('status', ['PENDING', 'NOT_PAID'])
     .select('id');
   if (orderId) {
-    // Full id ("IO12345") matches exactly; bare digits ("99901") match
-    // orders whose number ends with those digits.
-    query = /^IO/i.test(orderId)
+    // Full id ("#12345" or legacy "IO12345") matches exactly; bare digits
+    // ("99901") match orders whose number ends with those digits.
+    query = /^(?:IO|#)/i.test(orderId)
       ? query.eq('id', orderId)
       : query.ilike('id', `%${orderId}`);
   }
