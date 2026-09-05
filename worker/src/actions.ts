@@ -41,14 +41,21 @@ export function detectIntent(message: string): ChatIntent {
   const lower = message.toLowerCase().trim();
   if (!lower) return { intent: 'ask' };
 
-  // Cancel intent: "cancel all orders" / "cancel my orders" / "cancel order IO12345".
-  // Checked first so phrases like "cancel the bisleri order" don't re-order.
+  // Cancel intent: "cancel all orders" / "cancel my orders" / "cancel order IO12345"
+  // / "cancel order 99901" (last digits). Checked first so phrases like
+  // "cancel the bisleri order" don't re-order.
   if (/cancel/.test(lower) && /order/.test(lower)) {
-    const idMatch = lower.match(/\bio\d+\b/i);
-    return {
-      intent: 'cancel_orders',
-      orderId: idMatch ? idMatch[0].toUpperCase() : undefined,
-    };
+    const fullMatch = lower.match(/\bio\d+\b/i);
+    let orderId: string | undefined = fullMatch
+      ? fullMatch[0].toUpperCase()
+      : undefined;
+    if (!orderId) {
+      // No IO prefix — treat a 3+ digit number as the last digits of the
+      // order number (e.g. "cancel order 99901" → IO99901).
+      const digitsMatch = lower.match(/\b\d{3,}\b/);
+      if (digitsMatch) orderId = digitsMatch[0];
+    }
+    return { intent: 'cancel_orders', orderId };
   }
 
   // Order intent: message mentions a known product.
@@ -110,7 +117,7 @@ const INTENT_TOOLS = [
     function: {
       name: 'cancel_orders',
       description:
-        'Cancel orders. Call when the user asks to cancel their order(s), e.g. "cancel all orders", "cancel my orders", "cancel order IO12345". Only unpaid orders can be cancelled.',
+        'Cancel orders. Call when the user asks to cancel their order(s), e.g. "cancel all orders", "cancel my orders", "cancel order IO12345", or "cancel order 99901" (last digits of the order number). Only unpaid orders can be cancelled.',
       parameters: {
         type: 'object',
         properties: {
@@ -283,7 +290,13 @@ export async function cancelOrders(
     .eq('customer_id', identity.customerId)
     .in('status', ['PENDING', 'NOT_PAID'])
     .select('id');
-  if (orderId) query = query.eq('id', orderId);
+  if (orderId) {
+    // Full id ("IO12345") matches exactly; bare digits ("99901") match
+    // orders whose number ends with those digits.
+    query = /^IO/i.test(orderId)
+      ? query.eq('id', orderId)
+      : query.ilike('id', `%${orderId}`);
+  }
 
   const { data, error } = await query;
   if (error) {
