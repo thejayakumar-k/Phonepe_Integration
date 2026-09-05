@@ -24,6 +24,8 @@ export function ChatWidget() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const speakEnabledRef = useRef(false);
+  // Browser-native speech recognition (Chrome/Android = Google's engine).
+  const speechRecRef = useRef<{ stop: () => void } | null>(null);
 
   useEffect(() => {
     if (listRef.current) {
@@ -100,7 +102,8 @@ export function ChatWidget() {
     }
   };
 
-  const startRecording = async () => {
+  // Fallback: record audio and transcribe with Whisper on the worker.
+  const startRecordingFallback = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
       return;
@@ -124,10 +127,64 @@ export function ChatWidget() {
     }
   };
 
-  const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    mediaRecorderRef.current = null;
-    setRecording(false);
+  // Start voice input: Google engine in Chrome/Android, Whisper elsewhere.
+  const startVoiceInput = () => {
+    type AnyRecognition = {
+      lang: string;
+      interimResults: boolean;
+      maxAlternatives: number;
+      start: () => void;
+      stop: () => void;
+      onresult: ((e: { results: { [i: number]: { [j: number]: { transcript: string } } } }) => void) | null;
+      onerror: ((e: { error?: string }) => void) | null;
+      onend: (() => void) | null;
+    };
+    const w = window as unknown as { SpeechRecognition?: new () => AnyRecognition; webkitSpeechRecognition?: new () => AnyRecognition };
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+
+    if (SR) {
+      const rec = new SR();
+      rec.lang = getChatLang() === 'ta' ? 'ta-IN' : 'en-IN';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      let transcript = '';
+      rec.onresult = (e) => {
+        const result = e.results?.[0]?.[0];
+        if (result) transcript = result.transcript;
+      };
+      rec.onerror = (e) => {
+        setRecording(false);
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: 'Microphone access was denied. Please allow mic access and try again.' },
+          ]);
+        }
+      };
+      rec.onend = () => {
+        speechRecRef.current = null;
+        setRecording(false);
+        const text = transcript.trim();
+        if (text) send(text);
+      };
+      speechRecRef.current = rec;
+      setRecording(true);
+      rec.start();
+      return;
+    }
+
+    startRecordingFallback();
+  };
+
+  const stopVoiceInput = () => {
+    if (speechRecRef.current) {
+      speechRecRef.current.stop();
+      speechRecRef.current = null;
+    } else {
+      mediaRecorderRef.current?.stop();
+      mediaRecorderRef.current = null;
+      setRecording(false);
+    }
   };
 
   const transcribeRecording = async () => {
@@ -234,7 +291,7 @@ export function ChatWidget() {
           <div className="chat-input-row">
             <button
               className={`chat-mic ${recording ? 'recording' : ''}`}
-              onClick={recording ? stopRecording : startRecording}
+              onClick={recording ? stopVoiceInput : startVoiceInput}
               disabled={transcribing}
               aria-label={recording ? 'Stop recording' : 'Start voice input'}
               title={recording ? 'Stop recording' : 'Voice input'}
