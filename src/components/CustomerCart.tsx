@@ -31,7 +31,17 @@ export function CustomerCart() {
   }, 0);
 
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
-  const walletBalance = getMargin(session?.customerId);
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMargin(session?.customerId).then((value) => {
+      if (!cancelled) setWalletBalance(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.customerId, totalAmount]);
 
   const buildItemOrder = (status: ItemOrderStatus, method?: PaymentMethod): ItemOrder => ({
     id: `IO${Date.now()}`,
@@ -55,17 +65,18 @@ export function CustomerCart() {
 
   useEffect(() => {
     // Listen for checkout trigger from navbar
-    const handleCheckout = () => {
+    const handleCheckout = async () => {
       if (selectedPayment === 'wallet') {
         if (walletBalance < totalAmount) {
           alert('Insufficient wallet balance!');
           return;
         }
         const newBalance = session?.customerId
-          ? subtractMargin(session.customerId, totalAmount)
+          ? await subtractMargin(session.customerId, totalAmount)
           : walletBalance;
-        saveItemOrder(buildItemOrder('PAID'));
+        await saveItemOrder(buildItemOrder('PAID'));
         localStorage.removeItem('customer_cart');
+        setWalletBalance(newBalance);
         setPaymentSuccess({ amount: totalAmount, balance: newBalance });
         if (redirectTimer.current) clearTimeout(redirectTimer.current);
         redirectTimer.current = setTimeout(() => {
@@ -73,16 +84,16 @@ export function CustomerCart() {
         }, 1800);
       } else if (selectedPayment === 'qr') {
         if (session?.customerId) {
-          subtractMargin(session.customerId, totalAmount);
+          await subtractMargin(session.customerId, totalAmount);
         }
         const itemOrder = buildItemOrder('PENDING', 'PHONEPE');
-        saveItemOrder(itemOrder);
+        await saveItemOrder(itemOrder);
         navigate(`/pay?mode=addfunds&amount=${totalAmount}&io=${itemOrder.id}`);
       } else {
         if (session?.customerId) {
-          subtractMargin(session.customerId, totalAmount);
+          await subtractMargin(session.customerId, totalAmount);
         }
-        saveItemOrder(buildItemOrder('NOT_PAID', 'COD'));
+        await saveItemOrder(buildItemOrder('NOT_PAID', 'COD'));
         alert('Order placed with Cash on Delivery!');
         localStorage.removeItem('customer_cart');
         navigate('/customer/orders');

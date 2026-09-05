@@ -13,16 +13,14 @@ export function OrdersPanel({ vendorId }: OrdersPanelProps) {
   const [transactionId, setTransactionId] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const loadOrders = () => {
-    const all = getOrders();
+  const loadOrders = async () => {
+    const all = await getOrders();
     if (vendorId) {
       setOrders(
-        Object.fromEntries(
-          Object.entries(all).filter(([, o]) => o.vendorId === vendorId)
-        )
+        Object.fromEntries(all.filter((o) => o.vendorId === vendorId).map((o) => [o.orderId, o]))
       );
     } else {
-      setOrders(all);
+      setOrders(Object.fromEntries(all.map((o) => [o.orderId, o])));
     }
   };
 
@@ -32,8 +30,8 @@ export function OrdersPanel({ vendorId }: OrdersPanelProps) {
     return () => clearInterval(interval);
   }, [vendorId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleVerify = (orderId: string, status: 'PAID' | 'FAILED') => {
-    const updated = updateOrderStatus(orderId, status, transactionId || undefined);
+  const handleVerify = async (orderId: string, status: 'PAID' | 'FAILED') => {
+    const updated = await updateOrderStatus(orderId, status, transactionId || undefined);
     if (updated) {
       setMessage({
         type: 'success',

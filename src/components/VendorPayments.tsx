@@ -64,9 +64,10 @@ export function VendorPayments() {
   const [filter, setFilter] = useState<FilterType>('all');
 
   useEffect(() => {
-    const fetchOrders = () => {
-      const ordersRecord = getOrders();
-      const allOrders = Object.values(ordersRecord);
+    let cancelled = false;
+    const fetchOrders = async () => {
+      const allOrders = await getOrders();
+      if (cancelled) return;
       const vendorOrders = allOrders.filter(
         (order) => order.vendorId === session?.vendorId
       );
@@ -76,11 +77,14 @@ export function VendorPayments() {
 
     fetchOrders();
     const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [session?.vendorId]);
 
-  const handleMarkPaid = (orderId: string) => {
-    updateOrderStatus(orderId, 'PAID');
+  const handleMarkPaid = async (orderId: string) => {
+    await updateOrderStatus(orderId, 'PAID');
     setOrders((prev) =>
       prev.map((o) =>
         o.orderId === orderId ? { ...o, paymentStatus: 'PAID' as PaymentStatus } : o
@@ -88,8 +92,8 @@ export function VendorPayments() {
     );
   };
 
-  const handleMarkFailed = (orderId: string) => {
-    updateOrderStatus(orderId, 'FAILED');
+  const handleMarkFailed = async (orderId: string) => {
+    await updateOrderStatus(orderId, 'FAILED');
     setOrders((prev) =>
       prev.map((o) =>
         o.orderId === orderId ? { ...o, paymentStatus: 'FAILED' as PaymentStatus } : o

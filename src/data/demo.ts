@@ -76,8 +76,8 @@ export const demoOrders: Order[] = [
   },
 ];
 
-export function startFreshPayment(orderId?: string): Order {
-  const existing = orderId ? getOrder(orderId) : null;
+export async function startFreshPayment(orderId?: string): Promise<Order> {
+  const existing = orderId ? await getOrder(orderId) : null;
   const base =
     existing ||
     demoOrders.find((o) => o.orderId === orderId) ||
@@ -95,7 +95,7 @@ export function startFreshPayment(orderId?: string): Order {
     codPlacedAt: undefined,
     transactionId: undefined,
   };
-  saveOrder(refreshed);
+  await saveOrder(refreshed);
   return refreshed;
 }
 

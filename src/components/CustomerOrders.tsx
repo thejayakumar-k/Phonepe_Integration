@@ -21,8 +21,10 @@ export function CustomerOrders() {
   const [filter, setFilter] = useState<OrderFilter>('all');
 
   useEffect(() => {
-    const fetchOrders = () => {
-      const all = Object.values(getItemOrders());
+    let cancelled = false;
+    const fetchOrders = async () => {
+      const all = await getItemOrders();
+      if (cancelled) return;
       const customerOrders = all.filter(
         (order) => order.customerId === session?.customerId
       );
@@ -32,7 +34,10 @@ export function CustomerOrders() {
 
     fetchOrders();
     const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [session?.customerId]);
 
   const paidCount = orders.filter((o) => isPaid(o.status)).length;

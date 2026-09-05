@@ -19,15 +19,19 @@ export function VendorHome() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    const load = () => {
-      const all = Object.values(getOrders()).filter(
+    let cancelled = false;
+    const load = async () => {
+      const all = (await getOrders()).filter(
         (o) => o.vendorId === session?.vendorId
       );
-      setOrders(all.sort((a, b) => b.createdAt - a.createdAt));
+      if (!cancelled) setOrders(all.sort((a, b) => b.createdAt - a.createdAt));
     };
     load();
     const interval = setInterval(load, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [session?.vendorId]);
 
   const paidOrders = orders.filter((o) => o.paymentStatus === 'PAID');

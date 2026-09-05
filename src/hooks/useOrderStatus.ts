@@ -12,16 +12,26 @@ export function useOrderStatus(orderId: string, pollIntervalMs = 3000): UseOrder
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const lastStatusRef = useRef<PaymentStatus | null>(null);
+  const mountedRef = useRef(true);
 
-  const fetchOrder = useCallback(() => {
-    const fetchedOrder = getOrder(orderId);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const fetchOrder = useCallback(async () => {
+    const fetchedOrder = await getOrder(orderId);
+    if (!mountedRef.current) return fetchedOrder;
+
     setOrder(fetchedOrder);
     setIsLoading(false);
-    
+
     if (fetchedOrder) {
       lastStatusRef.current = fetchedOrder.paymentStatus;
     }
-    
+
     return fetchedOrder;
   }, [orderId]);
 
@@ -32,9 +42,9 @@ export function useOrderStatus(orderId: string, pollIntervalMs = 3000): UseOrder
 
   // Polling for status changes
   useEffect(() => {
-    const interval = setInterval(() => {
-      const currentOrder = getOrder(orderId);
-      
+    const interval = setInterval(async () => {
+      const currentOrder = await getOrder(orderId);
+
       if (currentOrder && lastStatusRef.current !== currentOrder.paymentStatus) {
         // Status changed! Update state
         setOrder(currentOrder);

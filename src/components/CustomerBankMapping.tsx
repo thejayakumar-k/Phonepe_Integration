@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import {
@@ -44,9 +44,7 @@ export function CustomerBankMapping() {
   const { session } = useAuth();
   const customerId = session?.customerId || 'CUST001';
 
-  const [accounts, setAccounts] = useState<BankAccount[]>(() =>
-    getBankAccounts(customerId)
-  );
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formError, setFormError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -61,8 +59,18 @@ export function CustomerBankMapping() {
   const [showAccountNumbers, setShowAccountNumbers] = useState<Record<string, boolean>>({});
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const refreshAccounts = () => {
-    setAccounts(getBankAccounts(customerId));
+  useEffect(() => {
+    let cancelled = false;
+    getBankAccounts(customerId).then((accs) => {
+      if (!cancelled) setAccounts(accs);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [customerId]);
+
+  const refreshAccounts = async () => {
+    setAccounts(await getBankAccounts(customerId));
   };
 
   const resetForm = () => {
@@ -75,7 +83,7 @@ export function CustomerBankMapping() {
     setFormError('');
   };
 
-  const handleAddAccount = () => {
+  const handleAddAccount = async () => {
     const finalBankName = bankName === 'Other' ? customBankName.trim() : bankName;
 
     const error = validateBankAccount({
@@ -91,7 +99,7 @@ export function CustomerBankMapping() {
       return;
     }
 
-    const newAccount = saveBankAccount({
+    const newAccount = await saveBankAccount({
       customerId,
       bankName: finalBankName,
       accountHolderName: accountHolderName.trim(),
@@ -100,7 +108,7 @@ export function CustomerBankMapping() {
       isPreferred: accounts.length === 0, // First account is auto-preferred
     });
 
-    refreshAccounts();
+    await refreshAccounts();
     resetForm();
     setShowAddForm(false);
     setSuccessMsg(
@@ -109,17 +117,17 @@ export function CustomerBankMapping() {
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const handleDelete = (accountId: string) => {
-    removeBankAccount(customerId, accountId);
-    refreshAccounts();
+  const handleDelete = async (accountId: string) => {
+    await removeBankAccount(customerId, accountId);
+    await refreshAccounts();
     setConfirmDelete(null);
     setSuccessMsg('Bank account removed.');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const handleSetPreferred = (accountId: string) => {
-    setPreferredBankAccount(customerId, accountId);
-    refreshAccounts();
+  const handleSetPreferred = async (accountId: string) => {
+    await setPreferredBankAccount(customerId, accountId);
+    await refreshAccounts();
     setSuccessMsg('Preferred bank updated.');
     setTimeout(() => setSuccessMsg(''), 3000);
   };

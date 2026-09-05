@@ -10,10 +10,17 @@ export function VendorSettings() {
   const [revenue, setRevenue] = useState(0);
 
   useEffect(() => {
-    const all = Object.values(getOrders()).filter(
-      (o: Order) => o.vendorId === session?.vendorId && o.paymentStatus === 'PAID'
-    );
-    setRevenue(all.reduce((sum, o) => sum + o.amount, 0));
+    let cancelled = false;
+    getOrders().then((all) => {
+      if (cancelled) return;
+      const paid = all.filter(
+        (o: Order) => o.vendorId === session?.vendorId && o.paymentStatus === 'PAID'
+      );
+      setRevenue(paid.reduce((sum, o) => sum + o.amount, 0));
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [session?.vendorId]);
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
 import { PaymentPage, TransactionHistory } from './components';
 import { Home } from './components/Home';
@@ -20,6 +20,7 @@ import { CustomerOrders } from './components/CustomerOrders';
 import { CustomerSettings } from './components/CustomerSettings';
 import { ManageUpi } from './components/ManageUpi';
 import { CustomerBankMapping } from './components/CustomerBankMapping';
+import { ChatWidget } from './components/ChatWidget';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { getAddFundsOrder, getDemoOrder, sessionMinutes } from './data/demo';
@@ -30,14 +31,23 @@ import './App.css';
 function PaymentRoute() {
   const [searchParams] = useSearchParams();
   const { session } = useAuth();
+  const [merchant, setMerchant] = useState<MerchantConfig>(() => ({
+    upiId: import.meta.env.VITE_MERCHANT_UPI_ID || 'merchant@phonepe',
+    merchantName: import.meta.env.VITE_MERCHANT_NAME || 'OORUNII Store',
+  }));
 
-  const merchant = useMemo<MerchantConfig>(
-    () => ({
-      upiId: getActiveUpiId(),
-      merchantName: import.meta.env.VITE_MERCHANT_NAME || 'OORUNII Store',
-    }),
-    []
-  );
+  // Load the active UPI ID from Supabase once available.
+  useEffect(() => {
+    let cancelled = false;
+    getActiveUpiId().then((upiId) => {
+      if (!cancelled) {
+        setMerchant((prev) => ({ ...prev, upiId }));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const order = useMemo(() => {
     const mode = searchParams.get('mode');
@@ -45,18 +55,13 @@ function PaymentRoute() {
       const amountParam = searchParams.get('amount');
       const parsedAmount = parseFloat(amountParam || '');
       const amount = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0;
-      const order = getAddFundsOrder(
+      return getAddFundsOrder(
         {
           id: session?.customerId ?? 'CUST001',
           name: session?.customerName ?? 'Customer',
         },
         amount
       );
-      const itemOrderId = searchParams.get('io');
-      if (itemOrderId) {
-        linkItemOrderToPayment(itemOrderId, order.orderId);
-      }
-      return order;
     }
     const amountParam = searchParams.get('amount');
     if (amountParam) {
@@ -73,6 +78,14 @@ function PaymentRoute() {
     }
     return getDemoOrder(searchParams.get('orderId') || undefined);
   }, [searchParams, session]);
+
+  // Link an add-funds order to its product-level item order, if provided.
+  useEffect(() => {
+    const itemOrderId = searchParams.get('io');
+    if (itemOrderId) {
+      linkItemOrderToPayment(itemOrderId, order.orderId);
+    }
+  }, [searchParams, order.orderId]);
 
   return (
     <PaymentPage
@@ -166,6 +179,7 @@ function App() {
             <Route path="bank-mapping" element={<CustomerBankMapping />} />
           </Route>
         </Routes>
+        <ChatWidget />
       </BrowserRouter>
     </AuthProvider>
   );

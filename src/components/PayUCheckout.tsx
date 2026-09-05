@@ -54,7 +54,7 @@ export function PayUCheckout() {
         paymentStatus: 'PENDING',
         paymentMethod: 'PAYU',
       };
-      saveOrder(order);
+      await saveOrder(order);
 
       // Submit to PayU
       await submitPayUPayment(

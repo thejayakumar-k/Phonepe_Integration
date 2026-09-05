@@ -1,31 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getOrders } from '../utils/storage';
+import { getOrders, getRefunds, saveRefund } from '../utils/storage';
 import { formatCurrency, formatDateTime } from '../utils/upi';
 import type { Order, Refund, RefundStatus } from '../types/payment';
-
-const REFUND_STORAGE_KEY = 'oorunii_refunds';
-
-function getRefunds(): Refund[] {
-  try {
-    const data = localStorage.getItem(REFUND_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveRefund(refund: Refund): void {
-  const refunds = getRefunds();
-  const idx = refunds.findIndex((r) => r.id === refund.id);
-  if (idx >= 0) {
-    refunds[idx] = refund;
-  } else {
-    refunds.push(refund);
-  }
-  localStorage.setItem(REFUND_STORAGE_KEY, JSON.stringify(refunds));
-}
 
 const refundStatusLabel: Record<RefundStatus, string> = {
   INITIATED: 'Refund Initiated',
@@ -52,20 +30,28 @@ export function VendorRefunds() {
   const [refundAmount, setRefundAmount] = useState('');
 
   useEffect(() => {
-    const allOrders = Object.values(getOrders());
-    const vendorPaid = allOrders.filter(
-      (o) =>
-        o.vendorId === session?.vendorId &&
-        o.paymentStatus === 'PAID' &&
-        o.paymentMethod === 'PAYU'
-    );
-    setPaidOrders(vendorPaid.sort((a, b) => b.createdAt - a.createdAt));
-    setRefunds(getRefunds());
-    setLoading(false);
+    let cancelled = false;
+    const load = async () => {
+      const [allOrders, allRefunds] = await Promise.all([getOrders(), getRefunds()]);
+      if (cancelled) return;
+      const vendorPaid = allOrders.filter(
+        (o) =>
+          o.vendorId === session?.vendorId &&
+          o.paymentStatus === 'PAID' &&
+          o.paymentMethod === 'PAYU'
+      );
+      setPaidOrders(vendorPaid.sort((a, b) => b.createdAt - a.createdAt));
+      setRefunds(allRefunds);
+      setLoading(false);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [session?.vendorId]);
 
   const handleInitiateRefund = useCallback(
-    (order: Order) => {
+    async (order: Order) => {
       const amount = parseFloat(refundAmount);
       if (!Number.isFinite(amount) || amount <= 0 || amount > order.amount) {
         return;
@@ -83,7 +69,7 @@ export function VendorRefunds() {
         vendorId: session?.vendorId,
       };
 
-      saveRefund(refund);
+      await saveRefund(refund);
       setRefunds((prev) => [...prev, refund]);
       setShowRefundModal(null);
       setRefundReason('');
@@ -91,21 +77,21 @@ export function VendorRefunds() {
 
       // Simulate PayU refund processing (in production, this would be an API call)
       // After a short delay, mark as PROCESSING
-      setTimeout(() => {
+      setTimeout(async () => {
         const updated = { ...refund, status: 'PROCESSING' as const };
-        saveRefund(updated);
+        await saveRefund(updated);
         setRefunds((prev) => prev.map((r) => (r.id === refund.id ? updated : r)));
       }, 2000);
 
       // Simulate completion after 5 seconds (for UAT demo)
-      setTimeout(() => {
+      setTimeout(async () => {
         const updated = {
           ...refund,
           status: 'COMPLETED' as const,
           completedAt: Date.now(),
           payuRefundId: `PAYU-REF-${Date.now()}`,
         };
-        saveRefund(updated);
+        await saveRefund(updated);
         setRefunds((prev) => prev.map((r) => (r.id === refund.id ? updated : r)));
       }, 8000);
     },

@@ -14,41 +14,51 @@ export function PaymentVerification() {
   const orderId = searchParams.get('orderId');
 
   useEffect(() => {
+    let cancelled = false;
     if (orderId) {
-      const existing = getOrder(orderId);
-      if (existing) {
-        setOrder(existing);
-      } else {
-        // Create new order for verification
-        const newOrder: Order = {
-          orderId: orderId,
-          vendorId: 'VENDOR001',
-          vendorName: 'OORUNII Store',
-          customerId: session?.customerId,
-          customerName: session?.customerName,
-          amount: parseFloat(searchParams.get('amount') || '0'),
-          currency: 'INR',
-          description: 'QR Payment',
-          createdAt: Date.now(),
-          expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes
-          paymentStatus: 'CUSTOMER_SUBMITTED',
-          paymentMethod: 'PHONEPE',
-          paymentSubmittedAt: Date.now(),
-        };
-        saveOrder(newOrder);
-        setOrder(newOrder);
-      }
+      getOrder(orderId).then((existing) => {
+        if (cancelled) return;
+        if (existing) {
+          setOrder(existing);
+        } else {
+          // Create new order for verification
+          const newOrder: Order = {
+            orderId: orderId,
+            vendorId: 'VENDOR001',
+            vendorName: 'OORUNII Store',
+            customerId: session?.customerId,
+            customerName: session?.customerName,
+            amount: parseFloat(searchParams.get('amount') || '0'),
+            currency: 'INR',
+            description: 'QR Payment',
+            createdAt: Date.now(),
+            expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes
+            paymentStatus: 'CUSTOMER_SUBMITTED',
+            paymentMethod: 'PHONEPE',
+            paymentSubmittedAt: Date.now(),
+          };
+          saveOrder(newOrder);
+          setOrder(newOrder);
+        }
+      });
     }
+    return () => {
+      cancelled = true;
+    };
   }, [orderId, session, searchParams]);
 
   useEffect(() => {
     if (!orderId) return;
-    const fetchStatus = () => {
-      const updated = getOrder(orderId);
-      if (updated) setOrder(updated);
+    let cancelled = false;
+    const fetchStatus = async () => {
+      const updated = await getOrder(orderId);
+      if (!cancelled && updated) setOrder(updated);
     };
     const interval = setInterval(fetchStatus, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [orderId]);
 
   if (!order) {

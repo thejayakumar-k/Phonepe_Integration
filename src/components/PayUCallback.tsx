@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getOrder, updateOrderStatus } from '../utils/storage';
 import { generatePayUResponseHash, getPayUConfig } from '../utils/payu';
 import { formatCurrency } from '../utils/upi';
-import type { PayUCallbackParams } from '../types/payment';
+import type { Order, PayUCallbackParams } from '../types/payment';
 
 interface VerifyResult {
   verified: boolean;
@@ -18,6 +18,7 @@ export function PayUCallback() {
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerifyResult | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
 
   const orderId = searchParams.get('oid') || searchParams.get('udf1') || '';
 
@@ -64,7 +65,7 @@ export function PayUCallback() {
             message: 'Payment verification failed. Hash mismatch detected.',
           });
           if (oid) {
-            updateOrderStatus(oid, 'FAILED');
+            await updateOrderStatus(oid, 'FAILED');
           }
           setVerifying(false);
           return;
@@ -73,7 +74,7 @@ export function PayUCallback() {
         // Determine payment status
         if (params.status === 'success') {
           if (oid) {
-            updateOrderStatus(oid, 'PAID', params.PayUOrderId || params.bank_ref_no);
+            await updateOrderStatus(oid, 'PAID', params.PayUOrderId || params.bank_ref_no);
           }
           setResult({
             verified: true,
@@ -82,7 +83,7 @@ export function PayUCallback() {
           });
         } else if (params.status === 'failure') {
           if (oid) {
-            updateOrderStatus(oid, 'FAILED');
+            await updateOrderStatus(oid, 'FAILED');
           }
           setResult({
             verified: false,
@@ -92,7 +93,7 @@ export function PayUCallback() {
         } else {
           // Pending or unknown status
           if (oid) {
-            updateOrderStatus(oid, 'FAILED');
+            await updateOrderStatus(oid, 'FAILED');
           }
           setResult({
             verified: false,
@@ -114,7 +115,16 @@ export function PayUCallback() {
     verify();
   }, [searchParams, orderId]);
 
-  const order = orderId ? getOrder(orderId) : null;
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+    getOrder(orderId).then((o) => {
+      if (!cancelled) setOrder(o);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
 
   return (
     <div className="payu-callback">

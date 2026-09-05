@@ -2,21 +2,32 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getMargin, getPreferredBankAccount } from '../utils/storage';
+import type { BankAccount } from '../types/payment';
 
 export function CustomerSettings() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
-  const [margin, setMargin] = useState(() => getMargin(session?.customerId));
-  const [preferredBank, setPreferredBank] = useState(() => getPreferredBankAccount(session?.customerId || ''));
+  const [margin, setMargin] = useState(0);
+  const [preferredBank, setPreferredBank] = useState<BankAccount | null>(null);
 
   useEffect(() => {
-    setMargin(getMargin(session?.customerId));
-    setPreferredBank(getPreferredBankAccount(session?.customerId || ''));
-    const interval = setInterval(() => {
-      setMargin(getMargin(session?.customerId));
-      setPreferredBank(getPreferredBankAccount(session?.customerId || ''));
-    }, 1000);
-    return () => clearInterval(interval);
+    let cancelled = false;
+    const refresh = async () => {
+      const [m, bank] = await Promise.all([
+        getMargin(session?.customerId),
+        getPreferredBankAccount(session?.customerId || ''),
+      ]);
+      if (!cancelled) {
+        setMargin(m);
+        setPreferredBank(bank);
+      }
+    };
+    refresh();
+    const interval = setInterval(refresh, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [session?.customerId]);
 
   const handleLogout = () => {

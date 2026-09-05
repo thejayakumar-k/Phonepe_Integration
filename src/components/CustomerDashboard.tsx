@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getMargin } from '../utils/storage';
@@ -9,13 +9,23 @@ const APP_VERSION = 'v1.0';
 export function CustomerDashboard() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [margin, setMargin] = useState(() => getMargin(session?.customerId));
+  const [margin, setMargin] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMargin(session?.customerId).then((value) => {
+      if (!cancelled) setMargin(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.customerId]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setMargin(getMargin(session?.customerId));
+    setTimeout(async () => {
+      setMargin(await getMargin(session?.customerId));
       setRefreshing(false);
     }, 500);
   };

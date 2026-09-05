@@ -1,0 +1,10 @@
+# Copy to worker/.dev.vars (gitignored) and fill in.
+# Get both from Supabase Dashboard → Project Settings → API
+SUPABASE_URL=https://your-project.supabase.co
+
+# Recommended: service_role key (server-side, bypasses RLS).
+# The Worker enforces per-user scoping itself.
+SUPABASE_SERVICE_ROLE_KEY=
+
+# Fallback used only if the service role key is not set.
+SUPABASE_ANON_KEY=your_anon_key

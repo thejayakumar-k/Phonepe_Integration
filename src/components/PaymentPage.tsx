@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import type { Order, MerchantConfig } from '../types/payment';
+import type { BankAccount, Order, MerchantConfig } from '../types/payment';
 import { OrderSummary } from './OrderSummary';
 import { PaymentTimer } from './PaymentTimer';
 import { PaymentStatus } from './PaymentStatus';
@@ -26,7 +26,7 @@ export function PaymentPage({
   const navigate = useNavigate();
   const { session } = useAuth();
   const { order: storedOrder } = useOrderStatus(initialOrder.orderId);
-  const preferredBank = getPreferredBankAccount(session?.customerId || initialOrder.customerId || '');
+  const [preferredBank, setPreferredBank] = useState<BankAccount | null>(null);
   const [order, setOrder] = useState<Order>(initialOrder);
   const [amountInput, setAmountInput] = useState(() =>
     String(initialOrder.amount || '')
@@ -43,27 +43,38 @@ export function PaymentPage({
   const hasLeftPageRef = useRef(false);
   const hasInitiatedRef = useRef(false);
 
-  // Load order from storage on mount
+  // Load order and preferred bank from storage on mount
   useEffect(() => {
-    const existing = getOrder(initialOrder.orderId);
-    if (existing) {
-      // If the saved session already expired, start a fresh one
-      if (existing.paymentStatus === 'EXPIRED' || existing.expiresAt <= Date.now()) {
-        const refreshed: Order = {
-          ...existing,
-          paymentStatus: 'PENDING',
-          expiresAt: Date.now() + sessionMinutes * 60 * 1000,
-        };
-        setOrder(refreshed);
-        saveOrder(refreshed);
+    let cancelled = false;
+    getOrder(initialOrder.orderId).then((existing) => {
+      if (cancelled) return;
+      if (existing) {
+        // If the saved session already expired, start a fresh one
+        if (existing.paymentStatus === 'EXPIRED' || existing.expiresAt <= Date.now()) {
+          const refreshed: Order = {
+            ...existing,
+            paymentStatus: 'PENDING',
+            expiresAt: Date.now() + sessionMinutes * 60 * 1000,
+          };
+          setOrder(refreshed);
+          saveOrder(refreshed);
+        } else {
+          setOrder(existing);
+        }
       } else {
-        setOrder(existing);
+        // First visit - save order
+        saveOrder(initialOrder);
       }
-    } else {
-      // First visit - save order
-      saveOrder(initialOrder);
-    }
-  }, [initialOrder, sessionMinutes]);
+    });
+    getPreferredBankAccount(
+      session?.customerId || initialOrder.customerId || ''
+    ).then((bank) => {
+      if (!cancelled) setPreferredBank(bank);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialOrder, sessionMinutes, session?.customerId]);
 
   // Update when admin verifies the order (PAID / FAILED / CANCELLED).
   // Local transitions (submit, COD, expiry) are NOT overwritten by stale
@@ -153,7 +164,7 @@ export function PaymentPage({
     };
   }, [order.paymentStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleAutoSubmit = useCallback(() => {
+  const handleAutoSubmit = useCallback(async () => {
     const now = Date.now();
     const updated: Order = {
       ...order,
@@ -162,21 +173,21 @@ export function PaymentPage({
       orderPlacedAt: order.orderPlacedAt || now,
     };
     setOrder(updated);
-    saveOrder(updated);
+    await saveOrder(updated);
     countdown.stop();
   }, [order, countdown]);
 
-  const handleCancelPayment = useCallback(() => {
+  const handleCancelPayment = useCallback(async () => {
     const updated: Order = {
       ...order,
       paymentStatus: 'CANCELLED',
     };
     setOrder(updated);
-    saveOrder(updated);
+    await saveOrder(updated);
     countdown.stop();
   }, [order, countdown]);
 
-  const handlePlaceCodOrder = useCallback(() => {
+  const handlePlaceCodOrder = useCallback(async () => {
     const now = Date.now();
     const updated: Order = {
       ...order,
@@ -186,11 +197,11 @@ export function PaymentPage({
       orderPlacedAt: order.orderPlacedAt || now,
     };
     setOrder(updated);
-    saveOrder(updated);
+    await saveOrder(updated);
     countdown.stop();
   }, [order, countdown]);
 
-  const handleRestartPayment = useCallback(() => {
+  const handleRestartPayment = useCallback(async () => {
     const newExpiresAt = Date.now() + sessionMinutes * 60 * 1000;
     const updated: Order = {
       ...order,
@@ -200,7 +211,7 @@ export function PaymentPage({
       orderPlacedAt: undefined,
     };
     setOrder(updated);
-    saveOrder(updated);
+    await saveOrder(updated);
     setPaymentRequestSent(false);
     hasReturnedRef.current = false;
     hasLeftPageRef.current = false;

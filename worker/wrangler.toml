@@ -1,0 +1,20 @@
+name = "oorunii-chat"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ── AI binding (Cloudflare Workers AI) ──────────────────────────────
+[ai]
+binding = "AI"
+
+# ── Plain-text vars (not secrets) ───────────────────────────────────
+[vars]
+SUPABASE_URL = "https://ijyoibmhualruyfuvlcu.supabase.co"
+# Default model; override with `wrangler secret put AI_MODEL` if needed.
+AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+
+# ── Secrets (set with `wrangler secret put`) ────────────────────────
+# SUPABASE_SERVICE_ROLE_KEY  -> recommended (server-side, bypasses RLS)
+# SUPABASE_ANON_KEY          -> fallback (uses permissive RLS policies)
+
+# ── Local dev values go in .dev.vars (gitignored) ───────────────────

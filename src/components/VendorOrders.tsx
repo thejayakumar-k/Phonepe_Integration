@@ -30,9 +30,10 @@ export function VendorOrders() {
   const [filter, setFilter] = useState<'all' | 'notpaid' | 'paid' | 'failed'>('all');
 
   useEffect(() => {
-    const fetchOrders = () => {
-      const ordersRecord = getOrders();
-      const allOrders = Object.values(ordersRecord);
+    let cancelled = false;
+    const fetchOrders = async () => {
+      const allOrders = await getOrders();
+      if (cancelled) return;
       const vendorOrders = allOrders.filter(
         (order) => order.vendorId === session?.vendorId
       );
@@ -41,6 +42,9 @@ export function VendorOrders() {
     };
 
     fetchOrders();
+    return () => {
+      cancelled = true;
+    };
   }, [session?.vendorId]);
 
   const filteredOrders = orders.filter((order) => {
@@ -61,15 +65,15 @@ export function VendorOrders() {
     return true;
   });
 
-  const handleMarkPaid = (orderId: string) => {
-    updateOrderStatus(orderId, 'PAID');
+  const handleMarkPaid = async (orderId: string) => {
+    await updateOrderStatus(orderId, 'PAID');
     setOrders(orders.map((o) =>
       o.orderId === orderId ? { ...o, paymentStatus: 'PAID' as PaymentStatus } : o
     ));
   };
 
-  const handleMarkFailed = (orderId: string) => {
-    updateOrderStatus(orderId, 'FAILED');
+  const handleMarkFailed = async (orderId: string) => {
+    await updateOrderStatus(orderId, 'FAILED');
     setOrders(orders.map((o) =>
       o.orderId === orderId ? { ...o, paymentStatus: 'FAILED' as PaymentStatus } : o
     ));

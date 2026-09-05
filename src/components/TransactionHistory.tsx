@@ -55,8 +55,10 @@ export function TransactionHistory() {
   const [transactions, setTransactions] = useState<Order[]>([]);
 
   useEffect(() => {
-    const fetchTransactions = () => {
-      const all = Object.values(getOrders());
+    let cancelled = false;
+    const fetchTransactions = async () => {
+      const all = await getOrders();
+      if (cancelled) return;
       setTransactions(
         all
           .filter((o) => o.customerId === session?.customerId)
@@ -66,7 +68,10 @@ export function TransactionHistory() {
 
     fetchTransactions();
     const interval = setInterval(fetchTransactions, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [session?.customerId]);
 
   const handleFilterChange = (filter: FilterType) => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../auth/AuthContext';
@@ -19,10 +19,22 @@ const virtualAccount = {
 export function CustomerAddMoney() {
   const navigate = useNavigate();
   const { session } = useAuth();
-  const merchantUpiId = getActiveUpiId();
+  const [merchantUpiId, setMerchantUpiId] = useState<string>(
+    () => import.meta.env.VITE_MERCHANT_UPI_ID || 'merchant@phonepe'
+  );
   const [amount, setAmount] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('upi');
   const [copied, setCopied] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    getActiveUpiId().then((id) => {
+      if (!cancelled) setMerchantUpiId(id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const amountValue = parseFloat(amount);
   const minAmount = 1;

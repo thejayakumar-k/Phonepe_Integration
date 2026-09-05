@@ -1,16 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUpiIds, saveUpiId, removeUpiId, setActiveUpiId, getActiveUpiId } from '../utils/storage';
 
 export function ManageUpi() {
   const navigate = useNavigate();
-  const [ids, setIds] = useState(() => getUpiIds());
+  const [ids, setIds] = useState<string[]>([]);
+  const [activeId, setActiveId] = useState<string>(
+    () => import.meta.env.VITE_MERCHANT_UPI_ID || 'merchant@phonepe'
+  );
   const [newId, setNewId] = useState('');
   const [error, setError] = useState('');
 
-  const refresh = () => setIds(getUpiIds());
+  useEffect(() => {
+    refresh();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleAdd = () => {
+  const refresh = async () => {
+    const [list, active] = await Promise.all([getUpiIds(), getActiveUpiId()]);
+    setIds(list);
+    setActiveId(active);
+  };
+
+  const handleAdd = async () => {
     const trimmed = newId.trim();
     if (!trimmed) {
       setError('Enter a UPI ID first.');
@@ -21,22 +32,20 @@ export function ManageUpi() {
       return;
     }
     setError('');
-    saveUpiId(trimmed);
+    await saveUpiId(trimmed);
     setNewId('');
-    refresh();
+    await refresh();
   };
 
-  const handleUse = (id: string) => {
-    setActiveUpiId(id);
-    refresh();
+  const handleUse = async (id: string) => {
+    await setActiveUpiId(id);
+    await refresh();
   };
 
-  const handleRemove = (id: string) => {
-    removeUpiId(id);
-    refresh();
+  const handleRemove = async (id: string) => {
+    await removeUpiId(id);
+    await refresh();
   };
-
-  const activeId = getActiveUpiId();
 
   return (
     <div className="customer-settings">
