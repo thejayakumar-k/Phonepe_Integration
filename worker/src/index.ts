@@ -1,6 +1,8 @@
 import { getSupabase } from './supabase';
 import { buildContext, type ChatIdentity } from './context';
 import { answerQuestion } from './chat';
+import { detectIntent, placeOrder } from './actions';
+import { PRODUCTS } from './products';
 import type { Env } from './env';
 
 const corsHeaders = (origin: string | null): Record<string, string> => ({
@@ -53,7 +55,24 @@ export default {
 
       const supabase = getSupabase(env);
       const context = await buildContext(supabase, identity);
-      const reply = await answerQuestion(env, identity, message, context);
+
+      // Detect and run any requested action, then let the LLM answer with
+      // the action result included in its context.
+      let actionContext = context;
+      if (identity.role === 'customer') {
+        const intent = detectIntent(message);
+        if (intent.intent === 'place_order') {
+          const result = await placeOrder(supabase, identity, intent.product, intent.qty ?? 1);
+          actionContext += `\n\nACTION RESULT: ${result.message}`;
+        } else if (intent.intent === 'list_products') {
+          const catalog = PRODUCTS.map(
+            (p) => `${p.name} — ${p.price} INR per ${p.unit} (${p.image})`
+          ).join('\n');
+          actionContext += `\n\nAVAILABLE PRODUCTS:\n${catalog}`;
+        }
+      }
+
+      const reply = await answerQuestion(env, identity, message, actionContext);
 
       return new Response(JSON.stringify({ reply }), {
         status: 200,
