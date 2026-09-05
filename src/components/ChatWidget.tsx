@@ -237,8 +237,12 @@ export function ChatWidget() {
     }
   };
 
-  // Hidden before login and on settings screens.
+  // Hidden before login, on the login/home pages, and on settings screens.
   const HIDDEN_PATHS = [
+    '/',
+    '/login',
+    '/login/customer',
+    '/login/vendor',
     '/customer/settings',
     '/vendor/settings',
     '/customer/manage-upi',
