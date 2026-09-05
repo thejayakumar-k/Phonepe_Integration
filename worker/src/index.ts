@@ -95,7 +95,7 @@ export default {
         // then LLM function-calling for natural-language phrasings.
         let intent = detectIntent(message);
         if (intent.intent === 'ask') {
-          const llmIntent = await detectIntentWithLLM(env, message);
+          const llmIntent = await detectIntentWithLLM(env, message, lang);
           if (llmIntent) intent = llmIntent;
         }
         if (intent.intent === 'place_order') {

@@ -17,33 +17,42 @@ const normalize = (s: string) =>
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Common synonyms / typos mapped to catalog names. */
-const ALIASES: Record<string, string> = {
-  Aquafina: 'aqua',
-  Bisleri: 'bislery',
-  Kinley: 'kinly',
+/** Common synonyms / typos / Tamil names mapped to catalog names. */
+const ALIASES: Record<string, string[]> = {
+  Aquafina: ['aqua', 'அக்வாஃபைனா', 'அக்வாபைனா', 'அக்வாஃபினா'],
+  Bisleri: ['bislery', 'பிஸ்லரி', 'பிஸ்லேரி'],
+  Kinley: ['kinly', 'கின்லி', 'கிண்லி'],
 };
 
 /**
  * Find a product by name, case-insensitively, wherever it appears in the
- * sentence (e.g. "order one bisleri", "i want a kinly please").
+ * sentence (e.g. "order one bisleri", "i want a kinly please",
+ * "ஒரு பிஸ்லரி ஆர்டர் போடு").
  */
 export function findProduct(input: string): Product | null {
   const needle = normalize(input);
-  if (!needle) return null;
+  // Only bail on an empty message. normalize() strips Tamil script, so a
+  // Tamil-only message yields "" and must still reach the alias matching.
+  if (!input.trim()) return null;
 
   // 1) Exact match ("bisleri", "aquafina").
-  const exact = PRODUCTS.find((p) => normalize(p.name) === needle);
-  if (exact) return exact;
+  if (needle) {
+    const exact = PRODUCTS.find((p) => normalize(p.name) === needle);
+    if (exact) return exact;
+  }
 
-  // 2) Word-boundary match on the original text (spaces intact):
-  //    "order one bisleri" → \bbisleri\b matches. Also checks aliases
-  //    so typos like "bislery" or "kinly" still resolve.
+  // 2) Match on the original text (spaces intact): word-boundary regex
+  //    for Latin names (\b is ASCII-only), plain substring for Tamil
+  //    names (Tamil script has no ASCII word boundaries).
   const lower = input.toLowerCase();
   for (const p of PRODUCTS) {
-    const names = [p.name, ALIASES[p.name]].filter(Boolean) as string[];
-    if (names.some((n) => new RegExp(`\\b${escapeRegExp(n)}\\b`, 'i').test(lower))) {
-      return p;
+    const names = [p.name, ...(ALIASES[p.name] || [])];
+    for (const n of names) {
+      const nonAscii = /[^\x00-\x7F]/.test(n);
+      const hit = nonAscii
+        ? lower.includes(n)
+        : new RegExp(`\\b${escapeRegExp(n)}\\b`, 'i').test(lower);
+      if (hit) return p;
     }
   }
   return null;
