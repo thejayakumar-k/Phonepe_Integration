@@ -46,7 +46,21 @@ export function ChatWidget() {
       const last = messages[messages.length - 1];
       if (speakEnabledRef.current && 'speechSynthesis' in window) {
         const lang = getChatLang();
-        const utterance = new SpeechSynthesisUtterance(last.content);
+        // Thanglish replies (English mode) are Latin text: drop stray Tamil
+        // script, emoji, and symbols so the English voice reads them cleanly.
+        // Tamil mode keeps the text as-is for the Tamil voice.
+        const unwantedForSpeech = (cp: number) =>
+          (cp >= 0x0b80 && cp <= 0x0bff) || // Tamil script
+          (cp >= 0x2190 && cp <= 0x2bff) || // arrows / misc symbols
+          (cp >= 0xfe00 && cp <= 0xfe0f) || // variation selectors
+          (cp >= 0x1f000 && cp <= 0x1faff); // emoji
+        const spokenText =
+          lang === 'ta'
+            ? last.content
+            : Array.from(last.content)
+                .filter((ch) => !unwantedForSpeech(ch.codePointAt(0) ?? 0))
+                .join('');
+        const utterance = new SpeechSynthesisUtterance(spokenText);
         utterance.rate = 1;
         utterance.lang = lang === 'ta' ? 'ta-IN' : 'en-IN';
         // Prefer a voice matching the selected language.
