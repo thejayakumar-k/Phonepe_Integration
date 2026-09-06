@@ -13,7 +13,7 @@ const TAMIL_SCRIPT_RE = /[\u0B80-\u0BFF]/;
  * message, the user is speaking Thanglish.
  */
 const THANGLISH_HINT_RE =
-  /\b(enna|endha|ethu|ethana|eppadi|epdi|evlo|evalo|enakku|enaku|unga|unnga|unbar|irukku|iruku|irukken|irukanga|vachurukken|vachuruku|vachirukken|venum|venam|vaanganum|vaangi|sapten|saptiya|saptacha|sapten|tharumaa|tharen|pannu|panrathu|pannen|pannuunga|podu|podunga|podanum|rathu|raththu|rendu|moonu|naalu|anju|aindhu|onnu|ondru|oru|pathu|pattu|nanri|nandri|seri|aamam|aama|illa|illai|illama|kandippa|podhuma|kaasu|panam|vasooli|kattunga|thambi|anna|akka|thanga|vaanga|poga|varum|kidaikkum|kidaikum|vendaam|vendam|sari|aana|appo|ippo|ipdi|romba|konjam|puriyala|purinjithu|mattum|verum|ellam|ella)\b/i;
+  /\b(thanglish|tanglish|enna|endha|ethu|ethana|eppadi|epdi|evlo|evalo|enakku|enaku|unga|unnga|unbar|irukku|iruku|irukken|irukanga|vachurukken|vachuruku|vachirukken|venum|venam|vaanganum|vaangi|sapten|saptiya|saptacha|sapten|tharumaa|tharen|pannu|panrathu|pannen|pannuunga|podu|podunga|podanum|rathu|raththu|rendu|moonu|naalu|anju|aindhu|onnu|ondru|oru|pathu|pattu|nanri|nandri|seri|aamam|aama|illa|illai|illama|kandippa|podhuma|kaasu|panam|vasooli|kattunga|thambi|anna|akka|thanga|vaanga|poga|varum|kidaikkum|kidaikum|vendaam|vendam|sari|aana|appo|ippo|ipdi|romba|konjam|puriyala|purinjithu|mattum|verum|ellam|ella)\b/i;
 
 /**
  * Should the assistant answer this message in Thanglish (Tamil written
@@ -64,6 +64,9 @@ export async function answerQuestion(
 
   const system = [
     'You are the OORUNII assistant, helping users of the OORUNII payment app.',
+    'You understand and can reply in English, Tamil (தமிழ் script), and Thanglish/Tanglish ' +
+      '(Tamil written in English letters, e.g. "sapten", "rendu bisleri venum"). If asked ' +
+      'whether you know Tanglish/Thanglish/Tamil, the answer is YES — briefly demonstrate it.',
     'Answer ONLY from the "APP DATA" context below. Never invent orders, amounts, or statuses.',
     languageRule,
     'Be concise and friendly. Use ₹ for currency (e.g. ₹500.00).',
