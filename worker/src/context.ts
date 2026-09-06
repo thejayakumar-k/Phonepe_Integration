@@ -54,9 +54,8 @@ export async function buildContext(
       lines.push(
         `- #${o.order_id} | ${o.description} | ${inr(Number(o.amount))} | status=${o.payment_status} | created ${date(Number(o.created_at))}${o.transaction_id ? ` | txn ${o.transaction_id}` : ''}`
       );
-    }
-
-    // Item orders (product purchases)
+    }    // Item orders (product purchases) — include item names so the bot can
+    // answer "what did I order?" / "what is in order #X?" questions.
     let itemOrders: Row[] = [];
     if (customerId) {
       const { data } = await supabase
@@ -69,8 +68,13 @@ export async function buildContext(
     }
     lines.push(`Product orders (${itemOrders.length}):`);
     for (const o of itemOrders) {
+      const items = Array.isArray(o.items)
+        ? (o.items as Array<{ name?: string; qty?: number }>)
+            .map((it) => `${it.qty ?? 1}x ${it.name ?? 'item'}`)
+            .join(', ')
+        : '';
       lines.push(
-        `- ${o.id} | total ${inr(Number(o.total))} | status=${o.status} | ${date(Number(o.created_at))}`
+        `- ${o.id} | ${items || 'items not listed'} | total ${inr(Number(o.total))} | status=${o.status} | ${date(Number(o.created_at))}`
       );
     }
 

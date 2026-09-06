@@ -47,15 +47,19 @@ export async function answerQuestion(
 
   const languageRule =
     lang === 'ta'
-      ? 'Reply in Tamil (தமிழ்). Use Tamil script for the answer. The user may write in ' +
-        'Tamil script or Thanglish (Tamil spoken through English/Latin letters, e.g. ' +
-        '"rendu bisleri venum", "saptiya?", "en wallet la evlo irukku") — understand both ' +
-        'and always answer in Tamil script.'        : replyInThanglish(userMessage)
-          ? 'The user is speaking Thanglish (Tamil through English letters) or Tamil (possibly ' +
-            'spoken, transcribed to Tamil script). REPLY IN THANGLISH: write Tamil words using ' +
-            'English letters the way people text, mixed with natural English where the user used ' +
-            'English words (e.g. "Yes, sapten. Unga order #12345 place aagiduchu. Total: ₹500"). ' +
-            'Never use Tamil script in the reply.'
+      ? 'Think through the answer FIRST (internally, in English if easier), THEN write it out ' +
+        'completely in Tamil (தமிழ்) script. The Tamil answer must be just as complete and ' +
+        'detailed as the English one would be — answer EVERY part of the question, include ALL ' +
+        'numbers, order ids, dates, and statuses found in APP DATA, never truncate, never ' +
+        'answer only partially. The user may write in Tamil script or Thanglish (Tamil through ' +
+        'English letters, e.g. "rendu bisleri venum", "saptiya?", "en wallet la evlo irukku") ' +
+        '— understand both and always answer in Tamil script.'
+      : replyInThanglish(userMessage)
+        ? 'The user is speaking Thanglish (Tamil through English letters) or Tamil (possibly ' +
+          'spoken, transcribed to Tamil script). REPLY IN THANGLISH: write Tamil words using ' +
+          'English letters the way people text, mixed with natural English where the user used ' +
+          'English words (e.g. "Yes, sapten. Unga order #12345 place aagiduchu. Total: ₹500"). ' +
+          'Answer the COMPLETE question — never answer only partially. Never use Tamil script in the reply.'
         : 'Reply in English only.';
 
   const system = [
@@ -76,12 +80,17 @@ export async function answerQuestion(
     run: (model: string, inputs: unknown) => Promise<unknown>;
   };
 
+  // Tamil script needs ~2-3× the tokens per word of English, so give the
+  // model a bigger budget in Tamil mode — otherwise answers get cut off
+  // mid-sentence and look like the bot "can't answer everything".
+  const maxTokens = lang === 'ta' ? 1200 : replyInThanglish(userMessage) ? 700 : 500;
+
   const out = await ai.run(model, {
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: userMessage },
     ],
-    max_tokens: 500,
+    max_tokens: maxTokens,
   });
 
   const text = (out as AiTextGenerationOutput)?.response?.trim();
