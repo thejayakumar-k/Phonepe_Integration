@@ -5,30 +5,57 @@ interface AiTextGenerationOutput {
   response?: string;
 }
 
+const TAMIL_SCRIPT_RE = /[\u0B80-\u0BFF]/;
+
+/**
+ * Common Thanglish (Romanized Tamil) words that mark a Tamil message
+ * written in English letters. If any of these appear in a Latin-script
+ * message, the user is speaking Thanglish.
+ */
+const THANGLISH_HINT_RE =
+  /\b(enna|endha|ethu|ethana|eppadi|epdi|evlo|evalo|enakku|enaku|unga|unnga|unbar|irukku|iruku|irukken|irukanga|vachurukken|vachuruku|vachirukken|venum|venam|vaanganum|vaangi|sapten|saptiya|saptacha|sapten|tharumaa|tharen|pannu|panrathu|pannen|pannuunga|podu|podunga|podanum|rathu|raththu|rendu|moonu|naalu|anju|aindhu|onnu|ondru|oru|pathu|pattu|nanri|nandri|seri|aamam|aama|illa|illai|illama|kandippa|podhuma|kaasu|panam|vasooli|kattunga|thambi|anna|akka|thanga|vaanga|poga|varum|kidaikkum|kidaikum|vendaam|vendam|sari|aana|appo|ippo|ipdi|romba|konjam|puriyala|purinjithu|mattum|verum|ellam|ella)\b/i;
+
+/**
+ * Should the assistant answer this message in Thanglish (Tamil written
+ * with English letters)? True when the user typed Thanglish (Latin letters
+ * + Tamil words) or wrote in Tamil script — voice input in English mode
+ * arrives as Tamil script after auto-detection, and spoken Tamil gets a
+ * Thanglish reply so it stays in English letters. Purely-English messages
+ * stay English.
+ */
+function replyInThanglish(userMessage: string): boolean {
+  return TAMIL_SCRIPT_RE.test(userMessage) || THANGLISH_HINT_RE.test(userMessage);
+}
+
 /**
  * Answer the user's question using the provided data context.
  * Uses the Workers AI binding (env.AI.run) with a configurable model.
+ *
+ * Language handling is automatic within the two user-facing modes:
+ * - English mode: plain English input → English reply; Thanglish or Tamil
+ *   (script, e.g. from voice) input → Thanglish reply (English letters).
+ * - Tamil mode: always reply in Tamil script, understanding Thanglish input.
  */
 export async function answerQuestion(
   env: Env,
   identity: ChatIdentity,
   userMessage: string,
   context: string,
-  lang: 'en' | 'ta' | 'thanglish' = 'en'
+  lang: 'en' | 'ta' = 'en'
 ): Promise<string> {
   const model = env.AI_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
   const languageRule =
     lang === 'ta'
-      ? 'Reply in Tamil (தமிழ்). Use Tamil script for the answer.'
-      : lang === 'thanglish'
-        ? 'The user may write in Thanglish — Tamil spoken in English/Latin letters ' +
-          '(e.g. "rendu bisleri venum", "enakku oru kinley tharumaa", "ethana vachurukken", ' +
-          '"en wallet la evlo irukku"). Understand it even when mixed with English words ' +
-          '("enna price", "order podanum"). REPLY IN THANGLISH ONLY: write Tamil words using ' +
-          'English letters the way people text (e.g. "Unga order #12345 successfully place aagiduchu. ' +
-          'Total: ₹500"). Never use Tamil script in the reply; use English only for words the user ' +
-          'used in English (order, price, wallet, refund).'
+      ? 'Reply in Tamil (தமிழ்). Use Tamil script for the answer. The user may write in ' +
+        'Tamil script or Thanglish (Tamil spoken through English/Latin letters, e.g. ' +
+        '"rendu bisleri venum", "saptiya?", "en wallet la evlo irukku") — understand both ' +
+        'and always answer in Tamil script.'        : replyInThanglish(userMessage)
+          ? 'The user is speaking Thanglish (Tamil through English letters) or Tamil (possibly ' +
+            'spoken, transcribed to Tamil script). REPLY IN THANGLISH: write Tamil words using ' +
+            'English letters the way people text, mixed with natural English where the user used ' +
+            'English words (e.g. "Yes, sapten. Unga order #12345 place aagiduchu. Total: ₹500"). ' +
+            'Never use Tamil script in the reply.'
         : 'Reply in English only.';
 
   const system = [

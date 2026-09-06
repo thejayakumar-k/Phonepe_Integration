@@ -1,4 +1,4 @@
-export type ChatLang = 'en' | 'ta' | 'thanglish';
+export type ChatLang = 'en' | 'ta';
 
 const STORAGE_KEY = 'oorunii_chat_lang';
 
@@ -6,7 +6,9 @@ const STORAGE_KEY = 'oorunii_chat_lang';
 export function getChatLang(): ChatLang {
   try {
     const v = localStorage.getItem(STORAGE_KEY);
-    return v === 'ta' || v === 'thanglish' ? v : 'en';
+    return v === 'ta' ? 'ta' : 'en';
+    // Legacy 'thanglish' values fall back to English (Thanglish is now
+    // auto-detected inside both modes, no separate option).
   } catch {
     return 'en';
   }

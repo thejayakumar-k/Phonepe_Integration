@@ -46,13 +46,7 @@ export function ChatWidget() {
       const last = messages[messages.length - 1];
       if (speakEnabledRef.current && 'speechSynthesis' in window) {
         const lang = getChatLang();
-        // Thanglish replies are in Latin script, so read them with the
-        // Indian English voice; strip any stray Tamil script first.
-        const spokenText =
-          lang === 'thanglish'
-            ? last.content.replace(/[^\u0000-\u024F\u2000-\u206F]/g, ' ')
-            : last.content;
-        const utterance = new SpeechSynthesisUtterance(spokenText);
+        const utterance = new SpeechSynthesisUtterance(last.content);
         utterance.rate = 1;
         utterance.lang = lang === 'ta' ? 'ta-IN' : 'en-IN';
         // Prefer a voice matching the selected language.
@@ -150,9 +144,7 @@ export function ChatWidget() {
 
     if (SR) {
       const rec = new SR();
-      // Thanglish: capture with the Tamil engine so Tamil words are heard
-      // correctly; the worker understands both Tamil script and Thanglish.
-      rec.lang = getChatLang() === 'en' ? 'en-IN' : 'ta-IN';
+      rec.lang = getChatLang() === 'ta' ? 'ta-IN' : 'en-IN';
       rec.interimResults = false;
       rec.maxAlternatives = 1;
       let transcript = '';

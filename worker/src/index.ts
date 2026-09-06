@@ -40,7 +40,7 @@ export default {
         vendorName?: string;
       };
 
-      const lang = body.lang === 'ta' || body.lang === 'thanglish' ? body.lang : 'en';
+      const lang = body.lang === 'ta' ? 'ta' : 'en';
 
       // ── Speech-to-text: transcribe recorded audio with Whisper ────────
       if (path === '/api/transcribe') {
@@ -54,14 +54,12 @@ export default {
         const ai = env.AI as {
           run: (model: string, inputs: unknown) => Promise<unknown>;
         };
-        // English: force transcription/translation into English so replies
-        // never come back in Tamil. Tamil/Thanglish: auto-detect and keep
-        // the Tamil script — the LLM layer understands Thanglish too, so a
-        // Tamil-script transcript still answers correctly in Tamil script.
-        const whisperInput =
-          lang === 'en'
-            ? { audio, language: 'en', task: 'translate' }
-            : { audio };
+        // Auto-detect the spoken language in both modes: English speech is
+        // transcribed as English, Tamil speech as Tamil script. The reply
+        // layer understands all three inputs (English, Tamil script,
+        // Thanglish) and answers in the right style for the selected mode,
+        // so forcing translation here is no longer needed.
+        const whisperInput = { audio };
         const out = await ai.run('@cf/openai/whisper-large-v3-turbo', whisperInput);
         const text = ((out as { text?: string })?.text || '').trim();
         return new Response(JSON.stringify({ text }), {

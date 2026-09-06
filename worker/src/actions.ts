@@ -227,7 +227,7 @@ const INTENT_TOOLS = [
 export async function detectIntentWithLLM(
   env: Env,
   message: string,
-  lang: 'en' | 'ta' | 'thanglish' = 'en'
+  lang: 'en' | 'ta' = 'en'
 ): Promise<ChatIntent | null> {
   const model = env.AI_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
   const ai = env.AI as {
@@ -241,22 +241,19 @@ export async function detectIntentWithLLM(
           role: 'system',
           content:
             'You help the OORUNII assistant decide what the user wants. ' +
+            'The user may write in English, Tamil (தமிழ் script), or Thanglish (Tamil spoken ' +
+            'through English/Latin letters, e.g. "rendu bisleri venum", "saptiya?", ' +
+            '"order podu rendu bisleri", "en wallet la evlo irukku") — understand all three. ' +
+            'Translate common Thanglish phrases: "venum/vaanganum/vaangi" = want/buy, ' +
+            '"podu/poduunga/pannu" = put/place/order, "rendu/erandu" = two, "moonu" = three, ' +
+            '"onnu/oru" = one, "anju" = five, "pathu" = ten. Thanglish product names: ' +
+            '"pisleri/besleri" = Bisleri, "kinli" = Kinley, "thanneer" = water/Aquafina. ' +
             (lang === 'ta'
-              ? 'The user writes in Tamil (தமிழ்). Recognize Tamil order phrases ' +
+              ? 'The selected reply language is Tamil: recognize Tamil order phrases ' +
                 '(e.g. "ஒரு பிஸ்லரி ஆர்டர் போடு" = order one Bisleri, "வாங்க" = buy, ' +
                 '"இரண்டு கின்லி" = two Kinley) and Tamil product names: ' +
-                'பிஸ்லரி = Bisleri, கின்லி = Kinley, அக்வாஃபைனா = Aquafina. ' +
-                'Call place_order with the English product name. '
-              : lang === 'thanglish'
-                ? 'The user writes in Thanglish — Tamil spoken through English/Latin letters, ' +
-                  'often mixed with real English words. Translate common phrases: ' +
-                  '"venum/vaanganum/vaangi" = want/buy, "podu/poduunga/pannu" = put/place/order, ' +
-                  '"rendu/erandu" = two, "moonu" = three, "onnu/oru" = one, "anju" = five, "pathu" = ten. ' +
-                  'Thanglish product names: "bisleri/pisleri/besleri" = Bisleri, ' +
-                  '"kinley/kinli/kinly" = Kinley, "aquafina/aquafina water/thanneer" = Aquafina. ' +
-                  '"order podu rendu bisleri" = order two Bisleri. ' +
-                  'Call place_order with the ENGLISH product name and numeric qty. '
-                : '') +
+                'பிஸ்லரி = Bisleri, கின்லி = Kinley, அக்வாஃபைனா = Aquafina. '
+              : '') +
             'Use place_order when the user clearly asks to order/buy/purchase a specific product; ' +
             'use list_products when they ask what they can order or what products are available ' +
             '(e.g. "what can i order", "what do you sell"). ' +
