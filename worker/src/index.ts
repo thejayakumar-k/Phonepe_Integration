@@ -2,7 +2,7 @@ import { getSupabase } from './supabase';
 import { buildContext, type ChatIdentity } from './context';
 import { answerQuestion } from './chat';
 import { detectIntent, detectIntentWithLLM, placeOrder, cancelOrders } from './actions';
-import { PRODUCTS } from './products';
+import { fetchProducts } from './products';
 import type { Env } from './env';
 
 const corsHeaders = (origin: string | null): Record<string, string> => ({
@@ -85,30 +85,34 @@ export default {
       };
 
       const supabase = getSupabase(env);
+      // Live product catalog from the database — a product added there is
+      // known to the bot on the very next message (name, price, unit, and
+      // English/Tamil/Thanglish spellings). Falls back to a seed list if
+      // the table is unavailable.
+      const products = await fetchProducts(supabase);
       const context = await buildContext(supabase, identity);
+      const catalog = products
+        .map((p) => `${p.name} — ₹${Number(p.price).toFixed(2)} per ${p.unit} (${p.image})`)
+        .join('\n');
 
       // Detect and run any requested action, then let the LLM answer with
-      // the action result included in its context.
-      let actionContext = context;
+      // the action result included in its context. The catalog is always
+      // present so price/catalog questions work for every product.
+      let actionContext = `${context}\n\nAVAILABLE PRODUCTS:\n${catalog}`;
       if (identity.role === 'customer') {
         // Fast deterministic path first (product name mentioned directly),
         // then LLM function-calling for natural-language phrasings.
-        let intent = detectIntent(message);
+        let intent = detectIntent(message, products);
         if (intent.intent === 'ask') {
-          const llmIntent = await detectIntentWithLLM(env, message, lang);
+          const llmIntent = await detectIntentWithLLM(env, message, lang, products);
           if (llmIntent) intent = llmIntent;
         }
         if (intent.intent === 'place_order') {
-          const result = await placeOrder(supabase, identity, intent.product, intent.qty ?? 1);
+          const result = await placeOrder(supabase, identity, intent.product, intent.qty ?? 1, products);
           actionContext += `\n\nACTION RESULT: ${result.message}`;
         } else if (intent.intent === 'cancel_orders') {
           const result = await cancelOrders(supabase, identity, intent.orderId);
           actionContext += `\n\nACTION RESULT: ${result.message}`;
-        } else if (intent.intent === 'list_products') {
-          const catalog = PRODUCTS.map(
-            (p) => `${p.name} — ${p.price} INR per ${p.unit} (${p.image})`
-          ).join('\n');
-          actionContext += `\n\nAVAILABLE PRODUCTS:\n${catalog}`;
         }
       }
 

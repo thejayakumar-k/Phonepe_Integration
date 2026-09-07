@@ -93,6 +93,30 @@ create table if not exists public.upi_ids (
   position integer not null default 0
 );
 
+-- ── Products (chatbot + cart catalog — fully automatic) ────────────
+-- The chatbot and the cart page read this table on every load, so a
+-- product added here is understood immediately (name, price, unit,
+-- image, and any English / Tamil / Thanglish spellings in `aliases`).
+-- No code changes or redeploys needed.
+create table if not exists public.products (
+  id serial primary key,
+  name text not null unique,
+  price numeric not null default 0,
+  unit text not null default '',
+  image text not null default '',
+  aliases text[] not null default '{}'
+);
+
+insert into public.products (name, price, unit, image, aliases)
+values
+  ('Aquafina', 20.0, 'PACK (LITER)', '💧',
+   array['aqua', 'அக்வாஃபைனா', 'அக்வாபைனா', 'அக்வாஃபினா', 'thanneer', 'thannir', 'tanneer', 'aquafina water']),
+  ('Bisleri', 40.0, 'CAN (LITER)', '🧊',
+   array['bislery', 'bisleri water', 'பிஸ்லரி', 'பிஸ்லேரி', 'pisleri', 'besleri', 'bisleri']),
+  ('Kinley', 25.0, 'PACK (LITER)', '💧',
+   array['kinly', 'kinli', 'கின்லி', 'கிண்லி', 'kinley water'])
+on conflict (name) do nothing;
+
 -- ── Row Level Security ─────────────────────────────────────────────
 -- NOTE: These are PERMISSIVE policies so the frontend (publishable key)
 -- can read/write. For production, replace with auth-based policies
@@ -105,6 +129,7 @@ alter table public.refunds enable row level security;
 alter table public.bank_accounts enable row level security;
 alter table public.margins enable row level security;
 alter table public.upi_ids enable row level security;
+alter table public.products enable row level security;
 
 create policy "anon_all_orders" on public.orders for all using (true) with check (true);
 create policy "anon_all_item_orders" on public.item_orders for all using (true) with check (true);
@@ -113,3 +138,4 @@ create policy "anon_all_refunds" on public.refunds for all using (true) with che
 create policy "anon_all_bank_accounts" on public.bank_accounts for all using (true) with check (true);
 create policy "anon_all_margins" on public.margins for all using (true) with check (true);
 create policy "anon_all_upi_ids" on public.upi_ids for all using (true) with check (true);
+create policy "anon_all_products" on public.products for all using (true) with check (true);

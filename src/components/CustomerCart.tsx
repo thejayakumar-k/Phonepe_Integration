@@ -3,8 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getMargin, subtractMargin, saveItemOrder, generateItemOrderId } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus, PaymentMethod } from '../types/payment';
+import { supabase } from '../lib/supabase';
 
-const products = [
+type CatalogProduct = { id: number; name: string; price: number; unit: string; image: string };
+
+/** Seed catalog, used until the products table is reachable. */
+const DEFAULT_PRODUCTS: CatalogProduct[] = [
   { id: 1, name: 'Aquafina', price: 20.00, unit: 'PACK (LITER)', image: '💧' },
   { id: 2, name: 'Bisleri', price: 40.00, unit: 'CAN (LITER)', image: '🧊' },
   { id: 3, name: 'Kinley', price: 25.00, unit: 'PACK (LITER)', image: '💧' },
@@ -15,6 +19,25 @@ type CartPaymentMethod = 'upi' | 'qr' | 'wallet' | 'cod';
 export function CustomerCart() {
   const navigate = useNavigate();
   const { session } = useAuth();
+  const [products, setProducts] = useState<CatalogProduct[]>(DEFAULT_PRODUCTS);
+
+  // Load the live catalog from the products table so a product added in
+  // the database shows up here automatically — no code changes needed.
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from('products')
+      .select('id, name, price, unit, image')
+      .order('id')
+      .then(({ data, error }) => {
+        if (!error && data && data.length > 0 && !cancelled) {
+          setProducts(data as CatalogProduct[]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [cart, setCart] = useState<{id: number; qty: number}[]>(() => {
     const saved = localStorage.getItem('customer_cart');
     return saved ? (JSON.parse(saved) as {id: number; qty: number}[]) : [];

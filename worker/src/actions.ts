@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ChatIdentity } from './context';
 import type { Env } from './env';
-import { PRODUCTS, findProduct } from './products';
+import { findProduct, type Product } from './products';
 
 export type ChatIntent =
   | { intent: 'place_order'; product?: string; qty?: number }
@@ -124,7 +124,7 @@ function extractQty(lower: string): number {
  * catalog-style questions trigger a product list; everything else is a
  * plain question.
  */
-export function detectIntent(message: string): ChatIntent {
+export function detectIntent(message: string, products: Product[]): ChatIntent {
   const lower = message.toLowerCase().trim();
   if (!lower) return { intent: 'ask' };
 
@@ -151,7 +151,7 @@ export function detectIntent(message: string): ChatIntent {
 
   // Order intent: message mentions a known product (Latin, Tamil, or
   // Thanglish name).
-  const product = findProduct(lower);
+  const product = findProduct(lower, products);
   if (product) {
     // Price questions ("how much is aquafina?", "பிஸ்லரி எவ்வளவு?",
     // "bisleri ethana") are not orders.
@@ -175,39 +175,52 @@ export function detectIntent(message: string): ChatIntent {
 }
 
 
-const CATALOG_LINE = 'Products: Aquafina (₹20), Bisleri (₹40), Kinley (₹25)';
-
-const INTENT_TOOLS = [
-  {
-    type: 'function',
-    function: {
-      name: 'place_order',
-      description:
-        'Place an order for a product. Call ONLY when the user clearly wants to buy/order a product (e.g. "buy bisleri", "order 2 aquafina", "one kinley please"). ' + CATALOG_LINE + '. If the product is not clear, do NOT call this function.',
-      parameters: {
-        type: 'object',
-        properties: {
-          product: { type: 'string', description: 'Exact product name (Aquafina, Bisleri, or Kinley).' },
-          qty: { type: 'integer', description: 'Quantity, default 1.' },
+/**
+ * Build the function-calling tools for intent detection. The catalog and
+ * its aliases come from the database, so newly added products are
+ * understood without any code changes.
+ */
+function buildIntentTools(products: Product[]) {
+  const catalog = products.map((p) => `${p.name} (${inr(p.price)})`).join(', ');
+  const aliasHints = products
+    .map((p) => {
+      const also = p.aliases.length > 0 ? ` (also ${p.aliases.join(', ')})` : '';
+      return `${p.name}${also}`;
+    })
+    .join('; ');
+  return [
+    {
+      type: 'function',
+      function: {
+        name: 'place_order',
+        description:
+          'Place an order for a product. Call ONLY when the user clearly wants to buy/order a product (e.g. "buy bisleri", "order 2 aquafina", "one kinley please"). ' +
+          'Catalog: ' + catalog + '. The user may refer to a product by any of these names: ' +
+          aliasHints + '. If the product is not clear, do NOT call this function.',
+        parameters: {
+          type: 'object',
+          properties: {
+            product: { type: 'string', description: 'Exact product name from the catalog (' + products.map((p) => p.name).join(', ') + ').' },
+            qty: { type: 'integer', description: 'Quantity, default 1.' },
+          },
+          required: ['product'],
         },
-        required: ['product'],
       },
     },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'list_products',
-      description: 'List the available products when the user asks what is available to order.',
-      parameters: { type: 'object', properties: {} },
+    {
+      type: 'function',
+      function: {
+        name: 'list_products',
+        description: 'List the available products when the user asks what is available to order.',
+        parameters: { type: 'object', properties: {} },
+      },
     },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'cancel_orders',
-      description:
-        'Cancel orders. Call when the user asks to cancel their order(s), e.g. "cancel all orders", "cancel my orders", "cancel order #12345", or "cancel order 99901" (last digits of the order number). Only unpaid orders can be cancelled.',
+    {
+      type: 'function',
+      function: {
+        name: 'cancel_orders',
+        description:
+          'Cancel orders. Call when the user asks to cancel their order(s), e.g. "cancel all orders", "cancel my orders", "cancel order #12345", or "cancel order 99901" (last digits of the order number). Only unpaid orders can be cancelled.',
       parameters: {
         type: 'object',
         properties: {
@@ -216,7 +229,8 @@ const INTENT_TOOLS = [
       },
     },
   },
-];
+  ];
+}
 
 /**
  * Natural-language intent detection via LLM function calling. Handles
@@ -227,12 +241,20 @@ const INTENT_TOOLS = [
 export async function detectIntentWithLLM(
   env: Env,
   message: string,
-  lang: 'en' | 'ta' = 'en'
+  lang: 'en' | 'ta' = 'en',
+  products: Product[]
 ): Promise<ChatIntent | null> {
   const model = env.AI_MODEL || '@cf/qwen/qwen3-30b-a3b-fp8';
   const ai = env.AI as {
     run: (model: string, inputs: unknown) => Promise<unknown>;
   };
+  const catalog = products.map((p) => `${p.name} (${inr(p.price)})`).join(', ');
+  const aliasHints = products
+    .map((p) => {
+      const also = p.aliases.length > 0 ? ` (also ${p.aliases.join(', ')})` : '';
+      return `${p.name}${also}`;
+    })
+    .join('; ');
 
   try {
     const out = await ai.run(model, {
@@ -246,22 +268,21 @@ export async function detectIntentWithLLM(
             '"order podu rendu bisleri", "en wallet la evlo irukku") — understand all three. ' +
             'Translate common Thanglish phrases: "venum/vaanganum/vaangi" = want/buy, ' +
             '"podu/poduunga/pannu" = put/place/order, "rendu/erandu" = two, "moonu" = three, ' +
-            '"onnu/oru" = one, "anju" = five, "pathu" = ten. Thanglish product names: ' +
-            '"pisleri/besleri" = Bisleri, "kinli" = Kinley, "thanneer" = water/Aquafina. ' +
+            '"onnu/oru" = one, "anju" = five, "pathu" = ten. ' +
             (lang === 'ta'
               ? 'The selected reply language is Tamil: recognize Tamil order phrases ' +
                 '(e.g. "ஒரு பிஸ்லரி ஆர்டர் போடு" = order one Bisleri, "வாங்க" = buy, ' +
-                '"இரண்டு கின்லி" = two Kinley) and Tamil product names: ' +
-                'பிஸ்லரி = Bisleri, கின்லி = Kinley, அக்வாஃபைனா = Aquafina. '
+                '"இரண்டு கின்லி" = two Kinley). '
               : '') +
             'Use place_order when the user clearly asks to order/buy/purchase a specific product; ' +
             'use list_products when they ask what they can order or what products are available ' +
             '(e.g. "what can i order", "what do you sell"). ' +
-            'Otherwise call no function. ' + CATALOG_LINE,
+            'Otherwise call no function. Catalog: ' + catalog +
+            '. The user may refer to a product by any of these names: ' + aliasHints + '.',
         },
         { role: 'user', content: message },
       ],
-      tools: INTENT_TOOLS as never,
+      tools: buildIntentTools(products) as never,
       max_tokens: 200,
     });
 
@@ -327,15 +348,16 @@ export async function placeOrder(
   supabase: SupabaseClient,
   identity: ChatIdentity,
   productName: string | undefined,
-  qty: number
+  qty: number,
+  products: Product[]
 ): Promise<ActionResult> {
   if (!identity.customerId) {
     return { ok: false, message: 'You must be logged in as a customer to place an order.' };
   }
 
-  const product = findProduct(productName || '');
+  const product = findProduct(productName || '', products);
   if (!product) {
-    const catalog = PRODUCTS.map((p) => `${p.name} (${inr(p.price)} ${p.unit})`).join(', ');
+    const catalog = products.map((p) => `${p.name} (${inr(p.price)} ${p.unit})`).join(', ');
     return { ok: false, message: `I could not find that product. Available: ${catalog}.` };
   }
 
