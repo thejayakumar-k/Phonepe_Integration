@@ -68,6 +68,7 @@ const KNOWN_UPI_HANDLES = [
   '@upi', '@nsdl', '@jio', '@fam', '@slice', '@cub',
   '@aubank', '@indus', '@bob', '@pnb', '@canara',
   '@federal', '@southindian', '@karurvysya', '@cityunion',
+  '@ptaxis', '@yptaxi', '@pockets', '@rbl', '@tatacap', '@triok',
 ];
 
 /**
