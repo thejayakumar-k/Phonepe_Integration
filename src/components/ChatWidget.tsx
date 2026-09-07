@@ -59,12 +59,46 @@ export function ChatWidget() {
     }
   }, [messages, loading, open]);
 
+  // Browser voices load asynchronously — getVoices() is empty at first and
+  // fills in after the 'voiceschanged' event. Keep the latest list in a ref
+  // so speech always picks a real voice for the selected language.
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    const load = () => {
+      voicesRef.current = window.speechSynthesis.getVoices();
+    };
+    load();
+    window.speechSynthesis.addEventListener('voiceschanged', load);
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', load);
+    };
+  }, []);
+
   useEffect(() => {
     speakEnabledRef.current = speakEnabled;
     if (!speakEnabled) {
       window.speechSynthesis?.cancel();
     }
   }, [speakEnabled]);
+
+  // Pick the best available voice for a language: exact match first, then
+  // a Google voice of that language, then any voice of that language.
+  const pickVoice = (lang: ChatLang): SpeechSynthesisVoice | null => {
+    const target = SPEECH_LANG[lang].toLowerCase();
+    const norm = (l: string) => l.toLowerCase().replace('_', '-');
+    const voices = voicesRef.current;
+    return (
+      voices.find((v) => norm(v.lang) === target) ||
+      voices.find(
+        (v) =>
+          v.name.toLowerCase().includes('google') && norm(v.lang).startsWith(lang)
+      ) ||
+      voices.find((v) => norm(v.lang).startsWith(lang)) ||
+      null
+    );
+  };
 
   // Speak assistant replies aloud when enabled, using the selected language's voice.
   useEffect(() => {
@@ -92,14 +126,29 @@ export function ChatWidget() {
         const spokenText = Array.from(last.content)
           .filter((ch) => keepChar(ch.codePointAt(0) ?? 0))
           .join('');
-        const utterance = new SpeechSynthesisUtterance(spokenText);
-        utterance.rate = 1;
-        utterance.lang = SPEECH_LANG[lang];
-        // Prefer a voice matching the selected language.
-        const voices = window.speechSynthesis.getVoices();
-        const voice = voices.find((v) => v.lang.toLowerCase().startsWith(lang));
-        if (voice) utterance.voice = voice;
-        window.speechSynthesis.speak(utterance);
+        if (!spokenText) return;
+
+        const speak = () => {
+          // Speak only the latest reply — cancel anything still playing.
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(spokenText);
+          utterance.rate = 1;
+          utterance.lang = SPEECH_LANG[lang];
+          const voice = pickVoice(lang);
+          if (voice) utterance.voice = voice;
+          window.speechSynthesis.speak(utterance);
+        };
+
+        if (voicesRef.current.length > 0) {
+          speak();
+        } else {
+          // Voices still loading — speak as soon as they arrive.
+          const onVoices = () => {
+            window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+            speak();
+          };
+          window.speechSynthesis.addEventListener('voiceschanged', onVoices);
+        }
       }
     }
   }, [messages]);
