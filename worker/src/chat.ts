@@ -15,12 +15,33 @@ const HINDI_SCRIPT_RE = /[\u0900-\u097F]/;
 const MALAYALAM_SCRIPT_RE = /[\u0D00-\u0D7F]/;
 
 /**
- * Common Thanglish (Romanized Tamil) words that mark a Tamil message
- * written in English letters. If any of these appear in a Latin-script
- * message, the user is speaking Thanglish.
+ * Common Thanglish/Tanglish (Romanized Tamil) words that mark a Tamil
+ * message written in English letters. If any of these appear in a
+ * Latin-script message, the user is speaking Tanglish.
  */
 const THANGLISH_HINT_RE =
   /\b(thanglish|tanglish|enna|endha|ethu|ethana|eppadi|epdi|evlo|evalo|enakku|enaku|unga|unnga|unbar|irukku|iruku|irukken|irukanga|vachurukken|vachuruku|vachirukken|venum|venam|vaanganum|vaangi|sapten|saptiya|saptacha|sapten|tharumaa|tharen|pannu|panrathu|pannen|pannuunga|podu|podunga|podanum|rathu|raththu|rendu|moonu|naalu|anju|aindhu|onnu|ondru|oru|pathu|pattu|nanri|nandri|seri|aamam|aama|illa|illai|illama|kandippa|podhuma|kaasu|panam|vasooli|kattunga|thambi|anna|akka|thanga|vaanga|poga|varum|kidaikkum|kidaikum|vendaam|vendam|sari|aana|appo|ippo|ipdi|romba|konjam|puriyala|purinjithu|mattum|verum|ellam|ella)\b/i;
+
+/**
+ * Hinglish (Romanized Hindi) words. Strong markers only, so plain English
+ * messages don't match.
+ */
+const HINGLISH_HINT_RE =
+  /\b(mujhe|chahiye|chahta|chahti|kya|kaise|kahan|kab|kis|kaun|kyun|kitna|kitne|nahi|hai|hain|haan|karo|karna|batao|bataiye|mera|meri|mere|aapka|aapki|aap|hum|accha|achha|theek|thik|kuch|thoda|paisa|paise|rupaye|bharo)\b/i;
+
+/**
+ * Tenglish (Romanized Telugu) words. Strong markers only.
+ */
+const TELUGU_ROMANIZED_HINT_RE =
+  /\b(naaku|nenu|meeru|meru|endi|emiti|emti|entha|enti|kavali|kaavali|kaavaali|cheppandi|cheyyandi|cheyandi|undi|undhi|ledu|ledhu|unnayi|ekkada|eppudu|ippudu|appudu|enduku|evaru|ela|mana|manam|dabbu|rupayalu|konadam|kaavaalante)\b/i;
+
+/**
+ * Manglish (Romanized Malayalam) words. Strong markers only; spellings
+ * that clash with Tamil words (e.g. "venam") are deliberately excluded so
+ * Malayalam isn't misread as Tanglish.
+ */
+const MALAYALAM_ROMANIZED_HINT_RE =
+  /\b(enikku|enikk|ningal|ningalkku|njan|ente|ethra|ethrayum|kodukku|parayu|paranjo|kuduthu|kudutha|aano|aanu|cheyyanam|avide|ivide|ippol|appol|randu|roopa|rupay|kondu|vendi|veno)\b/i;
 
 /**
  * Should the assistant answer this message in Thanglish (Tamil written
@@ -63,9 +84,9 @@ const LANG_RULES: Record<Exclude<ChatLang, 'en'>, LangInfo> = {
       'completely in Tamil (தமிழ்) script. The Tamil answer must be just as complete and ' +
       'detailed as the English one would be — answer EVERY part of the question, include ALL ' +
       'numbers, order ids, dates, and statuses found in APP DATA, never truncate, never ' +
-      'answer only partially. The user may write in Tamil script or Thanglish (Tamil through ' +
-      'English letters, e.g. "rendu bisleri venum", "saptiya?", "en wallet la evlo irukku") ' +
-      '— understand both and always answer in Tamil script.',
+      'answer only partially. The user may write in Tamil script or Tanglish/Thanglish (Tamil ' +
+      'through English letters, e.g. "rendu bisleri venum", "saptiya?", "en wallet la evlo ' +
+      'irukku") — understand both and always answer in Tamil script.',
   },
   te: {
     name: 'Telugu (తెలుగు)',
@@ -74,9 +95,9 @@ const LANG_RULES: Record<Exclude<ChatLang, 'en'>, LangInfo> = {
       'completely in Telugu (తెలుగు) script. The Telugu answer must be just as complete and ' +
       'detailed as the English one would be — answer EVERY part of the question, include ALL ' +
       'numbers, order ids, dates, and statuses found in APP DATA, never truncate, never ' +
-      'answer only partially. The user may write in Telugu script or romanized Telugu (e.g. ' +
-      '"rendu bisleri kavali", "na wallet lo entha undi") — understand both and always answer ' +
-      'in Telugu script.',
+      'answer only partially. The user may write in Telugu script or Tenglish (romanized ' +
+      'Telugu, Telugu through English letters, e.g. "rendu bisleri kavali", "na wallet lo ' +
+      'entha undi") — understand both and always answer in Telugu script.',
   },
   hi: {
     name: 'Hindi (हिन्दी)',
@@ -96,9 +117,9 @@ const LANG_RULES: Record<Exclude<ChatLang, 'en'>, LangInfo> = {
       'completely in Malayalam (മലയാളം) script. The Malayalam answer must be just as complete ' +
       'and detailed as the English one would be — answer EVERY part of the question, include ' +
       'ALL numbers, order ids, dates, and statuses found in APP DATA, never truncate, never ' +
-      'answer only partially. The user may write in Malayalam script or romanized Malayalam ' +
-      '(e.g. "enikku rendu bisleri venam", "ente wallet balance ethra") — understand both and ' +
-      'always answer in Malayalam script.',
+      'answer only partially. The user may write in Malayalam script or Manglish (romanized ' +
+      'Malayalam, Malayalam through English letters, e.g. "enikku rendu bisleri venam", ' +
+      '"ente wallet balance ethra") — understand both and always answer in Malayalam script.',
   },
 };
 
@@ -109,6 +130,26 @@ const SCRIPT_REPLY_RULES: Record<'ta' | 'te' | 'hi' | 'ml', string> = {
   hi: 'The user wrote in Hindi (हिन्दी / Devanagari) script. Understand it and reply completely in Hindi script — answer every part of the question, include all numbers/order ids/dates/statuses from APP DATA, never truncate. Never reply in English.',
   ml: 'The user wrote in Malayalam (മലയാളം) script. Understand it and reply completely in Malayalam script — answer every part of the question, include all numbers/order ids/dates/statuses from APP DATA, never truncate. Never reply in English.',
 };
+
+/** Reply rules for romanized Indic input detected inside English mode. */
+const ROMANIZED_REPLY_RULES: Record<'te' | 'hi' | 'ml', string> = {
+  te: 'The user wrote in Tenglish (romanized Telugu, Telugu in English letters, e.g. "naaku rendu bisleri kavali"). Understand it and reply completely in Telugu (తెలుగు) script — answer every part of the question, include all numbers/order ids/dates/statuses from APP DATA, never truncate. Never reply in English.',
+  hi: 'The user wrote in Hinglish (romanized Hindi, Hindi in English letters, e.g. "mujhe do bisleri chahiye"). Understand it and reply completely in Hindi (हिन्दी / Devanagari) script — answer every part of the question, include all numbers/order ids/dates/statuses from APP DATA, never truncate. Never reply in English.',
+  ml: 'The user wrote in Manglish (romanized Malayalam, Malayalam in English letters, e.g. "enikku randu bisleri venam"). Understand it and reply completely in Malayalam (മലയാളം) script — answer every part of the question, include all numbers/order ids/dates/statuses from APP DATA, never truncate. Never reply in English.',
+};
+
+/**
+ * Detect romanized (English-letter) Indic input. Tamil is handled by
+ * replyInThanglish; this covers Hindi (Hinglish), Telugu (Tenglish), and
+ * Malayalam (Manglish), checked before Tanglish so shared words like
+ * "rendu"/"venam" don't get misread as Tamil.
+ */
+function romanizedScriptInput(userMessage: string): 'te' | 'hi' | 'ml' | null {
+  if (HINGLISH_HINT_RE.test(userMessage)) return 'hi';
+  if (TELUGU_ROMANIZED_HINT_RE.test(userMessage)) return 'te';
+  if (MALAYALAM_ROMANIZED_HINT_RE.test(userMessage)) return 'ml';
+  return null;
+}
 
 const TRANSLATE_SUFFIX =
   ' If the user types or speaks English words mixed in, or even a whole English sentence, ' +
@@ -137,26 +178,36 @@ export async function answerQuestion(
   let languageRule: string;
   if (lang !== 'en') {
     languageRule = LANG_RULES[lang].replyRule + TRANSLATE_SUFFIX;
-  } else if (replyInThanglish(userMessage)) {
-    languageRule =
-      'The user is speaking Thanglish (Tamil in English letters) or Tamil. Reply ONLY in ' +
-      'Thanglish: Tamil words written with English letters the way people text, plus ' +
-      'English where natural (e.g. "Yes sapten, unga order #12345 place aagiduchu, total ' +
-      '₹500"). Never reply in full English, never use Tamil script, never show both ' +
-      'languages, never quote a second version — one Thanglish answer only, complete, ' +
-      'including any order/price info from APP DATA. The "ACTION RESULT:" text is data, ' +
-      'not your answer — convey it in Thanglish.';
   } else {
     const script = detectScriptInput(userMessage);
-    languageRule = script ? SCRIPT_REPLY_RULES[script] : 'Reply in English only.';
+    if (script) {
+      languageRule = SCRIPT_REPLY_RULES[script];
+    } else {
+      const romanized = romanizedScriptInput(userMessage);
+      if (romanized) {
+        languageRule = ROMANIZED_REPLY_RULES[romanized];
+      } else if (replyInThanglish(userMessage)) {
+        languageRule =
+          'The user is speaking Tanglish (Tamil in English letters) or Tamil. Reply ONLY in ' +
+          'Tanglish: Tamil words written with English letters the way people text, plus ' +
+          'English where natural (e.g. "Yes sapten, unga order #12345 place aagiduchu, total ' +
+          '₹500"). Never reply in full English, never use Tamil script, never show both ' +
+          'languages, never quote a second version — one Tanglish answer only, complete, ' +
+          'including any order/price info from APP DATA. The "ACTION RESULT:" text is data, ' +
+          'not your answer — convey it in Tanglish.';
+      } else {
+        languageRule = 'Reply in English only.';
+      }
+    }
   }
 
   const system = [
     'You are the OORUNII assistant, helping users of the OORUNII payment app.',
     'You understand and can reply in English, Tamil (தமிழ்), Telugu (తెలుగు), Hindi ' +
-      '(हिन्दी), and Malayalam (മലയാളം), as well as their romanized forms (e.g. ' +
-      'Thanglish/Tanglish for Tamil, Hinglish for Hindi). If asked whether you know any of ' +
-      'these languages, the answer is YES — briefly demonstrate it.',
+      '(हिन्दी), and Malayalam (മലയാളം), as well as their English-letter/romanized forms: ' +
+      'Tanglish/Thanglish (Tamil), Hinglish (Hindi), Tenglish (Telugu), and Manglish ' +
+      '(Malayalam). If asked whether you know any of these languages, the answer is YES — ' +
+      'briefly demonstrate it.',
     'Answer ONLY from the "APP DATA" context below. Never invent orders, amounts, or statuses.',
     languageRule,
     'Be concise and friendly. Use ₹ for currency (e.g. ₹500.00).',
