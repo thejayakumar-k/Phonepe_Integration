@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { saveOrder, getOrder } from '../utils/storage';
+import { getStoreInfo } from '../utils/store';
 import type { Order } from '../types/payment';
 
 export function PaymentVerification() {
@@ -16,7 +17,7 @@ export function PaymentVerification() {
   useEffect(() => {
     let cancelled = false;
     if (orderId) {
-      getOrder(orderId).then((existing) => {
+      Promise.all([getOrder(orderId), getStoreInfo()]).then(([existing, store]) => {
         if (cancelled) return;
         if (existing) {
           setOrder(existing);
@@ -24,8 +25,8 @@ export function PaymentVerification() {
           // Create new order for verification
           const newOrder: Order = {
             orderId: orderId,
-            vendorId: 'VENDOR001',
-            vendorName: 'OORUNII Store',
+            vendorId: store.vendorId,
+            vendorName: store.vendorName,
             customerId: session?.customerId,
             customerName: session?.customerName,
             amount: parseFloat(searchParams.get('amount') || '0'),

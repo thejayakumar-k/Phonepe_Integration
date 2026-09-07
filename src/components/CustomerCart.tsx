@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { getMargin, subtractMargin, saveItemOrder, generateItemOrderId } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus, PaymentMethod } from '../types/payment';
 import { supabase } from '../lib/supabase';
+import { getStoreInfo, type StoreInfo } from '../utils/store';
 
 type CatalogProduct = { id: number; name: string; price: number; unit: string; image: string };
 
@@ -20,6 +21,7 @@ export function CustomerCart() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const [products, setProducts] = useState<CatalogProduct[]>(DEFAULT_PRODUCTS);
+  const [store, setStore] = useState<StoreInfo>({ vendorId: 'VENDOR001', vendorName: 'OORUNII Store' });
 
   // Load the live catalog from the products table so a product added in
   // the database shows up here automatically — no code changes needed.
@@ -34,6 +36,17 @@ export function CustomerCart() {
           setProducts(data as CatalogProduct[]);
         }
       });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Store identity from the store_settings table (fallback to defaults).
+  useEffect(() => {
+    let cancelled = false;
+    getStoreInfo().then((info) => {
+      if (!cancelled) setStore(info);
+    });
     return () => {
       cancelled = true;
     };
@@ -70,8 +83,8 @@ export function CustomerCart() {
     id,
     customerId: session?.customerId || 'CUST001',
     customerName: session?.customerName,
-    vendorId: 'VENDOR001',
-    vendorName: 'OORUNII Store',
+    vendorId: store.vendorId,
+    vendorName: store.vendorName,
     items: cart
       .map((item) => {
         const product = getProduct(item.id);

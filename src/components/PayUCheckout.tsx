@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { generateTxnId, submitPayUPayment, getPayUConfig, getAppUrl } from '../utils/payu';
 import { formatCurrency } from '../utils/upi';
 import { saveOrder } from '../utils/storage';
+import { getStoreInfo } from '../utils/store';
 import type { Order } from '../types/payment';
 
 type PayMethod = 'upi' | 'card' | 'netbanking';
@@ -38,12 +39,13 @@ export function PayUCheckout() {
       const appUrl = getAppUrl();
       const orderId = `PU${Date.now()}`;
       const txnId = generateTxnId(orderId);
+      const store = await getStoreInfo();
 
       // Create order record
       const order: Order = {
         orderId,
-        vendorId: 'VENDOR001',
-        vendorName: import.meta.env.VITE_MERCHANT_NAME || 'OORUNII Store',
+        vendorId: store.vendorId,
+        vendorName: store.vendorName,
         customerId: session?.customerId,
         customerName: session?.customerName,
         amount: amountValue,

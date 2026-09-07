@@ -93,6 +93,33 @@ create table if not exists public.upi_ids (
   position integer not null default 0
 );
 
+-- ── Store settings (first row = active) ────────────────────────────
+-- The chatbot and the app read store identity from here, so changing
+-- the store name / vendor id / support contact needs no code changes.
+create table if not exists public.store_settings (
+  id serial primary key,
+  vendor_id text not null default 'VENDOR001',
+  store_name text not null default 'OORUNII Store',
+  currency text not null default 'INR',
+  support_contact text not null default ''
+);
+
+insert into public.store_settings (vendor_id, store_name, currency, support_contact)
+select 'VENDOR001', 'OORUNII Store', 'INR', ''
+where not exists (select 1 from public.store_settings);
+
+-- ── Knowledge base (chatbot answers these automatically) ───────────
+-- Add any question + answer here and the bot will know it on the next
+-- message — no code changes. `keywords` holds extra words the bot can
+-- use to match the question (English/Tamil/Thanglish).
+create table if not exists public.faqs (
+  id serial primary key,
+  question text not null,
+  answer text not null,
+  keywords text[] not null default '{}',
+  sort_order integer not null default 0
+);
+
 -- ── Products (chatbot + cart catalog — fully automatic) ────────────
 -- The chatbot and the cart page read this table on every load, so a
 -- product added here is understood immediately (name, price, unit,
@@ -130,6 +157,8 @@ alter table public.bank_accounts enable row level security;
 alter table public.margins enable row level security;
 alter table public.upi_ids enable row level security;
 alter table public.products enable row level security;
+alter table public.store_settings enable row level security;
+alter table public.faqs enable row level security;
 
 create policy "anon_all_orders" on public.orders for all using (true) with check (true);
 create policy "anon_all_item_orders" on public.item_orders for all using (true) with check (true);
@@ -139,3 +168,5 @@ create policy "anon_all_bank_accounts" on public.bank_accounts for all using (tr
 create policy "anon_all_margins" on public.margins for all using (true) with check (true);
 create policy "anon_all_upi_ids" on public.upi_ids for all using (true) with check (true);
 create policy "anon_all_products" on public.products for all using (true) with check (true);
+create policy "anon_all_store_settings" on public.store_settings for all using (true) with check (true);
+create policy "anon_all_faqs" on public.faqs for all using (true) with check (true);

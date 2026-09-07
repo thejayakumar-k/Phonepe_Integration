@@ -3,6 +3,7 @@ import { buildContext, type ChatIdentity } from './context';
 import { answerQuestion } from './chat';
 import { detectIntent, detectIntentWithLLM, placeOrder, cancelOrders } from './actions';
 import { fetchProducts } from './products';
+import { fetchStoreSettings, fetchFaqs } from './settings';
 import type { Env } from './env';
 
 const corsHeaders = (origin: string | null): Record<string, string> => ({
@@ -85,20 +86,32 @@ export default {
       };
 
       const supabase = getSupabase(env);
-      // Live product catalog from the database — a product added there is
-      // known to the bot on the very next message (name, price, unit, and
-      // English/Tamil/Thanglish spellings). Falls back to a seed list if
-      // the table is unavailable.
+      // Live data from the database — products, store identity, and the
+      // FAQ knowledge base are all read fresh on every message, so
+      // changes there are known instantly with no code changes.
       const products = await fetchProducts(supabase);
+      const store = await fetchStoreSettings(supabase);
+      const faqs = await fetchFaqs(supabase);
       const context = await buildContext(supabase, identity);
       const catalog = products
         .map((p) => `${p.name} — ₹${Number(p.price).toFixed(2)} per ${p.unit} (${p.image})`)
         .join('\n');
+      const storeInfo =
+        `Store: ${store.storeName} (ID: ${store.vendorId})` +
+        (store.supportContact ? ` | Support contact: ${store.supportContact}` : '');
+      const knowledge =
+        faqs.length > 0
+          ? '\n\nKNOWLEDGE BASE (answer from these when relevant):\n' +
+            faqs
+              .map((f) => `Q: ${f.question}\nA: ${f.answer}`)
+              .join('\n\n')
+          : '';
 
       // Detect and run any requested action, then let the LLM answer with
       // the action result included in its context. The catalog is always
       // present so price/catalog questions work for every product.
-      let actionContext = `${context}\n\nAVAILABLE PRODUCTS:\n${catalog}`;
+      let actionContext =
+        `${context}\n\n${storeInfo}\n\nAVAILABLE PRODUCTS:\n${catalog}` + knowledge;
       if (identity.role === 'customer') {
         // Fast deterministic path first (product name mentioned directly),
         // then LLM function-calling for natural-language phrasings.
@@ -108,7 +121,7 @@ export default {
           if (llmIntent) intent = llmIntent;
         }
         if (intent.intent === 'place_order') {
-          const result = await placeOrder(supabase, identity, intent.product, intent.qty ?? 1, products);
+          const result = await placeOrder(supabase, identity, intent.product, intent.qty ?? 1, products, store);
           actionContext += `\n\nACTION RESULT: ${result.message}`;
         } else if (intent.intent === 'cancel_orders') {
           const result = await cancelOrders(supabase, identity, intent.orderId);

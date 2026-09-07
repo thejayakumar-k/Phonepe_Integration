@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ChatIdentity } from './context';
 import type { Env } from './env';
 import { findProduct, type Product } from './products';
+import type { StoreSettings } from './settings';
 
 export type ChatIntent =
   | { intent: 'place_order'; product?: string; qty?: number }
@@ -349,7 +350,8 @@ export async function placeOrder(
   identity: ChatIdentity,
   productName: string | undefined,
   qty: number,
-  products: Product[]
+  products: Product[],
+  store: StoreSettings
 ): Promise<ActionResult> {
   if (!identity.customerId) {
     return { ok: false, message: 'You must be logged in as a customer to place an order.' };
@@ -377,8 +379,8 @@ export async function placeOrder(
     id,
     customer_id: identity.customerId,
     customer_name: identity.customerName ?? null,
-    vendor_id: 'VENDOR001',
-    vendor_name: 'OORUNII Store',
+    vendor_id: store.vendorId,
+    vendor_name: store.storeName,
     items: [{ name: product.name, qty, price: product.price, unit: product.unit, image: product.image }],
     total,
     status: 'PENDING',
