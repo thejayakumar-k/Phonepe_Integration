@@ -1,0 +1,1 @@
+{"root":["./src/actions.ts","./src/chat.ts","./src/context.ts","./src/env.ts","./src/index.ts","./src/products.ts","./src/settings.ts","./src/supabase.ts"],"version":"5.9.3"}
