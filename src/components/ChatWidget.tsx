@@ -125,7 +125,16 @@ export function ChatWidget() {
         };
         const spokenText = Array.from(last.content)
           .filter((ch) => keepChar(ch.codePointAt(0) ?? 0))
-          .join('');
+          .join('')
+          // Markdown syntax (e.g. **bold**, `code`, #hash) must not be
+          // read aloud — "**Aquafina**" should sound like "Aquafina".
+          .replace(/[*_`#~>]/g, '')
+          // List bullets ("- Aquafina", "+ Bisleri").
+          .replace(/^[-+]\s+/gm, '')
+          // Empty parentheses left behind by stripped emoji.
+          .replace(/\(\s*\)/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
         if (!spokenText) return;
 
         const speak = () => {
