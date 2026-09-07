@@ -131,6 +131,9 @@ export function ChatWidget() {
           .replace(/[*_`#~>]/g, '')
           // List bullets ("- Aquafina", "+ Bisleri").
           .replace(/^[-+]\s+/gm, '')
+          // ALL-CAPS words make TTS spell them out ("OORUNII" → "O O R U
+          // N I I"). Convert to title case so they're read as words.
+          .replace(/\b[A-Z]{2,}[0-9]*\b/g, (w) => w[0] + w.slice(1).toLowerCase())
           // Empty parentheses left behind by stripped emoji.
           .replace(/\(\s*\)/g, '')
           .replace(/\s+/g, ' ')
