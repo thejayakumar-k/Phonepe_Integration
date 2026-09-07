@@ -54,7 +54,9 @@ export async function answerQuestion(
         'numbers, order ids, dates, and statuses found in APP DATA, never truncate, never ' +
         'answer only partially. The user may write in Tamil script or Thanglish (Tamil through ' +
         'English letters, e.g. "rendu bisleri venum", "saptiya?", "en wallet la evlo irukku") ' +
-        '— understand both and always answer in Tamil script.'
+        '— understand both and always answer in Tamil script. If the user types or speaks ' +
+        'English words mixed in, or even a whole English sentence, understand it and translate ' +
+        'those words into Tamil in your reply — never switch the reply to English.'
       : replyInThanglish(userMessage)
         ? 'The user is speaking Thanglish (Tamil in English letters) or Tamil. Reply ONLY in ' +
           'Thanglish: Tamil words written with English letters the way people text, plus ' +

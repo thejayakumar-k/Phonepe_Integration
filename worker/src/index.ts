@@ -55,12 +55,13 @@ export default {
         const ai = env.AI as {
           run: (model: string, inputs: unknown) => Promise<unknown>;
         };
-        // Auto-detect the spoken language in both modes: English speech is
-        // transcribed as English, Tamil speech as Tamil script. The reply
-        // layer understands all three inputs (English, Tamil script,
-        // Thanglish) and answers in the right style for the selected mode,
-        // so forcing translation here is no longer needed.
-        const whisperInput = { audio };
+        // Transcribe the spoken audio. In Tamil mode, hint the language so
+        // mixed Tamil speech (with English words like "order", "wallet")
+        // comes back as Tamil script instead of being auto-detected as
+        // English. English mode keeps auto-detection — spoken Thanglish
+        // arrives as romanized text either way.
+        const whisperInput: { audio: string; language?: string } = { audio };
+        if (lang === 'ta') whisperInput.language = 'ta';
         const out = await ai.run('@cf/openai/whisper-large-v3-turbo', whisperInput);
         const text = ((out as { text?: string })?.text || '').trim();
         return new Response(JSON.stringify({ text }), {
