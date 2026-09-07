@@ -137,11 +137,14 @@ create table if not exists public.products (
 insert into public.products (name, price, unit, image, aliases)
 values
   ('Aquafina', 20.0, 'PACK (LITER)', '💧',
-   array['aqua', 'அக்வாஃபைனா', 'அக்வாபைனா', 'அக்வாஃபினா', 'thanneer', 'thannir', 'tanneer', 'aquafina water']),
+   array['aqua', 'அக்வாஃபைனா', 'அக்வாபைனா', 'அக்வாஃபினா', 'thanneer', 'thannir', 'tanneer', 'aquafina water',
+         'एक्वाफिना', 'అక్వాఫినా', 'അക്വാഫിന', 'pani', 'neellu', 'vellam']),
   ('Bisleri', 40.0, 'CAN (LITER)', '🧊',
-   array['bislery', 'bisleri water', 'பிஸ்லரி', 'பிஸ்லேரி', 'pisleri', 'besleri', 'bisleri']),
+   array['bislery', 'bisleri water', 'பிஸ்லரி', 'பிஸ்லேரி', 'pisleri', 'besleri', 'bisleri',
+         'बिसलेरी', 'బిస్లేరి', 'ബിസ്ലേരി']),
   ('Kinley', 25.0, 'PACK (LITER)', '💧',
-   array['kinly', 'kinli', 'கின்லி', 'கிண்லி', 'kinley water'])
+   array['kinly', 'kinli', 'கின்லி', 'கிண்லி', 'kinley water',
+         'किनले', 'కిన్లీ', 'കിൻലി'])
 on conflict (name) do nothing;
 
 -- ── Row Level Security ─────────────────────────────────────────────

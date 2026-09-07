@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getChatLang } from '../utils/chatLang';
+import { getChatLang, type ChatLang } from '../utils/chatLang';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -9,6 +9,32 @@ interface ChatMessage {
 }
 
 const CHAT_API_URL = (import.meta.env.VITE_CHAT_API_URL || '').replace(/\/$/, '');
+
+/** BCP-47 speech recognition / synthesis tag per chat language. */
+const SPEECH_LANG: Record<ChatLang, string> = {
+  en: 'en-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
+  hi: 'hi-IN',
+  ml: 'ml-IN',
+};
+
+/** Unicode ranges of the Indic scripts the bot can speak. */
+const SCRIPT_RANGES: Array<[number, number]> = [
+  [0x0900, 0x097f], // Hindi / Devanagari
+  [0x0b80, 0x0bff], // Tamil
+  [0x0c00, 0x0c7f], // Telugu
+  [0x0d00, 0x0d7f], // Malayalam
+];
+
+/** Which script (if any) belongs to each chat language. */
+const OWN_SCRIPT: Record<ChatLang, [number, number] | null> = {
+  en: null,
+  ta: [0x0b80, 0x0bff],
+  te: [0x0c00, 0x0c7f],
+  hi: [0x0900, 0x097f],
+  ml: [0x0d00, 0x0d7f],
+};
 
 export function ChatWidget() {
   const { session } = useAuth();
@@ -46,26 +72,32 @@ export function ChatWidget() {
       const last = messages[messages.length - 1];
       if (speakEnabledRef.current && 'speechSynthesis' in window) {
         const lang = getChatLang();
-        // Thanglish replies (English mode) are Latin text: drop stray Tamil
-        // script, emoji, and symbols so the English voice reads them cleanly.
-        // Tamil mode keeps the text as-is for the Tamil voice.
-        const unwantedForSpeech = (cp: number) =>
-          (cp >= 0x0b80 && cp <= 0x0bff) || // Tamil script
-          (cp >= 0x2190 && cp <= 0x2bff) || // arrows / misc symbols
-          (cp >= 0xfe00 && cp <= 0xfe0f) || // variation selectors
-          (cp >= 0x1f000 && cp <= 0x1faff); // emoji
-        const spokenText =
-          lang === 'ta'
-            ? last.content
-            : Array.from(last.content)
-                .filter((ch) => !unwantedForSpeech(ch.codePointAt(0) ?? 0))
-                .join('');
+        // Speak with the selected language's voice. Strip emoji, symbols,
+        // and any Indic script that is NOT the selected language's script,
+        // so e.g. a Tamil-mode reply isn't read with stray Hindi characters
+        // and English-mode Thanglish text isn't polluted by Tamil script.
+        const keepChar = (cp: number) => {
+          if (
+            (cp >= 0x2190 && cp <= 0x2bff) || // arrows / misc symbols
+            (cp >= 0xfe00 && cp <= 0xfe0f) || // variation selectors
+            (cp >= 0x1f000 && cp <= 0x1faff) // emoji
+          )
+            return false;
+          const own = OWN_SCRIPT[lang];
+          for (const [lo, hi] of SCRIPT_RANGES) {
+            if (cp >= lo && cp <= hi) return own ? cp >= own[0] && cp <= own[1] : false;
+          }
+          return true;
+        };
+        const spokenText = Array.from(last.content)
+          .filter((ch) => keepChar(ch.codePointAt(0) ?? 0))
+          .join('');
         const utterance = new SpeechSynthesisUtterance(spokenText);
         utterance.rate = 1;
-        utterance.lang = lang === 'ta' ? 'ta-IN' : 'en-IN';
+        utterance.lang = SPEECH_LANG[lang];
         // Prefer a voice matching the selected language.
         const voices = window.speechSynthesis.getVoices();
-        const voice = voices.find((v) => v.lang.toLowerCase().startsWith(lang === 'ta' ? 'ta' : 'en'));
+        const voice = voices.find((v) => v.lang.toLowerCase().startsWith(lang));
         if (voice) utterance.voice = voice;
         window.speechSynthesis.speak(utterance);
       }
@@ -168,7 +200,7 @@ export function ChatWidget() {
 
     if (SR) {
       const rec = new SR();
-      rec.lang = getChatLang() === 'ta' ? 'ta-IN' : 'en-IN';
+      rec.lang = SPEECH_LANG[getChatLang()];
       rec.interimResults = false;
       rec.maxAlternatives = 1;
       let transcript = '';

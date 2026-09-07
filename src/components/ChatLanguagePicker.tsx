@@ -4,6 +4,9 @@ import { getChatLang, setChatLang, type ChatLang } from '../utils/chatLang';
 const OPTIONS: { value: ChatLang; label: string }[] = [
   { value: 'en', label: 'English' },
   { value: 'ta', label: 'தமிழ்' },
+  { value: 'te', label: 'తెలుగు' },
+  { value: 'hi', label: 'हिन्दी' },
+  { value: 'ml', label: 'മലയാളം' },
 ];
 
 export function ChatLanguagePicker() {

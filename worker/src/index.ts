@@ -1,6 +1,6 @@
 import { getSupabase } from './supabase';
 import { buildContext, type ChatIdentity } from './context';
-import { answerQuestion } from './chat';
+import { answerQuestion, type ChatLang } from './chat';
 import { detectIntent, detectIntentWithLLM, placeOrder, cancelOrders } from './actions';
 import { fetchProducts } from './products';
 import { fetchStoreSettings, fetchFaqs } from './settings';
@@ -41,7 +41,10 @@ export default {
         vendorName?: string;
       };
 
-      const lang = body.lang === 'ta' ? 'ta' : 'en';
+      const lang: ChatLang =
+        body.lang === 'ta' || body.lang === 'te' || body.lang === 'hi' || body.lang === 'ml'
+          ? body.lang
+          : 'en';
 
       // ── Speech-to-text: transcribe recorded audio with Whisper ────────
       if (path === '/api/transcribe') {
@@ -61,7 +64,7 @@ export default {
         // English. English mode keeps auto-detection — spoken Thanglish
         // arrives as romanized text either way.
         const whisperInput: { audio: string; language?: string } = { audio };
-        if (lang === 'ta') whisperInput.language = 'ta';
+        if (lang !== 'en') whisperInput.language = lang;
         const out = await ai.run('@cf/openai/whisper-large-v3-turbo', whisperInput);
         const text = ((out as { text?: string })?.text || '').trim();
         return new Response(JSON.stringify({ text }), {

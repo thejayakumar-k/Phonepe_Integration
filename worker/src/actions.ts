@@ -3,6 +3,7 @@ import type { ChatIdentity } from './context';
 import type { Env } from './env';
 import { findProduct, type Product } from './products';
 import type { StoreSettings } from './settings';
+import type { ChatLang } from './chat';
 
 export type ChatIntent =
   | { intent: 'place_order'; product?: string; qty?: number }
@@ -233,6 +234,18 @@ function buildIntentTools(products: Product[]) {
   ];
 }
 
+/** Order-phrase hints for each language mode, to help intent detection. */
+const LANG_ORDER_HINTS: Partial<Record<ChatLang, string>> = {
+  ta: 'The selected reply language is Tamil: recognize Tamil order phrases (e.g. ' +
+    '"ஒரு பிஸ்லரி ஆர்டர் போடு" = order one Bisleri, "வாங்க" = buy, "இரண்டு கின்லி" = two Kinley). ',
+  te: 'The selected reply language is Telugu: recognize Telugu order phrases (e.g. ' +
+    '"ఒక బిస్లేరి ఆర్డర్ చేయండి" = order one Bisleri, "కొనండి" = buy, "రెండు కిన్లీ" = two Kinley). ',
+  hi: 'The selected reply language is Hindi: recognize Hindi order phrases (e.g. ' +
+    '"एक बिसलेरी ऑर्डर करो" = order one Bisleri, "खरीदो" = buy, "दो किनले" = two Kinley). ',
+  ml: 'The selected reply language is Malayalam: recognize Malayalam order phrases (e.g. ' +
+    '"ഒരു ബിസ്ലേരി ഓർഡർ ചെയ്യുക" = order one Bisleri, "വാങ്ങുക" = buy, "രണ്ട് കിൻലി" = two Kinley). ',
+};
+
 /**
  * Natural-language intent detection via LLM function calling. Handles
  * paraphrases and typos that the deterministic matcher misses (e.g.
@@ -242,7 +255,7 @@ function buildIntentTools(products: Product[]) {
 export async function detectIntentWithLLM(
   env: Env,
   message: string,
-  lang: 'en' | 'ta' = 'en',
+  lang: ChatLang = 'en',
   products: Product[]
 ): Promise<ChatIntent | null> {
   const model = env.AI_MODEL || '@cf/qwen/qwen3-30b-a3b-fp8';
@@ -270,11 +283,7 @@ export async function detectIntentWithLLM(
             'Translate common Thanglish phrases: "venum/vaanganum/vaangi" = want/buy, ' +
             '"podu/poduunga/pannu" = put/place/order, "rendu/erandu" = two, "moonu" = three, ' +
             '"onnu/oru" = one, "anju" = five, "pathu" = ten. ' +
-            (lang === 'ta'
-              ? 'The selected reply language is Tamil: recognize Tamil order phrases ' +
-                '(e.g. "ஒரு பிஸ்லரி ஆர்டர் போடு" = order one Bisleri, "வாங்க" = buy, ' +
-                '"இரண்டு கின்லி" = two Kinley). '
-              : '') +
+            (LANG_ORDER_HINTS[lang] || '') +
             'Use place_order when the user clearly asks to order/buy/purchase a specific product; ' +
             'use list_products when they ask what they can order or what products are available ' +
             '(e.g. "what can i order", "what do you sell"). ' +
