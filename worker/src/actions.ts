@@ -229,7 +229,7 @@ export async function detectIntentWithLLM(
   message: string,
   lang: 'en' | 'ta' = 'en'
 ): Promise<ChatIntent | null> {
-  const model = env.AI_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+  const model = env.AI_MODEL || '@cf/qwen/qwen3-30b-a3b-fp8';
   const ai = env.AI as {
     run: (model: string, inputs: unknown) => Promise<unknown>;
   };

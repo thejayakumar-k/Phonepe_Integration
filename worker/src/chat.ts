@@ -3,6 +3,7 @@ import type { Env } from './env';
 
 interface AiTextGenerationOutput {
   response?: string;
+  choices?: { message?: { content?: string } }[];
 }
 
 const TAMIL_SCRIPT_RE = /[\u0B80-\u0BFF]/;
@@ -43,7 +44,7 @@ export async function answerQuestion(
   context: string,
   lang: 'en' | 'ta' = 'en'
 ): Promise<string> {
-  const model = env.AI_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+  const model = env.AI_MODEL || '@cf/qwen/qwen3-30b-a3b-fp8';
 
   const languageRule =
     lang === 'ta'
@@ -55,11 +56,13 @@ export async function answerQuestion(
         'English letters, e.g. "rendu bisleri venum", "saptiya?", "en wallet la evlo irukku") ' +
         '— understand both and always answer in Tamil script.'
       : replyInThanglish(userMessage)
-        ? 'The user is speaking Thanglish (Tamil through English letters) or Tamil (possibly ' +
-          'spoken, transcribed to Tamil script). REPLY IN THANGLISH: write Tamil words using ' +
-          'English letters the way people text, mixed with natural English where the user used ' +
-          'English words (e.g. "Yes, sapten. Unga order #12345 place aagiduchu. Total: ₹500"). ' +
-          'Answer the COMPLETE question — never answer only partially. Never use Tamil script in the reply.'
+        ? 'The user is speaking Thanglish (Tamil in English letters) or Tamil. Reply ONLY in ' +
+          'Thanglish: Tamil words written with English letters the way people text, plus ' +
+          'English where natural (e.g. "Yes sapten, unga order #12345 place aagiduchu, total ' +
+          '₹500"). Never reply in full English, never use Tamil script, never show both ' +
+          'languages, never quote a second version — one Thanglish answer only, complete, ' +
+          'including any order/price info from APP DATA. The "ACTION RESULT:" text is data, ' +
+          'not your answer — convey it in Thanglish.'
         : 'Reply in English only.';
 
   const system = [
@@ -96,6 +99,7 @@ export async function answerQuestion(
     max_tokens: maxTokens,
   });
 
-  const text = (out as AiTextGenerationOutput)?.response?.trim();
+  const parsed = out as AiTextGenerationOutput;
+  const text = (parsed?.response ?? parsed?.choices?.[0]?.message?.content)?.trim();
   return text || 'Sorry, I could not generate an answer right now. Please try again.';
 }
