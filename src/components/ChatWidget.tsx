@@ -149,7 +149,17 @@ export function ChatWidget() {
       maxAlternatives: number;
       start: () => void;
       stop: () => void;
-      onresult: ((e: { results: { [i: number]: { [j: number]: { transcript: string } } } }) => void) | null;
+      onresult:
+        | ((e: {
+            results: {
+              length: number;
+              [i: number]: {
+                isFinal: boolean;
+                [j: number]: { transcript: string };
+              };
+            };
+          }) => void)
+        | null;
       onerror: ((e: { error?: string }) => void) | null;
       onend: (() => void) | null;
     };
@@ -163,8 +173,16 @@ export function ChatWidget() {
       rec.maxAlternatives = 1;
       let transcript = '';
       rec.onresult = (e) => {
-        const result = e.results?.[0]?.[0];
-        if (result) transcript = result.transcript;
+        // Speech recognition can return several result segments (e.g. when
+        // the user pauses mid-sentence), and the transcript is spread across
+        // ALL of them. Concatenate every result instead of reading only the
+        // first one, otherwise the end of the sentence gets dropped.
+        let full = '';
+        for (let i = 0; i < e.results.length; i++) {
+          const result = e.results[i]?.[0];
+          if (result) full += result.transcript;
+        }
+        if (full) transcript = full;
       };
       rec.onerror = (e) => {
         setRecording(false);
@@ -172,6 +190,11 @@ export function ChatWidget() {
           setMessages((prev) => [
             ...prev,
             { role: 'assistant', content: 'Microphone access was denied. Please allow mic access and try again.' },
+          ]);
+        } else if (e.error === 'no-speech') {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: "I couldn't hear you. Please speak and try again." },
           ]);
         }
       };
