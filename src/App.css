@@ -7817,44 +7817,6 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Saved address - separate editable fields */
-.da-saved-field-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.da-saved-field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.da-saved-field label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.da-saved-field input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  font-size: 13px;
-  font-family: var(--font-sans);
-  color: var(--text-primary);
-  box-sizing: border-box;
-  background: white;
-}
-
-.da-saved-field input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
 .da-fp-field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -8298,43 +8260,6 @@ body {
 .da-confirmed-edit:hover {
   background: var(--success-light);
 }
-
-/* Confirmed address with editable separate fields (cart inline) */
-.da-fields-confirmed {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.da-fields-confirmed-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.da-fields-confirmed-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.da-fields-confirmed .da-saved-field-grid {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  padding: 12px;
-}
-
-.da-fields-confirmed .da-confirmed-edit {
-  border-color: var(--border-color);
-  color: var(--text-secondary);
-}
-
-.da-fields-confirmed .da-confirmed-edit:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
 
 /* GPS User Marker (blue pulsing dot) */
 .gps-user-marker {
