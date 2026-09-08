@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getMargin, subtractMargin, saveItemOrder, generateItemOrderId } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus, PaymentMethod } from '../types/payment';
 import { supabase } from '../lib/supabase';
 import { getStoreInfo, type StoreInfo } from '../utils/store';
+
+const DeliveryAddress = lazy(() => import('./DeliveryAddress').then(m => ({ default: m.DeliveryAddress })));
 
 type CatalogProduct = { id: number; name: string; price: number; unit: string; image: string };
 
@@ -57,6 +59,7 @@ export function CustomerCart() {
   });
   const [selectedPayment, setSelectedPayment] = useState<CartPaymentMethod>('upi');
   const [paymentSuccess, setPaymentSuccess] = useState<{ amount: number; balance: number } | null>(null);
+  const [deliveryAddress, setDeliveryAddress] = useState<{ address: string; lat: number; lng: number } | null>(null);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getProduct = (id: number) => products.find((p) => p.id === id);
@@ -236,6 +239,26 @@ export function CustomerCart() {
       </div>
 
       <div className="cart-summary">
+        {/* Delivery Address */}
+        {!deliveryAddress ? (
+          <Suspense fallback={<div className="da-loading">Loading address picker...</div>}>
+            <DeliveryAddress
+              onAddressConfirm={(addr, lat, lng) => setDeliveryAddress({ address: addr, lat, lng })}
+            />
+          </Suspense>
+        ) : (
+          <div className="da-confirmed">
+            <div className="da-confirmed-header">
+              <span className="da-confirmed-icon">📍</span>
+              <div className="da-confirmed-info">
+                <span className="da-confirmed-label">Delivering to</span>
+                <span className="da-confirmed-address">{deliveryAddress.address}</span>
+              </div>
+              <button className="da-confirmed-edit" onClick={() => setDeliveryAddress(null)}>Change</button>
+            </div>
+          </div>
+        )}
+
         <div className="summary-row">
           <span>Items ({totalItems})</span>
           <span>₹{totalAmount.toFixed(2)}</span>

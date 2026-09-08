@@ -7566,6 +7566,252 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* ========================================
+   Delivery Address Section (Cart)
+   ======================================== */
+
+.delivery-address-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.da-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.da-choose {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.da-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.da-option:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.da-option-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.da-option-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.da-option-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.da-option-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.da-option-arrow {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.da-map {
+  width: 100%;
+  height: 200px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+  margin-bottom: 10px;
+}
+
+.da-map-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.da-map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.da-error {
+  font-size: 12px;
+  color: var(--danger-color);
+  background: var(--danger-light);
+  padding: 8px 10px;
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 10px;
+}
+
+.da-gps-address {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.da-field {
+  margin-bottom: 12px;
+}
+
+.da-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.da-field textarea,
+.da-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  box-sizing: border-box;
+}
+
+.da-field textarea:focus,
+.da-field input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.da-field textarea {
+  resize: vertical;
+}
+
+.da-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.da-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.da-btn.back {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.da-btn.confirm {
+  background: var(--primary-color);
+  color: white;
+}
+
+.da-btn.confirm:hover {
+  background: var(--primary-hover);
+}
+
+.da-btn.confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.da-loading {
+  padding: 14px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.da-confirmed {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.da-confirmed-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--success-light);
+  border: 1px solid var(--success-color);
+  border-radius: var(--border-radius-sm);
+}
+
+.da-confirmed-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.da-confirmed-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.da-confirmed-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--success-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.da-confirmed-address {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.da-confirmed-edit {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid var(--success-color);
+  border-radius: var(--border-radius-sm);
+  color: var(--success-color);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.da-confirmed-edit:hover {
+  background: var(--success-light);
+}
+
 
 /* GPS User Marker (blue pulsing dot) */
 .gps-user-marker {
