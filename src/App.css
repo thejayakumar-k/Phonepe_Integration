@@ -7944,6 +7944,8 @@ body {
 .da-fp-map {
   width: 100%;
   height: 250px;
+  min-height: 250px;
+  flex-shrink: 0;
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--border-color);
 }

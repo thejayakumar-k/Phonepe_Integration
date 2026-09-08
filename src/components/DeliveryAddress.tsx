@@ -19,7 +19,10 @@ type AddressParts = {
   landmark: string;
 };
 
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
+type GeocodeResult = { parts: AddressParts; address: string };
+
+async function reverseGeocode(lat: number, lng: number): Promise<GeocodeResult> {
+  const emptyParts: AddressParts = { houseNo: '', street: '', area: '', city: '', pincode: '', landmark: '' };
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -28,12 +31,20 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
     const data = await res.json();
     if (data?.address) {
       const a = data.address;
-      return [a.house_number, a.road, a.suburb || a.neighbourhood, a.city || a.town, a.state, a.postcode]
-        .filter(Boolean).join(', ');
+      const parts: AddressParts = {
+        houseNo: a.house_number || '',
+        street: a.road || '',
+        area: a.suburb || a.neighbourhood || a.quarter || '',
+        city: a.city || a.town || a.village || a.municipality || '',
+        pincode: a.postcode || '',
+        landmark: '',
+      };
+      const address = [parts.houseNo, parts.street, parts.area, parts.city, parts.pincode].filter(Boolean).join(', ');
+      return { parts, address };
     }
-    return data.display_name || '';
+    return { parts: emptyParts, address: data.display_name || '' };
   } catch {
-    return '';
+    return { parts: emptyParts, address: '' };
   }
 }
 
@@ -49,8 +60,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
   const [page, setPage] = useState<Page>('home');
 
   // GPS state
-  const [gpsAddress, setGpsAddress] = useState('');
-  const [gpsEditable, setGpsEditable] = useState('');
+  const [gpsParts, setGpsParts] = useState<AddressParts | null>(null);
   const [gpsLat, setGpsLat] = useState(0);
   const [gpsLng, setGpsLng] = useState(0);
 
@@ -91,6 +101,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
       m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
 
       m.on('load', () => {
+        m.resize();
         const shopEl = document.createElement('div');
         shopEl.className = 'shop-marker';
         shopEl.innerHTML = '<div class="shop-marker-pin">🏪</div>';
@@ -103,6 +114,10 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
         userMarkerRef.current = new maplibregl.Marker({ element: userEl, anchor: 'center' })
           .setLngLat(SHOP_LOCATION).addTo(m);
       });
+
+      // Modal entry animation is 0.25s; resize again once it has settled so
+      // the canvas matches the final container size.
+      setTimeout(() => m.resize(), 500);
 
       mapRef.current = m;
       mapInitDone.current = true;
@@ -140,9 +155,13 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
     setGpsLat(position.latitude);
     setGpsLng(position.longitude);
-    reverseGeocode(position.latitude, position.longitude).then((addr) => {
-      setGpsAddress(addr);
-      setGpsEditable(addr);
+    reverseGeocode(position.latitude, position.longitude).then(({ parts, address }) => {
+      const filled = parts.houseNo || parts.street || parts.area || parts.city || parts.pincode;
+      if (filled) {
+        setGpsParts(parts);
+      } else if (address) {
+        setGpsParts({ houseNo: '', street: address, area: '', city: '', pincode: '', landmark: '' });
+      }
     });
   }, [position]);
 
@@ -163,9 +182,16 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
   // ─── SAVE GPS ────────────────────────────────────────────
   const handleSaveGPS = () => {
-    const addr = gpsEditable.trim() || gpsAddress || `${gpsLat.toFixed(4)}, ${gpsLng.toFixed(4)}`;
+    if (!gpsParts) {
+      onAddressConfirm(`${gpsLat.toFixed(4)}, ${gpsLng.toFixed(4)}`, gpsLat, gpsLng, null);
+      setPage('home');
+      cleanupMap();
+      return;
+    }
+    const partsArr = [gpsParts.houseNo, gpsParts.street, gpsParts.area, gpsParts.city, gpsParts.pincode].filter(Boolean);
+    const addr = partsArr.join(', ') + (gpsParts.landmark ? `, Near ${gpsParts.landmark}` : '');
     setPage('home');
-    onAddressConfirm(addr, gpsLat, gpsLng, null);
+    onAddressConfirm(addr, gpsLat, gpsLng, gpsParts);
     cleanupMap();
   };
 
@@ -237,14 +263,67 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
               <div className="da-fp-address-from waiting">📍 Waiting for GPS...</div>
             )}
 
-            {gpsAddress && (
+            {gpsParts && (
               <div className="da-fp-edit-box">
-                <label>✏️ Edit address if GPS is inaccurate:</label>
-                <textarea
-                  value={gpsEditable}
-                  onChange={(e) => setGpsEditable(e.target.value)}
-                  rows={3}
-                />
+                <label>✏️ The fetched address may be inaccurate. Please correct it:</label>
+                <div className="da-fp-fields">
+                  <div className="da-fp-field">
+                    <label>House / Flat No</label>
+                    <input
+                      type="text"
+                      value={gpsParts.houseNo}
+                      onChange={(e) => setGpsParts({ ...gpsParts, houseNo: e.target.value })}
+                      placeholder="e.g. 12"
+                    />
+                  </div>
+                  <div className="da-fp-field">
+                    <label>Street / Road</label>
+                    <input
+                      type="text"
+                      value={gpsParts.street}
+                      onChange={(e) => setGpsParts({ ...gpsParts, street: e.target.value })}
+                      placeholder="e.g. Gandhi Street"
+                    />
+                  </div>
+                  <div className="da-fp-field">
+                    <label>Area / Locality</label>
+                    <input
+                      type="text"
+                      value={gpsParts.area}
+                      onChange={(e) => setGpsParts({ ...gpsParts, area: e.target.value })}
+                      placeholder="e.g. Anna Nagar"
+                    />
+                  </div>
+                  <div className="da-fp-field-row">
+                    <div className="da-fp-field">
+                      <label>City</label>
+                      <input
+                        type="text"
+                        value={gpsParts.city}
+                        onChange={(e) => setGpsParts({ ...gpsParts, city: e.target.value })}
+                        placeholder="e.g. Chennai"
+                      />
+                    </div>
+                    <div className="da-fp-field">
+                      <label>Pincode</label>
+                      <input
+                        type="text"
+                        value={gpsParts.pincode}
+                        onChange={(e) => setGpsParts({ ...gpsParts, pincode: e.target.value })}
+                        placeholder="e.g. 600095"
+                      />
+                    </div>
+                  </div>
+                  <div className="da-fp-field">
+                    <label>Landmark</label>
+                    <input
+                      type="text"
+                      value={gpsParts.landmark}
+                      onChange={(e) => setGpsParts({ ...gpsParts, landmark: e.target.value })}
+                      placeholder="Near temple, opposite park..."
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
