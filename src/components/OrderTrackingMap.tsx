@@ -15,7 +15,6 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const map = useRef<maplibregl.Map | null>(null);
   const userMarker = useRef<maplibregl.Marker | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mapReady, setMapReady] = useState(false);
 
   const { position, error, isTracking, startTracking, stopTracking } = useGPS({
     enableHighAccuracy: true,
@@ -30,43 +29,39 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => stopTracking();
   }, []);
 
-  // Create a custom HTML marker for the user (blue dot with pulse)
-  const createUserMarkerHtml = useCallback(() => {
+  // Create blue pulsing dot marker
+  const createMarkerEl = useCallback(() => {
     const el = document.createElement('div');
     el.className = 'gps-user-marker';
-    el.innerHTML = `
-      <div class="gps-marker-pulse"></div>
-      <div class="gps-marker-dot"></div>
-    `;
+    el.innerHTML = '<div class="gps-marker-pulse"></div><div class="gps-marker-dot"></div>';
     return el;
   }, []);
 
-  // Initialize map once GPS position is available
+  // Initialize map IMMEDIATELY with a default center (India)
   useEffect(() => {
-    if (!mapContainer.current || map.current || !position) return;
+    if (!mapContainer.current || map.current) return;
+
+    const defaultCenter: [number, number] = [80.2707, 13.0827]; // Chennai, India
 
     const mapInstance = new maplibregl.Map({
       container: mapContainer.current,
       style: OPENFREEMAP_STYLE,
-      center: [position.longitude, position.latitude],
-      zoom: 16,
+      center: defaultCenter,
+      zoom: 13,
       attributionControl: false,
     });
 
     mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     mapInstance.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 
-    // Wait for map style to load before adding markers
+    // Add marker immediately at default location
     mapInstance.on('load', () => {
-      // User location marker (blue pulsing dot)
       userMarker.current = new maplibregl.Marker({
-        element: createUserMarkerHtml(),
+        element: createMarkerEl(),
         anchor: 'center',
       })
-        .setLngLat([position.longitude, position.latitude])
+        .setLngLat(defaultCenter)
         .addTo(mapInstance);
-
-      setMapReady(true);
     });
 
     map.current = mapInstance;
@@ -75,39 +70,37 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
       mapInstance.remove();
       map.current = null;
       userMarker.current = null;
-      setMapReady(false);
     };
-  }, [position !== null]); // Only run once when position becomes available
+  }, []); // Runs once on mount
 
-  // Real-time: update marker position whenever GPS position changes
+  // When GPS position arrives, update the map to show real location
   useEffect(() => {
-    if (!map.current || !position || !mapReady) return;
+    if (!map.current || !position) return;
 
     const lngLat: [number, number] = [position.longitude, position.latitude];
 
-    // Update user marker
+    // Move marker to real GPS location
     userMarker.current?.setLngLat(lngLat);
 
-    // Smooth pan to follow user (only when not dragging/zooming)
-    if (!map.current.isMoving()) {
-      map.current.panTo(lngLat, { duration: 1000 });
-    }
-  }, [position, mapReady]);
+    // Fly to real location
+    map.current.flyTo({
+      center: lngLat,
+      zoom: 16,
+      essential: true,
+      duration: 1500,
+    });
+  }, [position]); // Runs every time GPS position updates
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen((prev) => !prev);
-    // Resize map after CSS transition
-    setTimeout(() => {
-      map.current?.resize();
-    }, 350);
+    setTimeout(() => map.current?.resize(), 350);
   }, []);
 
   const formatTime = (ts: number) => new Date(ts).toLocaleTimeString();
 
   return (
     <div className={`otm-container ${isFullscreen ? 'otm-fullscreen' : ''}`}>
-      {/* Overlay backdrop for fullscreen */}
       {isFullscreen && <div className="otm-backdrop" onClick={onClose} />}
 
       <div className={`otm-panel ${isFullscreen ? 'otm-panel-full' : ''}`}>
@@ -130,7 +123,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           </div>
         </div>
 
-        {/* Map */}
+        {/* Map - always visible */}
         <div ref={mapContainer} className="otm-map" />
 
         {/* Footer */}
@@ -140,7 +133,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
             {error
               ? `⚠️ ${error}`
               : isTracking
-                ? `Live · ${position ? formatTime(position.timestamp) : 'Acquiring...'}`
+                ? `Live · ${position ? formatTime(position.timestamp) : 'Acquiring GPS...'}`
                 : 'Tracking paused'}
           </span>
           {position && (
