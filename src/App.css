@@ -7019,4 +7019,322 @@ body {
   font-size: 15px;
 }
 
+/* ========================================
+   Bike GPS Tracking
+   ======================================== */
+
+.tracking-page {
+  min-height: 100vh;
+  background: var(--bg-secondary);
+}
+
+.tracking-header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px;
+}
+
+.tracking-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tracking-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.tracking-header p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.tracking-body {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  display: flex;
+  gap: 20px;
+}
+
+.tracking-map-section {
+  flex: 2;
+  min-width: 0;
+}
+
+.tracking-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 280px;
+}
+
+.tracking-card {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.tracking-card-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tracking-card-header h2,
+.tracking-card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tracking-card-body {
+  padding: 16px;
+}
+
+.tracking-map-container {
+  height: 500px;
+}
+
+.tracking-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.tracking-status-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tracking-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tracking-status-badge.active {
+  background: var(--success-light);
+  color: var(--success-color);
+}
+
+.tracking-status-badge.inactive {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.tracking-error {
+  background: var(--danger-light);
+  border: 1px solid var(--danger-color);
+  border-radius: var(--border-radius-sm);
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+
+.tracking-error p {
+  font-size: 12px;
+  color: var(--danger-color);
+  margin: 0;
+}
+
+.tracking-btn {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  margin-top: 12px;
+}
+
+.tracking-btn.start {
+  background: var(--primary-color);
+}
+
+.tracking-btn.start:hover {
+  background: var(--primary-hover);
+}
+
+.tracking-btn.stop {
+  background: var(--danger-color);
+}
+
+.tracking-btn.stop:hover {
+  background: #dc2626;
+}
+
+.tracking-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tracking-detail-row:last-child {
+  border-bottom: none;
+}
+
+.tracking-detail-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.tracking-detail-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.tracking-history-list {
+  max-height: 250px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tracking-history-item {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-sm);
+  padding: 8px 10px;
+}
+
+.tracking-history-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.tracking-history-coords {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.tracking-empty {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.tracking-info-box {
+  margin-top: 20px;
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+}
+
+.tracking-info-box h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2563eb;
+  margin: 0 0 8px 0;
+}
+
+.tracking-info-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tracking-info-box li {
+  font-size: 12px;
+  color: #3b82f6;
+}
+
+.tracking-info-box li strong {
+  font-weight: 600;
+}
+
+/* Map Style Selector */
+.map-style-selector {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 8px 10px;
+}
+
+.map-style-selector label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.map-style-selector select {
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.map-attribution {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border-radius: var(--border-radius-sm);
+}
+
+@media (max-width: 768px) {
+  .tracking-body {
+    flex-direction: column;
+  }
+
+  .tracking-panel {
+    min-width: auto;
+  }
+
+  .tracking-map-container {
+    height: 350px;
+  }
+}
+
 

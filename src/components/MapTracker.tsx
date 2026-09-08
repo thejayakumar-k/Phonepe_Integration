@@ -84,14 +84,13 @@ export function MapTracker({
   }, [mapStyle]);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`map-wrapper ${className}`}>
       {/* Map Style Selector */}
-      <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-2">
-        <label className="text-sm font-medium text-gray-700 mb-1 block">Map Style</label>
+      <div className="map-style-selector">
+        <label>Map Style</label>
         <select
           value={mapStyle}
           onChange={(e) => setMapStyle(e.target.value as keyof typeof OPENFREEMAP_STYLES)}
-          className="w-full p-2 border border-gray-300 rounded-md text-sm"
         >
           <option value="bright">Bright</option>
           <option value="positron">Light</option>
@@ -100,13 +99,10 @@ export function MapTracker({
       </div>
 
       {/* Map Container */}
-      <div
-        ref={mapContainer}
-        className="w-full h-full min-h-[400px] rounded-lg"
-      />
+      <div ref={mapContainer} className="map-container" />
 
       {/* Attribution */}
-      <div className="absolute bottom-2 right-2 z-10 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-600">
+      <div className="map-attribution">
         © OpenStreetMap contributors
       </div>
     </div>
