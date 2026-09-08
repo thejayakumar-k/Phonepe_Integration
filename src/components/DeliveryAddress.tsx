@@ -10,7 +10,6 @@ interface DeliveryAddressProps {
   onAddressConfirm: (address: string, lat: number, lng: number) => void;
 }
 
-// Reverse geocode using Nominatim (free, no API key)
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const res = await fetch(
@@ -18,18 +17,18 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
       { headers: { 'Accept-Language': 'en' } }
     );
     const data = await res.json();
-    if (data && data.address) {
+    if (data?.address) {
       const a = data.address;
-      return [a.house_number, a.road || a.street, a.suburb || a.neighbourhood, a.city || a.town, a.state, a.postcode]
+      return [a.house_number, a.road, a.suburb || a.neighbourhood, a.city || a.town, a.state, a.postcode]
         .filter(Boolean).join(', ');
     }
-    return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    return data.display_name || '';
   } catch {
-    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    return '';
   }
 }
 
-type Page = 'summary' | 'choose' | 'gps' | 'manual';
+type Page = 'home' | 'gps' | 'manual';
 
 export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
   const mapDivRef = useRef<HTMLDivElement>(null);
@@ -38,19 +37,22 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const mapInitDone = useRef(false);
 
-  const [page, setPage] = useState<Page>('summary');
+  const [page, setPage] = useState<Page>('home');
   const [savedAddress, setSavedAddress] = useState('');
 
-
-  // GPS page state
+  // GPS state
   const [gpsAddress, setGpsAddress] = useState('');
   const [gpsEditable, setGpsEditable] = useState('');
   const [gpsLat, setGpsLat] = useState(0);
   const [gpsLng, setGpsLng] = useState(0);
 
-  // Manual page state
-  const [manualAddress, setManualAddress] = useState('');
-  const [manualLandmark, setManualLandmark] = useState('');
+  // Manual state — separate fields
+  const [houseNo, setHouseNo] = useState('');
+  const [street, setStreet] = useState('');
+  const [area, setArea] = useState('');
+  const [city, setCity] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [landmark, setLandmark] = useState('');
 
   const { position, error: gpsError, startTracking, stopTracking } = useGPS({
     enableHighAccuracy: true,
@@ -64,7 +66,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     return () => stopTracking();
   }, []);
 
-  // ─── MAP INIT ─────────────────────────────────────────────
+  // ─── MAP INIT (GPS page only) ────────────────────────────
   useEffect(() => {
     if (page !== 'gps' || !mapDivRef.current || mapInitDone.current) return;
 
@@ -96,12 +98,12 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
       mapRef.current = m;
       mapInitDone.current = true;
-    }, 250);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [page === 'gps']);
 
-  // ─── GPS POSITION → MAP + REVERSE GEOCODE ────────────────
+  // ─── GPS → MAP + GEOCODE ─────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || !position) return;
     const lngLat: [number, number] = [position.longitude, position.latitude];
@@ -128,16 +130,15 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     bounds.extend(lngLat);
     mapRef.current.fitBounds(bounds, { padding: 50, duration: 1000 });
 
-    // Reverse geocode
     setGpsLat(position.latitude);
     setGpsLng(position.longitude);
     reverseGeocode(position.latitude, position.longitude).then((addr) => {
       setGpsAddress(addr);
-      setGpsEditable(addr); // pre-fill editable field
+      setGpsEditable(addr);
     });
   }, [position]);
 
-  // Cleanup
+  // Cleanup map
   useEffect(() => {
     return () => {
       mapRef.current?.remove();
@@ -146,191 +147,164 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     };
   }, []);
 
-  // ─── HANDLERS ─────────────────────────────────────────────
-  const handleEditClick = () => setPage('choose');
-
-  const handleSelectGPS = () => {
-    setPage('gps');
+  const cleanupMap = () => {
+    mapRef.current?.remove();
+    mapRef.current = null;
+    mapInitDone.current = false;
   };
 
-  const handleSelectManual = () => {
-    setPage('manual');
-  };
-
-  // Save from GPS page (after editing)
+  // ─── SAVE GPS ────────────────────────────────────────────
   const handleSaveGPS = () => {
     const addr = gpsEditable.trim() || gpsAddress || `${gpsLat.toFixed(4)}, ${gpsLng.toFixed(4)}`;
     setSavedAddress(addr);
-    setPage('summary');
+    setPage('home');
     onAddressConfirm(addr, gpsLat, gpsLng);
-    // Cleanup map
-    mapRef.current?.remove();
-    mapRef.current = null;
-    mapInitDone.current = false;
+    cleanupMap();
   };
 
-  // Save from manual page
+  // ─── SAVE MANUAL ─────────────────────────────────────────
   const handleSaveManual = () => {
-    if (!manualAddress.trim()) return;
-    const full = `${manualAddress}${manualLandmark ? ', ' + manualLandmark : ''}`;
-    setSavedAddress(full);
-    setPage('summary');
-    onAddressConfirm(full, SHOP_LOCATION[1], SHOP_LOCATION[0]);
+    const parts = [houseNo, street, area, city, pincode].filter(Boolean);
+    if (parts.length === 0) return;
+    const addr = parts.join(', ') + (landmark ? `, Near ${landmark}` : '');
+    setSavedAddress(addr);
+    setPage('home');
+    onAddressConfirm(addr, SHOP_LOCATION[1], SHOP_LOCATION[0]);
   };
 
   const handleBack = () => {
-    mapRef.current?.remove();
-    mapRef.current = null;
-    mapInitDone.current = false;
-    setPage('choose');
+    cleanupMap();
+    setPage('home');
   };
 
-  // ─── SUMMARY PAGE (main view) ────────────────────────────
-  if (page === 'summary') {
+  // ─── HOME (cart inline) ──────────────────────────────────
+  if (page === 'home') {
     return (
       <div className="delivery-address-section">
-        <div className="da-input-row" style={{ cursor: 'pointer' }} onClick={handleEditClick}>
-          <span className="da-input-icon">📍</span>
-          {savedAddress ? (
-            <div className="da-confirmed-text">
-              <span className="da-confirmed-label">Delivering to</span>
-              <span className="da-confirmed-value">{savedAddress}</span>
+        {savedAddress ? (
+          <div className="da-saved-card">
+            <div className="da-saved-info">
+              <span className="da-saved-label">📍 Delivering to</span>
+              <span className="da-saved-value">{savedAddress}</span>
             </div>
-          ) : (
-            <input className="da-input-field" readOnly placeholder="Enter your address" />
-          )}
-          <button className="da-edit-btn" onClick={(e) => { e.stopPropagation(); handleEditClick(); }}>✏️</button>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── CHOOSE PAGE ──────────────────────────────────────────
-  if (page === 'choose') {
-    return (
-      <div className="da-page-overlay">
-        <div className="da-page">
-          <div className="da-page-header">
-            <button className="da-page-back" onClick={() => setPage('summary')}>←</button>
-            <h3>Choose Address</h3>
-            <span />
+            <button className="da-edit-btn" onClick={() => { setSavedAddress(''); setPage('home'); }}>✏️</button>
           </div>
-          <div className="da-page-body">
-            <button className="da-page-option" onClick={handleSelectGPS}>
-              <span className="da-page-option-icon">📍</span>
-              <div className="da-page-option-info">
-                <span className="da-page-option-title">Use Current Location</span>
-                <span className="da-page-option-desc">Auto-detect your location via GPS</span>
-              </div>
-              <span className="da-page-option-arrow">›</span>
-            </button>
-            <button className="da-page-option" onClick={handleSelectManual}>
-              <span className="da-page-option-icon">✏️</span>
-              <div className="da-page-option-info">
-                <span className="da-page-option-title">Add New Address</span>
-                <span className="da-page-option-desc">Enter address manually</span>
-              </div>
-              <span className="da-page-option-arrow">›</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── GPS PAGE ─────────────────────────────────────────────
-  if (page === 'gps') {
-    return (
-      <div className="da-page-overlay">
-        <div className="da-page">
-          <div className="da-page-header">
-            <button className="da-page-back" onClick={handleBack}>←</button>
-            <h3>Current Location</h3>
-            <span />
-          </div>
-          <div className="da-page-body">
-            <div ref={mapDivRef} className="da-map" />
-
-            <div className="da-map-legend">
-              <span><span className="otm-legend-dot shop" /> Shop (Jeeva Complex)</span>
-              <span><span className="otm-legend-dot user" /> Your Location</span>
-            </div>
-
-            {gpsError && <p className="da-error">⚠️ {gpsError}</p>}
-
-            {position ? (
-              <div className="da-address-display">
-                <span className="da-address-from">🏪 Jeeva Complex, Alapakkam, Maduravoyal</span>
-                <span className="da-address-arrow">↓</span>
-                <span className="da-address-to">📍 {gpsAddress || 'Getting address...'}</span>
-              </div>
-            ) : (
-              <div className="da-address-display">
-                <span className="da-address-waiting">📍 Waiting for GPS signal...</span>
-              </div>
-            )}
-
-            {/* Editable address field */}
-            {gpsAddress && (
-              <div className="da-edit-section">
-                <label className="da-edit-label">✏️ Edit address if incorrect:</label>
-                <textarea
-                  className="da-edit-textarea"
-                  value={gpsEditable}
-                  onChange={(e) => setGpsEditable(e.target.value)}
-                  rows={3}
-                />
-              </div>
-            )}
-
-            <div className="da-page-footer">
-              <button className="da-btn confirm full" onClick={handleSaveGPS} disabled={!position}>
-                ✓ Save Address
+        ) : (
+          <>
+            <h3 className="da-title">📍 Delivery Address</h3>
+            <div className="da-home-options">
+              <button className="da-home-btn" onClick={() => setPage('gps')}>
+                <span className="da-home-btn-icon">📍</span>
+                <div className="da-home-btn-text">
+                  <span className="da-home-btn-title">Use Current Location</span>
+                  <span className="da-home-btn-desc">Auto-detect via GPS</span>
+                </div>
+              </button>
+              <button className="da-home-btn" onClick={() => setPage('manual')}>
+                <span className="da-home-btn-icon">🏠</span>
+                <div className="da-home-btn-text">
+                  <span className="da-home-btn-title">Add New Address</span>
+                  <span className="da-home-btn-desc">Enter address manually</span>
+                </div>
               </button>
             </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ─── GPS FULL-SCREEN PAGE ────────────────────────────────
+  if (page === 'gps') {
+    return (
+      <div className="da-fullpage">
+        <div className="da-fp-header">
+          <button className="da-fp-back" onClick={handleBack}>←</button>
+          <h3>Current Location</h3>
+          <span />
+        </div>
+        <div className="da-fp-body">
+          <div ref={mapDivRef} className="da-fp-map" />
+
+          <div className="da-fp-legend">
+            <span><span className="otm-legend-dot shop" /> Shop</span>
+            <span><span className="otm-legend-dot user" /> You</span>
           </div>
+
+          {gpsError && <p className="da-error">⚠️ {gpsError}</p>}
+
+          {position ? (
+            <div className="da-fp-address-from">
+              🏪 Jeeva Complex, Alapakkam, Maduravoyal
+            </div>
+          ) : (
+            <div className="da-fp-address-from waiting">📍 Waiting for GPS...</div>
+          )}
+
+          {gpsAddress && (
+            <div className="da-fp-edit-box">
+              <label>✏️ Edit address if GPS is inaccurate:</label>
+              <textarea
+                value={gpsEditable}
+                onChange={(e) => setGpsEditable(e.target.value)}
+                rows={3}
+              />
+            </div>
+          )}
+        </div>
+        <div className="da-fp-footer">
+          <button className="da-fp-save" onClick={handleSaveGPS} disabled={!position}>
+            ✓ Save Address
+          </button>
         </div>
       </div>
     );
   }
 
-  // ─── MANUAL PAGE ──────────────────────────────────────────
+  // ─── MANUAL FULL-SCREEN PAGE ─────────────────────────────
   return (
-    <div className="da-page-overlay">
-      <div className="da-page">
-        <div className="da-page-header">
-          <button className="da-page-back" onClick={() => setPage('choose')}>←</button>
-          <h3>Add New Address</h3>
-          <span />
-        </div>
-        <div className="da-page-body">
-          <div className="da-manual-form">
-            <div className="da-field">
-              <label>House No, Street, Area *</label>
-              <textarea
-                value={manualAddress}
-                onChange={(e) => setManualAddress(e.target.value)}
-                placeholder="e.g. 12, Gandhi Street, Anna Nagar"
-                rows={4}
-              />
-            </div>
-            <div className="da-field">
-              <label>Landmark (optional)</label>
-              <input
-                type="text"
-                value={manualLandmark}
-                onChange={(e) => setManualLandmark(e.target.value)}
-                placeholder="Near temple, opposite park..."
-              />
-            </div>
+    <div className="da-fullpage">
+      <div className="da-fp-header">
+        <button className="da-fp-back" onClick={() => setPage('home')}>←</button>
+        <h3>Add New Address</h3>
+        <span />
+      </div>
+      <div className="da-fp-body">
+        <div className="da-fp-fields">
+          <div className="da-fp-field">
+            <label>House / Flat No *</label>
+            <input type="text" value={houseNo} onChange={(e) => setHouseNo(e.target.value)} placeholder="e.g. 12" />
           </div>
-
-          <div className="da-page-footer">
-            <button className="da-btn confirm full" onClick={handleSaveManual} disabled={!manualAddress.trim()}>
-              ✓ Save Address
-            </button>
+          <div className="da-fp-field">
+            <label>Street / Road *</label>
+            <input type="text" value={street} onChange={(e) => setStreet(e.target.value)} placeholder="e.g. Gandhi Street" />
+          </div>
+          <div className="da-fp-field">
+            <label>Area / Locality *</label>
+            <input type="text" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Anna Nagar" />
+          </div>
+          <div className="da-fp-field">
+            <label>City *</label>
+            <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Chennai" />
+          </div>
+          <div className="da-fp-field">
+            <label>Pincode *</label>
+            <input type="text" value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="e.g. 600095" />
+          </div>
+          <div className="da-fp-field">
+            <label>Landmark (optional)</label>
+            <input type="text" value={landmark} onChange={(e) => setLandmark(e.target.value)} placeholder="Near temple, opposite park..." />
           </div>
         </div>
+      </div>
+      <div className="da-fp-footer">
+        <button
+          className="da-fp-save"
+          onClick={handleSaveManual}
+          disabled={!houseNo.trim() && !street.trim() && !area.trim()}
+        >
+          ✓ Save Address
+        </button>
       </div>
     </div>
   );

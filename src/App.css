@@ -7733,10 +7733,95 @@ body {
 }
 
 /* ========================================
-   Delivery Address Full Page Overlay
+   Delivery Address - Home (cart inline)
    ======================================== */
 
-.da-page-overlay {
+.da-home-options {
+  display: flex;
+  gap: 10px;
+}
+
+.da-home-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.da-home-btn:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.da-home-btn-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.da-home-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.da-home-btn-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.da-home-btn-desc {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.da-saved-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--success-light);
+  border: 1px solid var(--success-color);
+  border-radius: var(--border-radius-sm);
+}
+
+.da-saved-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.da-saved-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--success-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.da-saved-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ========================================
+   Delivery Address - Full Screen Pages
+   ======================================== */
+
+.da-fullpage {
   position: fixed;
   top: 0;
   left: 0;
@@ -7744,6 +7829,8 @@ body {
   bottom: 0;
   z-index: 9999;
   background: white;
+  display: flex;
+  flex-direction: column;
   animation: da-slide-up 0.25s ease;
 }
 
@@ -7752,17 +7839,7 @@ body {
   to { transform: translateY(0); }
 }
 
-.da-page {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  background: white;
-}
-
-.da-page-header {
+.da-fp-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -7771,14 +7848,14 @@ body {
   flex-shrink: 0;
 }
 
-.da-page-header h3 {
+.da-fp-header h3 {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
 }
 
-.da-page-back {
+.da-fp-back {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -7791,94 +7868,72 @@ body {
   justify-content: center;
 }
 
-.da-page-back:hover {
-  background: var(--bg-tertiary);
-}
-
-.da-page-body {
+.da-fp-body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-.da-page-option {
+.da-fp-map {
+  width: 100%;
+  height: 250px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.da-fp-legend {
+  display: flex;
+  gap: 16px;
+}
+
+.da-fp-legend span {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-  transition: all 0.2s ease;
-}
-
-.da-page-option:hover {
-  border-color: var(--primary-color);
-  background: var(--primary-light);
-}
-
-.da-page-option-icon {
-  font-size: 28px;
-  flex-shrink: 0;
-}
-
-.da-page-option-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.da-page-option-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.da-page-option-desc {
+  gap: 5px;
   font-size: 12px;
   color: var(--text-secondary);
 }
 
-.da-page-option-arrow {
-  font-size: 20px;
+.da-fp-address-from {
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.da-fp-address-from.waiting {
   color: var(--text-muted);
+  animation: da-blink 1.5s infinite;
 }
 
-.da-page-footer {
-  padding: 16px;
-  border-top: 1px solid var(--border-color);
-  flex-shrink: 0;
+@keyframes da-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
-.da-btn.confirm.full {
-  width: 100%;
-  padding: 14px;
-  font-size: 15px;
-}
-
-.da-edit-section {
+.da-fp-edit-box {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   padding: 12px;
 }
 
-.da-edit-label {
+.da-fp-edit-box label {
+  display: block;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 8px;
-  display: block;
 }
 
-.da-edit-textarea {
+.da-fp-edit-box textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border-color);
@@ -7890,15 +7945,68 @@ body {
   box-sizing: border-box;
 }
 
-.da-edit-textarea:focus {
+.da-fp-edit-box textarea:focus {
   outline: none;
   border-color: var(--primary-color);
 }
 
-.da-manual-form {
+.da-fp-fields {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.da-fp-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.da-fp-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  box-sizing: border-box;
+  background: white;
+}
+
+.da-fp-field input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.da-fp-footer {
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.da-fp-save {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.da-fp-save:hover {
+  background: var(--primary-hover);
+}
+
+.da-fp-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .da-option {
