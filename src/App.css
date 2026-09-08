@@ -7514,6 +7514,59 @@ body {
   color: var(--text-muted);
 }
 
+/* Map Legend */
+.otm-legend {
+  display: flex;
+  gap: 16px;
+  padding: 6px 14px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.otm-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.otm-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.otm-legend-dot.shop {
+  background: #ef4444;
+}
+
+.otm-legend-dot.user {
+  background: #3b82f6;
+}
+
+/* Shop Marker */
+.shop-marker {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+
+.shop-marker-pin {
+  width: 36px;
+  height: 36px;
+  background: #ef4444;
+  border: 3px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+
 /* GPS User Marker (blue pulsing dot) */
 .gps-user-marker {
   position: relative;

@@ -5,6 +5,9 @@ import { useGPS } from '../hooks/useGPS';
 
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/bright';
 
+// VVK WATER SUPPLY - Jeeva Complex, Alapakkam, Maduravoyal, Chennai
+const SHOP_LOCATION: [number, number] = [80.170, 13.054]; // [lng, lat]
+
 interface OrderTrackingMapProps {
   orderId: string;
   onClose: () => void;
@@ -14,6 +17,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const userMarker = useRef<maplibregl.Marker | null>(null);
+  const shopMarker = useRef<maplibregl.Marker | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const { position, error, isTracking, startTracking, stopTracking } = useGPS({
@@ -29,38 +33,53 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => stopTracking();
   }, []);
 
-  // Create blue pulsing dot marker
-  const createMarkerEl = useCallback(() => {
+  // Create shop marker (red pin with store icon)
+  const createShopMarkerEl = useCallback(() => {
+    const el = document.createElement('div');
+    el.className = 'shop-marker';
+    el.innerHTML = '<div class="shop-marker-pin">🏪</div>';
+    el.title = 'VVK WATER SUPPLY - Jeeva Complex, Alapakkam, Maduravoyal';
+    return el;
+  }, []);
+
+  // Create user marker (blue pulsing dot)
+  const createUserMarkerEl = useCallback(() => {
     const el = document.createElement('div');
     el.className = 'gps-user-marker';
     el.innerHTML = '<div class="gps-marker-pulse"></div><div class="gps-marker-dot"></div>';
     return el;
   }, []);
 
-  // Initialize map IMMEDIATELY with a default center (India)
+  // Initialize map IMMEDIATELY at shop location
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
-
-    const defaultCenter: [number, number] = [80.2707, 13.0827]; // Chennai, India
 
     const mapInstance = new maplibregl.Map({
       container: mapContainer.current,
       style: OPENFREEMAP_STYLE,
-      center: defaultCenter,
-      zoom: 13,
+      center: SHOP_LOCATION,
+      zoom: 15,
       attributionControl: false,
     });
 
     mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     mapInstance.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 
-    // Add marker immediately at default location
     mapInstance.on('load', () => {
-      userMarker.current = new maplibregl.Marker({
-        element: createMarkerEl(),
+      // Add shop marker at default location
+      shopMarker.current = new maplibregl.Marker({
+        element: createShopMarkerEl(),
         anchor: 'center',
       })
-        .setLngLat(defaultCenter)
+        .setLngLat(SHOP_LOCATION)
+        .addTo(mapInstance);
+
+      // Add user marker at shop location initially
+      userMarker.current = new maplibregl.Marker({
+        element: createUserMarkerEl(),
+        anchor: 'center',
+      })
+        .setLngLat(SHOP_LOCATION)
         .addTo(mapInstance);
     });
 
@@ -70,16 +89,16 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
       mapInstance.remove();
       map.current = null;
       userMarker.current = null;
+      shopMarker.current = null;
     };
-  }, []); // Runs once on mount
+  }, []);
 
-  // When GPS position arrives, update the map to show real location
+  // When GPS position arrives, update user marker to real location
   useEffect(() => {
     if (!map.current || !position) return;
 
     const lngLat: [number, number] = [position.longitude, position.latitude];
 
-    // Move marker to real GPS location
     userMarker.current?.setLngLat(lngLat);
 
     // Fly to real location
@@ -89,7 +108,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
       essential: true,
       duration: 1500,
     });
-  }, [position]); // Runs every time GPS position updates
+  }, [position]);
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -109,9 +128,9 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           <div className="otm-title">
             <span className="otm-icon">🚲</span>
             <div>
-              <span className="otm-label">Delivery Partner</span>
+              <span className="otm-label">VVK WATER SUPPLY</span>
               <span className="otm-eta">
-                {position ? '📍 Live location active' : 'Waiting for GPS...'}
+                {position ? '📍 Live tracking active' : '📍 Jeeva Complex, Alapakkam, Maduravoyal'}
               </span>
             </div>
           </div>
@@ -125,6 +144,16 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
 
         {/* Map - always visible */}
         <div ref={mapContainer} className="otm-map" />
+
+        {/* Legend */}
+        <div className="otm-legend">
+          <span className="otm-legend-item">
+            <span className="otm-legend-dot shop" /> Shop
+          </span>
+          <span className="otm-legend-item">
+            <span className="otm-legend-dot user" /> You
+          </span>
+        </div>
 
         {/* Footer */}
         <div className="otm-footer">
@@ -143,12 +172,12 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           )}
         </div>
 
-        {/* Bottom info (compact mode only) */}
+        {/* Bottom info (compact mode) */}
         {!isFullscreen && (
           <div className="otm-bottom-info">
             <span className="otm-order-id">Order {orderId}</span>
             <span className="otm-accuracy">
-              ±{position ? position.accuracy.toFixed(0) : '?'}m accuracy
+              ±{position ? position.accuracy.toFixed(0) : '?'}m
             </span>
           </div>
         )}
