@@ -8,6 +8,8 @@ import { getStoreInfo, type StoreInfo } from '../utils/store';
 
 const DeliveryAddress = lazy(() => import('./DeliveryAddress').then(m => ({ default: m.DeliveryAddress })));
 
+type AddressParts = { houseNo: string; street: string; area: string; city: string; pincode: string; landmark: string };
+
 type CatalogProduct = { id: number; name: string; price: number; unit: string; image: string };
 
 /** Seed catalog, used until the products table is reachable. */
@@ -59,7 +61,7 @@ export function CustomerCart() {
   });
   const [selectedPayment, setSelectedPayment] = useState<CartPaymentMethod>('upi');
   const [paymentSuccess, setPaymentSuccess] = useState<{ amount: number; balance: number } | null>(null);
-  const [deliveryAddress, setDeliveryAddress] = useState<{ address: string; lat: number; lng: number } | null>(null);
+  const [deliveryAddress, setDeliveryAddress] = useState<{ address: string; lat: number; lng: number; parts?: AddressParts | null } | null>(null);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getProduct = (id: number) => products.find((p) => p.id === id);
@@ -175,6 +177,14 @@ export function CustomerCart() {
       return newCart;
     });  };
 
+  const updateAddressPart = (key: keyof AddressParts, value: string) => {
+    if (!deliveryAddress?.parts) return;
+    const parts = { ...deliveryAddress.parts, [key]: value };
+    const joined = [parts.houseNo, parts.street, parts.area, parts.city, parts.pincode].filter(Boolean).join(', ');
+    const address = joined + (parts.landmark ? `, Near ${parts.landmark}` : '');
+    setDeliveryAddress({ ...deliveryAddress, parts, address });
+  };
+
   if (cart.length === 0) {
     return (
       <div className="customer-cart">
@@ -243,9 +253,44 @@ export function CustomerCart() {
         {!deliveryAddress ? (
           <Suspense fallback={<div className="da-loading">Loading address picker...</div>}>
             <DeliveryAddress
-              onAddressConfirm={(addr, lat, lng) => setDeliveryAddress({ address: addr, lat, lng })}
+              onAddressConfirm={(addr, lat, lng, parts) => setDeliveryAddress({ address: addr, lat, lng, parts })}
             />
           </Suspense>
+        ) : deliveryAddress.parts ? (
+          <div className="da-fields-confirmed">
+            <div className="da-fields-confirmed-header">
+              <span className="da-fields-confirmed-label">📍 Delivering to</span>
+              <button className="da-confirmed-edit" onClick={() => setDeliveryAddress(null)}>Change</button>
+            </div>
+            <div className="da-saved-field-grid">
+              <div className="da-saved-field">
+                <label>House / Flat No</label>
+                <input type="text" value={deliveryAddress.parts.houseNo} onChange={(e) => updateAddressPart('houseNo', e.target.value)} />
+              </div>
+              <div className="da-saved-field">
+                <label>Street / Road</label>
+                <input type="text" value={deliveryAddress.parts.street} onChange={(e) => updateAddressPart('street', e.target.value)} />
+              </div>
+              <div className="da-saved-field">
+                <label>Area / Locality</label>
+                <input type="text" value={deliveryAddress.parts.area} onChange={(e) => updateAddressPart('area', e.target.value)} />
+              </div>
+              <div className="da-saved-field-row">
+                <div className="da-saved-field">
+                  <label>City</label>
+                  <input type="text" value={deliveryAddress.parts.city} onChange={(e) => updateAddressPart('city', e.target.value)} />
+                </div>
+                <div className="da-saved-field">
+                  <label>Pincode</label>
+                  <input type="text" value={deliveryAddress.parts.pincode} onChange={(e) => updateAddressPart('pincode', e.target.value)} />
+                </div>
+              </div>
+              <div className="da-saved-field">
+                <label>Landmark</label>
+                <input type="text" value={deliveryAddress.parts.landmark} onChange={(e) => updateAddressPart('landmark', e.target.value)} />
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="da-confirmed">
             <div className="da-confirmed-header">

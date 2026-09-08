@@ -7817,6 +7817,50 @@ body {
   text-overflow: ellipsis;
 }
 
+/* Saved address - separate editable fields */
+.da-saved-field-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.da-saved-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.da-saved-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.da-saved-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  box-sizing: border-box;
+  background: white;
+}
+
+.da-saved-field input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.da-fp-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 /* ========================================
    Delivery Address - Full Screen Pages
    ======================================== */
@@ -7828,15 +7872,35 @@ body {
   right: 0;
   bottom: 0;
   z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: da-fade-in 0.2s ease;
+}
+
+@keyframes da-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.da-fullpage-card {
   background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   animation: da-slide-up 0.25s ease;
+  overflow: hidden;
 }
 
 @keyframes da-slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .da-fp-header {
@@ -8231,6 +8295,42 @@ body {
 
 .da-confirmed-edit:hover {
   background: var(--success-light);
+}
+
+/* Confirmed address with editable separate fields (cart inline) */
+.da-fields-confirmed {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.da-fields-confirmed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.da-fields-confirmed-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.da-fields-confirmed .da-saved-field-grid {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 12px;
+}
+
+.da-fields-confirmed .da-confirmed-edit {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.da-fields-confirmed .da-confirmed-edit:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 
