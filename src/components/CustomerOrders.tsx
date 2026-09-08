@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { getItemOrders, updateItemOrderStatus } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus } from '../types/payment';
+
+const OrderTrackingMap = lazy(() => import('./OrderTrackingMap').then(m => ({ default: m.OrderTrackingMap })));
 
 // Product IDs match the catalog in CustomerCart.tsx.
 const PRODUCT_ID_BY_NAME: Record<string, number> = {
@@ -25,6 +27,7 @@ export function CustomerOrders() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OrderFilter>('pending');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   const flash = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -68,6 +71,9 @@ export function CustomerOrders() {
 
   const canCancel = (status: ItemOrderStatus) =>
     status === 'PENDING' || status === 'NOT_PAID';
+
+  const canTrack = (status: ItemOrderStatus) =>
+    status === 'PAID' || status === 'PENDING';
 
   useEffect(() => {
     let cancelled = false;
@@ -160,6 +166,7 @@ export function CustomerOrders() {
           <div className="orders-list">
             {filteredOrders.map((order) => {
               const meta = STATUS_META[order.status] || STATUS_META.NOT_PAID;
+              const isTracking = trackingOrderId === order.id;
               return (
                 <div key={order.id} className="order-card">
                   <div className="order-header">
@@ -190,7 +197,26 @@ export function CustomerOrders() {
                     </div>
                     <p className="order-date">{formatDate(order.createdAt)}</p>
                   </div>
+
+                  {/* Inline Tracking Map */}
+                  {isTracking && (
+                    <Suspense fallback={<div className="otm-loading">Loading map...</div>}>
+                      <OrderTrackingMap
+                        orderId={order.id}
+                        onClose={() => setTrackingOrderId(null)}
+                      />
+                    </Suspense>
+                  )}
+
                   <div className="order-actions">
+                    {canTrack(order.status) && (
+                      <button
+                        className={`order-btn track ${isTracking ? 'tracking-active' : ''}`}
+                        onClick={() => setTrackingOrderId(isTracking ? null : order.id)}
+                      >
+                        {isTracking ? '🗺️ Hide Map' : '🗺️ Track Order'}
+                      </button>
+                    )}
                     <button className="order-btn reorder" onClick={() => handleReorder(order)}>
                       Reorder
                     </button>

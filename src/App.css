@@ -7337,4 +7337,129 @@ body {
   }
 }
 
+/* ========================================
+   Inline Order Tracking Map (Swiggy/Zomato style)
+   ======================================== */
+
+.order-tracking-map {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  margin: 12px 0;
+  background: var(--bg-primary);
+}
+
+.otm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.otm-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.otm-icon {
+  font-size: 20px;
+}
+
+.otm-label {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.9;
+  display: block;
+}
+
+.otm-eta {
+  font-size: 14px;
+  font-weight: 700;
+  display: block;
+}
+
+.otm-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.otm-close:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.otm-map {
+  width: 100%;
+  height: 220px;
+}
+
+.otm-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.otm-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: otm-pulse 2s infinite;
+}
+
+@keyframes otm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.otm-status-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.otm-order-id {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.otm-loading {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.order-btn.track {
+  background: #10b981;
+  color: white;
+}
+
+.order-btn.track:hover {
+  background: #059669;
+}
+
+.order-btn.tracking-active {
+  background: var(--danger-color);
+}
+
+.order-btn.tracking-active:hover {
+  background: #dc2626;
+}
+
 
