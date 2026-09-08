@@ -20,6 +20,7 @@ import { CustomerOrders } from './components/CustomerOrders';
 import { CustomerSettings } from './components/CustomerSettings';
 import { ManageUpi } from './components/ManageUpi';
 import { CustomerBankMapping } from './components/CustomerBankMapping';
+import { TrackingPage } from './components/TrackingPage';
 import { ChatWidget } from './components/ChatWidget';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './auth/AuthContext';
@@ -159,6 +160,10 @@ function App() {
               }
             />
           </Route>
+
+          {/* Bike Tracking Page */}
+          <Route path="/track" element={<TrackingPage />} />
+          <Route path="/track/:bikeId" element={<TrackingPage />} />
 
           {/* Customer Routes with Layout */}
           <Route
