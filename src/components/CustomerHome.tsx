@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
 
 const products = [
   {
@@ -30,7 +29,6 @@ const products = [
 ];
 
 export function CustomerHome() {
-  const { session } = useAuth();
   const navigate = useNavigate();
   const [cart, setCart] = useState<{id: number; qty: number}[]>(() => {
     const saved = localStorage.getItem('customer_cart');
@@ -75,23 +73,17 @@ export function CustomerHome() {
         <div className="vendor-top">
           <div className="vendor-info">
             <div className="vendor-avatar">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
+              🏪
             </div>
             <div className="vendor-details">
-              <h2 className="vendor-name">{session?.customerName || 'Demo Vendor'}</h2>
+              <h2 className="vendor-name">VVK WATER SUPPLY</h2>
+              <p className="vendor-address">📍 Jeeva Complex, Alapakkam, Maduravoyal</p>
             </div>
           </div>
-          <button className="vendor-contact-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </button>
+          <a className="vendor-contact-link" href="tel:+919876543210">
+            📞
+          </a>
         </div>
-
       </div>
 
       {/* Banner */}
