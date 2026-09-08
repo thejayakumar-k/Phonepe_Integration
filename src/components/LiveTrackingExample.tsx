@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { MapTracker } from './MapTracker';
 import { useGPS } from '../hooks/useGPS';
 import { useRealtimeGPS } from '../hooks/useRealtimeGPS';
