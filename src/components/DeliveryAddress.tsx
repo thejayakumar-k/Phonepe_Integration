@@ -12,21 +12,22 @@ interface DeliveryAddressProps {
   onAddressConfirm: (address: string, lat: number, lng: number) => void;
 }
 
-type AddressMode = 'choose' | 'gps' | 'manual';
+type AddressMode = 'input' | 'options' | 'gps' | 'manual';
 
 export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const shopMarkerRef = useRef<maplibregl.Marker | null>(null);
   const destMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const routeSourceRef = useRef(false);
 
-  const [mode, setMode] = useState<AddressMode>('choose');
+  const [mode, setMode] = useState<AddressMode>('input');
+  const [inputValue, setInputValue] = useState('');
   const [manualAddress, setManualAddress] = useState('');
   const [manualLandmark, setManualLandmark] = useState('');
   const [gpsAddress, setGpsAddress] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const { position, error: gpsError, startTracking, stopTracking } = useGPS({
     enableHighAccuracy: true,
@@ -40,7 +41,6 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     return () => stopTracking();
   }, []);
 
-  // Create shop marker
   const createShopEl = useCallback(() => {
     const el = document.createElement('div');
     el.className = 'shop-marker';
@@ -48,7 +48,6 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     return el;
   }, []);
 
-  // Create destination marker
   const createDestEl = useCallback(() => {
     const el = document.createElement('div');
     el.className = 'gps-user-marker';
@@ -56,9 +55,9 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     return el;
   }, []);
 
-  // Initialize map at shop location
+  // Initialize map when GPS mode is selected
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (mode !== 'gps' || !mapContainer.current || map.current) return;
 
     const mapInstance = new maplibregl.Map({
       container: mapContainer.current,
@@ -71,12 +70,10 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
 
     mapInstance.on('load', () => {
-      // Shop marker
       shopMarkerRef.current = new maplibregl.Marker({ element: createShopEl(), anchor: 'center' })
         .setLngLat(SHOP_LOCATION)
         .addTo(mapInstance);
 
-      // Destination marker (at shop initially)
       destMarkerRef.current = new maplibregl.Marker({ element: createDestEl(), anchor: 'center' })
         .setLngLat(SHOP_LOCATION)
         .addTo(mapInstance);
@@ -91,97 +88,126 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
       map.current = null;
       shopMarkerRef.current = null;
       destMarkerRef.current = null;
+      setMapReady(false);
     };
-  }, []);
+  }, [mode === 'gps']);
 
-  // Draw route line between shop and destination
+  // Draw route
   const drawRoute = useCallback((destLng: number, destLat: number) => {
     if (!map.current || !mapReady) return;
+    if (map.current.getLayer('route-line')) map.current.removeLayer('route-line');
+    if (map.current.getSource('route')) map.current.removeSource('route');
 
-    const mapInstance = map.current;
-
-    // Remove old route if exists
-    if (mapInstance.getLayer('route-line')) mapInstance.removeLayer('route-line');
-    if (mapInstance.getSource('route')) mapInstance.removeSource('route');
-
-    // Draw straight line (OSRM routing would need API call, using direct line for free)
-    mapInstance.addSource('route', {
+    map.current.addSource('route', {
       type: 'geojson',
       data: {
         type: 'Feature',
-        geometry: {
-          type: 'LineString',
-          coordinates: [
-            SHOP_LOCATION,
-            [destLng, destLat],
-          ],
-        },
+        geometry: { type: 'LineString', coordinates: [SHOP_LOCATION, [destLng, destLat]] },
         properties: {},
       },
     });
 
-    mapInstance.addLayer({
+    map.current.addLayer({
       id: 'route-line',
       type: 'line',
       source: 'route',
-      layout: {
-        'line-join': 'round',
-        'line-cap': 'round',
-      },
-      paint: {
-        'line-color': '#2563eb',
-        'line-width': 3,
-        'line-dasharray': [2, 1],
-      },
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#2563eb', 'line-width': 3, 'line-dasharray': [2, 1] },
     });
-
-    routeSourceRef.current = true;
   }, [mapReady]);
 
-  // When GPS position arrives, update destination
+  // Update GPS on map
   useEffect(() => {
     if (!map.current || !position || !mapReady) return;
+    const lngLat: [number, number] = [position.longitude, position.latitude];
+    destMarkerRef.current?.setLngLat(lngLat);
+    drawRoute(position.longitude, position.latitude);
 
-    const destLng = position.longitude;
-    const destLat = position.latitude;
-
-    destMarkerRef.current?.setLngLat([destLng, destLat]);
-    drawRoute(destLng, destLat);
-
-    // Fit map to show both markers
     const bounds = new maplibregl.LngLatBounds();
     bounds.extend(SHOP_LOCATION);
-    bounds.extend([destLng, destLat]);
+    bounds.extend(lngLat);
     map.current.fitBounds(bounds, { padding: 60, duration: 1000 });
 
-    // Reverse geocode (approximate address from coordinates)
-    setGpsAddress(`Lat: ${destLat.toFixed(4)}, Lng: ${destLng.toFixed(4)}`);
+    setGpsAddress(`Lat: ${position.latitude.toFixed(4)}, Lng: ${position.longitude.toFixed(4)}`);
   }, [position, mapReady, drawRoute]);
+
+  const handleEditClick = () => {
+    setExpanded(true);
+    setMode('options');
+  };
+
+  const handleSelectGPS = () => {
+    setMode('gps');
+  };
+
+  const handleSelectManual = () => {
+    setMode('manual');
+  };
 
   const handleConfirmGPS = () => {
     if (!position) return;
-    const addr = gpsAddress || `Near your current location (${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)})`;
+    const addr = gpsAddress || `Current Location (${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)})`;
+    setInputValue(addr);
     setConfirmed(true);
+    setExpanded(false);
+    setMode('input');
     onAddressConfirm(addr, position.latitude, position.longitude);
   };
 
   const handleConfirmManual = () => {
     if (!manualAddress.trim()) return;
     const fullAddr = `${manualAddress}${manualLandmark ? ', ' + manualLandmark : ''}`;
-    // Use shop location as default for manual (no GPS for manual entry)
+    setInputValue(fullAddr);
     setConfirmed(true);
+    setExpanded(false);
+    setMode('input');
     onAddressConfirm(fullAddr, SHOP_LOCATION[1], SHOP_LOCATION[0]);
   };
 
-  if (confirmed) return null; // Hide after confirmation
+  const handleBack = () => {
+    setMode('options');
+  };
+
+  if (confirmed) {
+    return (
+      <div className="delivery-address-section">
+        <div className="da-input-row">
+          <span className="da-input-icon">📍</span>
+          <input
+            className="da-input-field"
+            value={inputValue}
+            readOnly
+            placeholder="Enter your address"
+          />
+          <button className="da-edit-btn" onClick={() => { setConfirmed(false); setExpanded(true); setMode('options'); }}>
+            ✏️
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="delivery-address-section">
       <h3 className="da-title">📍 Delivery Address</h3>
 
-      {mode === 'choose' && (
-        <div className="da-choose">
-          <button className="da-option" onClick={() => setMode('gps')}>
+      {/* Input field row with edit icon */}
+      <div className="da-input-row">
+        <span className="da-input-icon">📍</span>
+        <input
+          className="da-input-field"
+          value={inputValue}
+          readOnly
+          placeholder="Enter your address"
+          onClick={handleEditClick}
+        />
+        <button className="da-edit-btn" onClick={handleEditClick}>✏️</button>
+      </div>
+
+      {/* Expanded options panel */}
+      {expanded && mode === 'options' && (
+        <div className="da-expand-panel">
+          <button className="da-option" onClick={handleSelectGPS}>
             <span className="da-option-icon">📍</span>
             <div className="da-option-info">
               <span className="da-option-title">Use Current Location</span>
@@ -189,7 +215,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
             </div>
             <span className="da-option-arrow">›</span>
           </button>
-          <button className="da-option" onClick={() => setMode('manual')}>
+          <button className="da-option" onClick={handleSelectManual}>
             <span className="da-option-icon">✏️</span>
             <div className="da-option-info">
               <span className="da-option-title">Add New Address</span>
@@ -200,8 +226,9 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
         </div>
       )}
 
-      {mode === 'gps' && (
-        <div className="da-gps">
+      {/* GPS Map view */}
+      {expanded && mode === 'gps' && (
+        <div className="da-expand-panel">
           <div ref={mapContainer} className="da-map" />
           <div className="da-map-legend">
             <span><span className="otm-legend-dot shop" /> Shop</span>
@@ -210,7 +237,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
           {gpsError && <p className="da-error">⚠️ {gpsError}</p>}
           {position && <p className="da-gps-address">📍 {gpsAddress}</p>}
           <div className="da-actions">
-            <button className="da-btn back" onClick={() => setMode('choose')}>← Back</button>
+            <button className="da-btn back" onClick={handleBack}>← Back</button>
             <button className="da-btn confirm" onClick={handleConfirmGPS} disabled={!position}>
               ✓ Confirm Location
             </button>
@@ -218,8 +245,9 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
         </div>
       )}
 
-      {mode === 'manual' && (
-        <div className="da-manual">
+      {/* Manual address form */}
+      {expanded && mode === 'manual' && (
+        <div className="da-expand-panel">
           <div className="da-field">
             <label>Address *</label>
             <textarea
@@ -239,7 +267,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
             />
           </div>
           <div className="da-actions">
-            <button className="da-btn back" onClick={() => setMode('choose')}>← Back</button>
+            <button className="da-btn back" onClick={handleBack}>← Back</button>
             <button className="da-btn confirm" onClick={handleConfirmManual} disabled={!manualAddress.trim()}>
               ✓ Save Address
             </button>
