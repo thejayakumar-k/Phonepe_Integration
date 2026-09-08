@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useGPS } from '../hooks/useGPS';
@@ -13,82 +13,152 @@ interface OrderTrackingMapProps {
 export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const marker = useRef<maplibregl.Marker | null>(null);
-  const [eta, setEta] = useState<string>('Calculating...');
+  const userMarker = useRef<maplibregl.Marker | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
-  const { position, isTracking, startTracking, stopTracking } = useGPS({
+  const { position, error, isTracking, startTracking, stopTracking } = useGPS({
     enableHighAccuracy: true,
-    maximumAge: 3000,
-    timeout: 10000,
+    maximumAge: 2000,
+    timeout: 15000,
     watchPosition: true,
   });
 
-  // Start tracking on mount
+  // Start GPS on mount
   useEffect(() => {
     startTracking();
     return () => stopTracking();
   }, []);
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+  // Create a custom HTML marker for the user (blue dot with pulse)
+  const createUserMarkerHtml = useCallback(() => {
+    const el = document.createElement('div');
+    el.className = 'gps-user-marker';
+    el.innerHTML = `
+      <div class="gps-marker-pulse"></div>
+      <div class="gps-marker-dot"></div>
+    `;
+    return el;
+  }, []);
 
-    map.current = new maplibregl.Map({
+  // Initialize map once GPS position is available
+  useEffect(() => {
+    if (!mapContainer.current || map.current || !position) return;
+
+    const mapInstance = new maplibregl.Map({
       container: mapContainer.current,
       style: OPENFREEMAP_STYLE,
-      center: [77.5946, 12.9716], // Default: Bangalore
-      zoom: 15,
+      center: [position.longitude, position.latitude],
+      zoom: 16,
       attributionControl: false,
     });
 
-    // Simulate delivery partner marker (green)
-    marker.current = new maplibregl.Marker({ color: '#10b981', scale: 1.0 })
-      .setLngLat([77.5946, 12.9716])
-      .addTo(map.current);
+    mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+    mapInstance.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+    // Wait for map style to load before adding markers
+    mapInstance.on('load', () => {
+      // User location marker (blue pulsing dot)
+      userMarker.current = new maplibregl.Marker({
+        element: createUserMarkerHtml(),
+        anchor: 'center',
+      })
+        .setLngLat([position.longitude, position.latitude])
+        .addTo(mapInstance);
+
+      setMapReady(true);
+    });
+
+    map.current = mapInstance;
 
     return () => {
-      map.current?.remove();
+      mapInstance.remove();
       map.current = null;
+      userMarker.current = null;
+      setMapReady(false);
     };
+  }, [position !== null]); // Only run once when position becomes available
+
+  // Real-time: update marker position whenever GPS position changes
+  useEffect(() => {
+    if (!map.current || !position || !mapReady) return;
+
+    const lngLat: [number, number] = [position.longitude, position.latitude];
+
+    // Update user marker
+    userMarker.current?.setLngLat(lngLat);
+
+    // Smooth pan to follow user (only when not dragging/zooming)
+    if (!map.current.isMoving()) {
+      map.current.panTo(lngLat, { duration: 1000 });
+    }
+  }, [position, mapReady]);
+
+  // Toggle fullscreen
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => !prev);
+    // Resize map after CSS transition
+    setTimeout(() => {
+      map.current?.resize();
+    }, 350);
   }, []);
 
-  // Update map when GPS position changes
-  useEffect(() => {
-    if (map.current && position) {
-      const newCenter: [number, number] = [position.longitude, position.latitude];
-      map.current.flyTo({ center: newCenter, zoom: 16, essential: true });
-      marker.current?.setLngLat(newCenter);
-
-      // Simulate ETA based on speed
-      if (position.speed && position.speed > 0) {
-        const km = (Math.random() * 3 + 0.5).toFixed(1);
-        const mins = Math.round((parseFloat(km) / (position.speed * 3.6)) * 60);
-        setEta(`${mins} min · ${km} km away`);
-      } else {
-        setEta('Arriving soon');
-      }
-    }
-  }, [position]);
+  const formatTime = (ts: number) => new Date(ts).toLocaleTimeString();
 
   return (
-    <div className="order-tracking-map">
-      <div className="otm-header">
-        <div className="otm-title">
-          <span className="otm-icon">🚲</span>
-          <div>
-            <span className="otm-label">Delivery Partner</span>
-            <span className="otm-eta">{eta}</span>
+    <div className={`otm-container ${isFullscreen ? 'otm-fullscreen' : ''}`}>
+      {/* Overlay backdrop for fullscreen */}
+      {isFullscreen && <div className="otm-backdrop" onClick={onClose} />}
+
+      <div className={`otm-panel ${isFullscreen ? 'otm-panel-full' : ''}`}>
+        {/* Header */}
+        <div className="otm-header">
+          <div className="otm-title">
+            <span className="otm-icon">🚲</span>
+            <div>
+              <span className="otm-label">Delivery Partner</span>
+              <span className="otm-eta">
+                {position ? '📍 Live location active' : 'Waiting for GPS...'}
+              </span>
+            </div>
+          </div>
+          <div className="otm-header-actions">
+            <button className="otm-fullscreen-btn" onClick={toggleFullscreen}>
+              {isFullscreen ? '⬜' : '⛶'}
+            </button>
+            <button className="otm-close" onClick={onClose}>✕</button>
           </div>
         </div>
-        <button className="otm-close" onClick={onClose}>✕</button>
-      </div>
-      <div ref={mapContainer} className="otm-map" />
-      <div className="otm-footer">
-        <span className="otm-status-dot" />
-        <span className="otm-status-text">
-          {isTracking ? 'Live tracking active' : 'Waiting for GPS...'}
-        </span>
-        <span className="otm-order-id">Order {orderId}</span>
+
+        {/* Map */}
+        <div ref={mapContainer} className="otm-map" />
+
+        {/* Footer */}
+        <div className="otm-footer">
+          <span className={`otm-status-dot ${isTracking ? 'live' : ''}`} />
+          <span className="otm-status-text">
+            {error
+              ? `⚠️ ${error}`
+              : isTracking
+                ? `Live · ${position ? formatTime(position.timestamp) : 'Acquiring...'}`
+                : 'Tracking paused'}
+          </span>
+          {position && (
+            <span className="otm-coords">
+              {position.latitude.toFixed(5)}, {position.longitude.toFixed(5)}
+            </span>
+          )}
+        </div>
+
+        {/* Bottom info (compact mode only) */}
+        {!isFullscreen && (
+          <div className="otm-bottom-info">
+            <span className="otm-order-id">Order {orderId}</span>
+            <span className="otm-accuracy">
+              ±{position ? position.accuracy.toFixed(0) : '?'}m accuracy
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
