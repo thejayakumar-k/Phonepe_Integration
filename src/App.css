@@ -7649,6 +7649,89 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Map loading */
+.da-map-loading {
+  padding: 40px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+}
+
+/* Address display below map */
+.da-address-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 10px;
+}
+
+.da-address-from {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger-color);
+}
+
+.da-address-arrow {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.da-address-to {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.da-address-waiting {
+  font-size: 12px;
+  color: var(--text-muted);
+  animation: da-blink 1.5s infinite;
+}
+
+@keyframes da-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Confirmed input row */
+.da-input-row.confirmed {
+  background: var(--success-light);
+  border-color: var(--success-color);
+}
+
+.da-confirmed-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.da-confirmed-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--success-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.da-confirmed-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .da-option {
   display: flex;
   align-items: center;

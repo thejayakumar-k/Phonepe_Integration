@@ -6,7 +6,7 @@ import { useGPS } from '../hooks/useGPS';
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/bright';
 
 // VVK WATER SUPPLY - Shop location
-const SHOP_LOCATION: [number, number] = [80.170, 13.054];
+const SHOP_LOCATION: [number, number] = [80.170, 13.054]; // [lng, lat]
 
 interface DeliveryAddressProps {
   onAddressConfirm: (address: string, lat: number, lng: number) => void;
@@ -16,17 +16,17 @@ type AddressMode = 'input' | 'options' | 'gps' | 'manual';
 
 export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | null>(null);
+  const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const shopMarkerRef = useRef<maplibregl.Marker | null>(null);
   const destMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const mapInitRef = useRef(false);
 
   const [mode, setMode] = useState<AddressMode>('input');
   const [inputValue, setInputValue] = useState('');
   const [manualAddress, setManualAddress] = useState('');
   const [manualLandmark, setManualLandmark] = useState('');
-  const [gpsAddress, setGpsAddress] = useState('');
   const [confirmed, setConfirmed] = useState(false);
-  const [mapReady, setMapReady] = useState(false);
+  const [mapLoading, setMapLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const { position, error: gpsError, startTracking, stopTracking } = useGPS({
@@ -41,6 +41,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     return () => stopTracking();
   }, []);
 
+  // Create markers
   const createShopEl = useCallback(() => {
     const el = document.createElement('div');
     el.className = 'shop-marker';
@@ -55,81 +56,126 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     return el;
   }, []);
 
-  // Initialize map when GPS mode is selected
-  useEffect(() => {
-    if (mode !== 'gps' || !mapContainer.current || map.current) return;
-
-    const mapInstance = new maplibregl.Map({
-      container: mapContainer.current,
-      style: OPENFREEMAP_STYLE,
-      center: SHOP_LOCATION,
-      zoom: 14,
-      attributionControl: false,
-    });
-
-    mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
-
-    mapInstance.on('load', () => {
-      shopMarkerRef.current = new maplibregl.Marker({ element: createShopEl(), anchor: 'center' })
-        .setLngLat(SHOP_LOCATION)
-        .addTo(mapInstance);
-
-      destMarkerRef.current = new maplibregl.Marker({ element: createDestEl(), anchor: 'center' })
-        .setLngLat(SHOP_LOCATION)
-        .addTo(mapInstance);
-
-      setMapReady(true);
-    });
-
-    map.current = mapInstance;
-
-    return () => {
-      mapInstance.remove();
-      map.current = null;
+  // Clean up map
+  const cleanupMap = useCallback(() => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
       shopMarkerRef.current = null;
       destMarkerRef.current = null;
-      setMapReady(false);
-    };
-  }, [mode === 'gps']);
+      mapInitRef.current = false;
+    }
+  }, []);
 
-  // Draw route
-  const drawRoute = useCallback((destLng: number, destLat: number) => {
-    if (!map.current || !mapReady) return;
-    if (map.current.getLayer('route-line')) map.current.removeLayer('route-line');
-    if (map.current.getSource('route')) map.current.removeSource('route');
+  // Initialize map when entering GPS mode - use requestAnimationFrame to ensure DOM is ready
+  const initMap = useCallback(() => {
+    if (mapInitRef.current || !mapContainer.current) return;
 
-    map.current.addSource('route', {
-      type: 'geojson',
-      data: {
-        type: 'Feature',
-        geometry: { type: 'LineString', coordinates: [SHOP_LOCATION, [destLng, destLat]] },
-        properties: {},
-      },
+    setMapLoading(true);
+    mapInitRef.current = true;
+
+    const container = mapContainer.current;
+
+    // Use requestAnimationFrame to ensure container has dimensions
+    requestAnimationFrame(() => {
+      if (!container || mapInstanceRef.current) {
+        setMapLoading(false);
+        return;
+      }
+
+      const mapInstance = new maplibregl.Map({
+        container,
+        style: OPENFREEMAP_STYLE,
+        center: SHOP_LOCATION,
+        zoom: 14,
+        attributionControl: false,
+      });
+
+      mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+
+      mapInstance.on('load', () => {
+        // Add shop marker
+        shopMarkerRef.current = new maplibregl.Marker({
+          element: createShopEl(),
+          anchor: 'center',
+        })
+          .setLngLat(SHOP_LOCATION)
+          .addTo(mapInstance);
+
+        // Add destination marker at shop location
+        destMarkerRef.current = new maplibregl.Marker({
+          element: createDestEl(),
+          anchor: 'center',
+        })
+          .setLngLat(SHOP_LOCATION)
+          .addTo(mapInstance);
+
+        setMapLoading(false);
+
+        // If GPS is already available, update map immediately
+        if (position) {
+          const lngLat: [number, number] = [position.longitude, position.latitude];
+          destMarkerRef.current.setLngLat(lngLat);
+          mapInstance.flyTo({ center: lngLat, zoom: 15, duration: 1500 });
+        }
+      });
+
+      // Handle errors
+      mapInstance.on('error', (e) => {
+        console.error('Map error:', e);
+        setMapLoading(false);
+      });
+
+      mapInstanceRef.current = mapInstance;
     });
+  }, [createShopEl, createDestEl, position]);
 
-    map.current.addLayer({
-      id: 'route-line',
-      type: 'line',
-      source: 'route',
-      layout: { 'line-join': 'round', 'line-cap': 'round' },
-      paint: { 'line-color': '#2563eb', 'line-width': 3, 'line-dasharray': [2, 1] },
-    });
-  }, [mapReady]);
-
-  // Update GPS on map
+  // When GPS position arrives, update map
   useEffect(() => {
-    if (!map.current || !position || !mapReady) return;
-    const lngLat: [number, number] = [position.longitude, position.latitude];
-    destMarkerRef.current?.setLngLat(lngLat);
-    drawRoute(position.longitude, position.latitude);
+    if (!mapInstanceRef.current || !position) return;
 
+    const lngLat: [number, number] = [position.longitude, position.latitude];
+
+    // Update destination marker
+    destMarkerRef.current?.setLngLat(lngLat);
+
+    // Draw route line
+    const mapInst = mapInstanceRef.current;
+    try {
+      if (mapInst.getLayer('route-line')) mapInst.removeLayer('route-line');
+      if (mapInst.getSource('route')) mapInst.removeSource('route');
+
+      mapInst.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [SHOP_LOCATION, lngLat] },
+          properties: {},
+        },
+      });
+
+      mapInst.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#2563eb', 'line-width': 3, 'line-dasharray': [2, 1] },
+      });
+    } catch {
+      // ignore if layer already exists
+    }
+
+    // Fit bounds to show both markers
     const bounds = new maplibregl.LngLatBounds();
     bounds.extend(SHOP_LOCATION);
     bounds.extend(lngLat);
-    map.current.fitBounds(bounds, { padding: 60, duration: 1000 });
+    mapInst.fitBounds(bounds, { padding: 50, duration: 1000 });
+  }, [position]);
 
-    setGpsAddress(`Lat: ${position.latitude.toFixed(4)}, Lng: ${position.longitude.toFixed(4)}`);
-  }, [position, mapReady, drawRoute]);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => cleanupMap();
+  }, [cleanupMap]);
 
   const handleEditClick = () => {
     setExpanded(true);
@@ -138,6 +184,8 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
   const handleSelectGPS = () => {
     setMode('gps');
+    // Init map after render
+    setTimeout(() => initMap(), 100);
   };
 
   const handleSelectManual = () => {
@@ -146,11 +194,12 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
   const handleConfirmGPS = () => {
     if (!position) return;
-    const addr = gpsAddress || `Current Location (${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)})`;
+    const addr = `Jeeva Complex, Alapakkam, Maduravoyal → Your Location (${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)})`;
     setInputValue(addr);
     setConfirmed(true);
     setExpanded(false);
     setMode('input');
+    cleanupMap();
     onAddressConfirm(addr, position.latitude, position.longitude);
   };
 
@@ -161,24 +210,25 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     setConfirmed(true);
     setExpanded(false);
     setMode('input');
+    cleanupMap();
     onAddressConfirm(fullAddr, SHOP_LOCATION[1], SHOP_LOCATION[0]);
   };
 
   const handleBack = () => {
+    cleanupMap();
     setMode('options');
   };
 
+  // Confirmed state - show input with address
   if (confirmed) {
     return (
       <div className="delivery-address-section">
-        <div className="da-input-row">
+        <div className="da-input-row confirmed">
           <span className="da-input-icon">📍</span>
-          <input
-            className="da-input-field"
-            value={inputValue}
-            readOnly
-            placeholder="Enter your address"
-          />
+          <div className="da-confirmed-text">
+            <span className="da-confirmed-label">Delivering to</span>
+            <span className="da-confirmed-value">{inputValue}</span>
+          </div>
           <button className="da-edit-btn" onClick={() => { setConfirmed(false); setExpanded(true); setMode('options'); }}>
             ✏️
           </button>
@@ -229,13 +279,29 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
       {/* GPS Map view */}
       {expanded && mode === 'gps' && (
         <div className="da-expand-panel">
-          <div ref={mapContainer} className="da-map" />
+          {mapLoading && <div className="da-map-loading">Loading map...</div>}
+          <div
+            ref={mapContainer}
+            className="da-map"
+            style={{ display: mapLoading ? 'none' : 'block' }}
+          />
           <div className="da-map-legend">
-            <span><span className="otm-legend-dot shop" /> Shop</span>
+            <span><span className="otm-legend-dot shop" /> Shop (Jeeva Complex)</span>
             <span><span className="otm-legend-dot user" /> Your Location</span>
           </div>
           {gpsError && <p className="da-error">⚠️ {gpsError}</p>}
-          {position && <p className="da-gps-address">📍 {gpsAddress}</p>}
+          {position && (
+            <div className="da-address-display">
+              <span className="da-address-from">🏪 Jeeva Complex, Alapakkam, Maduravoyal</span>
+              <span className="da-address-arrow">↓</span>
+              <span className="da-address-to">📍 Your Location ({position.latitude.toFixed(4)}, {position.longitude.toFixed(4)})</span>
+            </div>
+          )}
+          {!position && !gpsError && (
+            <div className="da-address-display">
+              <span className="da-address-waiting">📍 Waiting for GPS signal...</span>
+            </div>
+          )}
           <div className="da-actions">
             <button className="da-btn back" onClick={handleBack}>← Back</button>
             <button className="da-btn confirm" onClick={handleConfirmGPS} disabled={!position}>
