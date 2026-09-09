@@ -8839,3 +8839,19 @@ svg .ltm-animated-dash {
   background: rgba(255,255,255,0.75) !important;
   padding: 2px 5px !important;
 }
+
+/* =========================================================
+   ROUTE LINE DASH ANIMATION FIX
+   In Leaflet, className on polyline goes to the SVG <path> directly
+   ========================================================= */
+
+/* Animated flowing dashes on the route line */
+path.ltm-animated-dash {
+  animation: ltm-dash-flow 1.8s linear infinite !important;
+  stroke-dasharray: 12, 18;
+}
+
+@keyframes ltm-dash-flow {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -60; }
+}

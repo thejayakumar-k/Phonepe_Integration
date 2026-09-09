@@ -24,8 +24,8 @@ export const MOTO_SVG_MARKUP =
   // Seat / body top
   '<path d="M22 20 Q28 16 36 18 L40 22 L22 22 Z" fill="#1d4ed8"/>' +
   // Delivery box on back
-  '<rect x="6" y="14" width="18" height="12" rx="2" fill="#16a34a" stroke="#15803d" stroke-width="1"/>' +
-  '<text x="15" y="23" font-size="6" font-family="sans-serif" font-weight="bold" fill="white" text-anchor="middle">VVK</text>' +
+  '<rect x="6" y="14" width="18" height="12" rx="2" fill="#0ea5e9" stroke="#0284c7" stroke-width="1"/>' +
+  '<text x="15" y="23" font-size="5.5" font-family="sans-serif" font-weight="bold" fill="white" text-anchor="middle">OOR</text>' +
   // Rider body
   '<ellipse cx="30" cy="19" rx="5" ry="7" fill="#374151"/>' +
   // Rider arm

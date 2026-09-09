@@ -8,11 +8,10 @@ import { getItemOrders } from '../utils/storage';
 import {
   formatDistanceMeters,
   formatEtaMinutes,
-  isFreshFix,
   haversineMeters,
 } from '../utils/geo';
 
-// VVK WATER SUPPLY - Jeeva Complex, Alapakkam, Maduravoyal, Chennai
+// Oorunii - Jeeva Complex, Alapakkam, Maduravoyal, Chennai
 const SHOP_LOCATION = { lat: 13.054, lng: 80.17 };
 
 interface OrderTrackingMapProps {
@@ -69,9 +68,15 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => { cancelled = true; };
   }, [orderId]);
 
-  // Bike position: prefer realtime partner, else this device's GPS
+  /**
+   * Bike position logic:
+   *  1. Real delivery partner streaming via Supabase → use that
+   *  2. No partner streaming → bike starts at SHOP (delivery comes from shop)
+   *     Customer's GPS is only used for the DESTINATION (their address), not the bike.
+   */
   const bike = useMemo<LiveBikeLocation | null>(() => {
     if (bikeLocation) {
+      // Real delivery partner is streaming from their device
       return {
         lat: bikeLocation.latitude,
         lng: bikeLocation.longitude,
@@ -80,40 +85,37 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
         timestamp: bikeLocation.timestamp ? Date.parse(bikeLocation.timestamp) : null,
       };
     }
-    if (position) {
-      return {
-        lat: position.latitude,
-        lng: position.longitude,
-        heading: position.heading ?? null,
-        timestamp: position.timestamp,
-        speed: position.speed ?? null,
-      };
-    }
-    return null;
-  }, [bikeLocation, position]);
+    // Fallback: show bike at SHOP location (delivery origin)
+    // The route will draw from shop → customer address
+    return {
+      lat: SHOP_LOCATION.lat,
+      lng: SHOP_LOCATION.lng,
+      heading: 90, // facing east by default
+      timestamp: Date.now(),
+      speed: null,
+    };
+  }, [bikeLocation]);
 
-  // Customer destination: saved address or fallback to shop
+  // Customer destination: saved order address → customer GPS → shop fallback
   const destination = deliveryTarget ?? (position ? { lat: position.latitude, lng: position.longitude } : SHOP_LOCATION);
 
   // OSRM route: bike → customer address
   const { route } = useDeliveryRoute(bike, destination);
 
-  // Only show stats when GPS has a real fresh fix
-  const hasRealFix = bike ? isFreshFix(bike.timestamp, now) : false;
+  // Show stats: bike is always available (at shop or partner), but only show ETA once destination is real
+  const hasRealFix = !!destination && destination !== SHOP_LOCATION;
 
   const distanceMeters = useMemo(() => {
-    if (!bike || !hasRealFix) return null;
     if (route?.isRoadRoute && route.distanceMeters > 0) return route.distanceMeters;
     const d = Math.round(haversineMeters(bike, destination));
-    return d > 0 ? d : null;
-  }, [bike, hasRealFix, route, destination]);
+    return d > 10 ? d : null;
+  }, [bike, route, destination]);
 
   const etaSeconds = useMemo(() => {
-    if (!bike || !hasRealFix) return null;
     if (route?.isRoadRoute && route.durationSeconds > 0) return route.durationSeconds;
     const d = haversineMeters(bike, destination);
-    return d > 10 ? Math.round(d / 8.33) : null;
-  }, [bike, hasRealFix, route, destination, now]);
+    return d > 100 ? Math.round(d / 8.33) : null;
+  }, [bike, route, destination, now]);
 
 
 
@@ -134,7 +136,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           <div className="otm-title">
             <span className="otm-icon">🛵</span>
             <div>
-              <span className="otm-label">VVK WATER SUPPLY</span>
+              <span className="otm-label">OORUNII</span>
               <span className="otm-eta">
                 📍 Jeeva Complex, Alapakkam, Maduravoyal
               </span>
@@ -184,7 +186,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
             shopLocation={SHOP_LOCATION}
             route={route}
             destinationLabel="Your address"
-            shopLabel="VVK Water Supply"
+            shopLabel="Oorunii"
             partnerLabel="Delivery bike"
           />
 
@@ -196,10 +198,10 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
                 ? (error.includes('denied') ? '🔒 Allow location to track' : `⚠️ ${error}`)
                 : isConnected && bikeLocation
                   ? '🛵 Live · Partner streaming'
-                  : hasRealFix
-                    ? `🛵 Live · GPS locked`
+                  : position
+                    ? `🛵 Live · Tracking from Oorunii`
                     : isTracking
-                      ? '📡 Acquiring GPS…'
+                      ? '📡 Acquiring your location…'
                       : '📡 Waiting for GPS…'}
             </span>
           </div>
