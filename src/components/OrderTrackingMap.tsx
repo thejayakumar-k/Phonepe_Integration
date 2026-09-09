@@ -77,8 +77,8 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => clearInterval(t);
   }, []);
 
-// Real AGS Theatre (AGS Cinemas), Chennai
-const AGS_THEATRE = { lat: 13.0474821, lng: 80.2450469 };
+// Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
+const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
 
 // Load real destination address from saved order
   useEffect(() => {
@@ -98,19 +98,19 @@ const AGS_THEATRE = { lat: 13.0474821, lng: 80.2450469 };
     [position]
   );
 
-  // Destination point: AGS Theatre (AGS Cinemas)
+  // Destination point: AGS Theatre, Maduravoyal
   const destination = useMemo(
-    () => deliveryTarget ?? AGS_THEATRE,
+    () => deliveryTarget ?? MADURAVOYAL_AGS,
     [deliveryTarget]
   );
 
   // Reverse-geocode destination → show real address in header
   useEffect(() => {
     let cancelled = false;
-    setDeliveryAddressText('AGS Theatre (AGS Cinemas)');
+    setDeliveryAddressText('AGS Theatre, Maduravoyal');
     reverseGeocode(destination.lat, destination.lng).then((addr) => {
       if (!cancelled && addr) {
-        setDeliveryAddressText(`AGS Theatre, ${addr}`);
+        setDeliveryAddressText(`AGS Theatre, Maduravoyal (${addr})`);
       }
     });
     return () => { cancelled = true; };
@@ -239,7 +239,7 @@ const AGS_THEATRE = { lat: 13.0474821, lng: 80.2450469 };
             destination={destination}
             shopLocation={shop}
             route={route}
-            destinationLabel="AGS Theatre (AGS Cinemas)"
+            destinationLabel="AGS Theatre, Maduravoyal"
             shopLabel="Your Location (Shop)"
             partnerLabel="Delivery bike"
           />
