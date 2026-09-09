@@ -93,10 +93,14 @@ export function DeliveryDashboard() {
         ) : (
           orders.map((order) => {
             const isDeliveringThis = deliveryStream.isDelivering && deliveryStream.activeOrder?.id === order.id;
-            const isAssigned = order.status === 'PENDING' || order.status === 'PAID' || !order.status || (!order.assignedPartnerId && order.status !== 'OUT_FOR_DELIVERY' && order.status !== 'DELIVERED');
             const isOutForDelivery = order.status === 'OUT_FOR_DELIVERY' || isDeliveringThis;
             const isDelivered = order.status === 'DELIVERED';
+            const isCancelled = order.status === 'CANCELLED';
             const isCod = order.paymentMethod === 'COD' || order.status === 'NOT_PAID';
+            // Any order that isn't started, delivered or cancelled — keeping
+            // this independent of assignedPartnerId so "Start Delivery" always
+            // shows until the trip begins.
+            const isAssigned = !isOutForDelivery && !isDelivered && !isCancelled;
 
             return (
               <div key={order.id} className="dp-card">
