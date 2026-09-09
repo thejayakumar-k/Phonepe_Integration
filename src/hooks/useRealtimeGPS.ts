@@ -62,6 +62,19 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
   useEffect(() => {
     if (!enabled || !bikeId) return;
 
+    // ── Fetch current row immediately (delivery partner may have started before customer opened this) ──
+    supabase
+      .from('bike_locations')
+      .select('*')
+      .eq('bike_id', bikeId)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setBikeLocation(data[0] as BikeLocation);
+        }
+      });
+
     const channel = supabase
       .channel(`bike:${bikeId}`)
       .on(

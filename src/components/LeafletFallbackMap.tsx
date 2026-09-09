@@ -217,15 +217,22 @@ export function LeafletFallbackMap({
 
   useEffect(() => {
     if (!mapRef.current) return;
-    const coords: Array<[number, number]> =
-      route && route.coordinates.length > 1
-        ? route.coordinates.map((c) => [c[1], c[0]] as [number, number])
-        : [];
+    let coords: Array<[number, number]> = [];
+    if (route && route.coordinates.length > 1) {
+      // OSRM road-following route
+      coords = route.coordinates.map((c) => [c[1], c[0]] as [number, number]);
+    } else if (bike) {
+      // Fallback: straight line from bike to destination
+      coords = [
+        [bike.lat, bike.lng],
+        [destination.lat, destination.lng],
+      ];
+    }
     casingRef.current?.setLatLngs(coords);
     lineRef.current?.setLatLngs(coords);
     animDashRef.current?.setLatLngs(coords);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeKey]);
+  }, [routeKey, bike?.lat, bike?.lng, destination.lat, destination.lng]);
 
 
   // ── Real-time bike position + heading + auto-pan ──
@@ -243,10 +250,13 @@ export function LeafletFallbackMap({
       // Show the badge (it may have been hidden by Leaflet internals)
       container.style.opacity = '1';
       // Rotate scooter glyph to match GPS heading
+      // GPS heading: 0=North, 90=East, 180=South, 270=West
+      // SVG faces East (right), so we subtract 90 to align: North→-90deg, East→0deg
       const glyph = container.querySelector<HTMLElement>('.ltm-bike-glyph');
       if (glyph) {
-        const heading = typeof bike.heading === 'number' && bike.heading >= 0 ? bike.heading : 0;
-        glyph.style.transform = `rotate(${heading}deg)`;
+        const rawHeading = typeof bike.heading === 'number' && bike.heading >= 0 ? bike.heading : 90;
+        const cssRotation = rawHeading - 90; // convert GPS heading to SVG rotation
+        glyph.style.transform = `rotate(${cssRotation}deg)`;
         glyph.style.transition = 'transform 0.7s cubic-bezier(0.22,1,0.36,1)';
       }
       // Ensure pulsing ring is visible

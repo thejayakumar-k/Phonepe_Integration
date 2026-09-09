@@ -191,7 +191,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           <div className={`otm-live-pill ${hasGPS ? 'otm-live-pill-active' : ''}`}>
             <span className={`otm-status-dot ${hasGPS ? 'live' : ''}`} />
             <span className="otm-status-text">
-              {isConnected && bikeLocation
+              {bikeLocation
                 ? '🛵 Live · Partner streaming'
                 : '📡 Waiting for delivery partner…'}
             </span>
