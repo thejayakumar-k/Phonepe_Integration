@@ -267,11 +267,43 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
   };
 
   // ─── SAVE MANUAL ─────────────────────────────────────────
-  const handleSaveManual = () => {
+  const [manualSaving, setManualSaving] = useState(false);
+
+  const handleSaveManual = async () => {
     const partsArr = [houseNo, street, area, city, pincode].filter(Boolean);
     if (partsArr.length === 0) return;
     const parts: AddressParts = { houseNo, street, area, city, pincode, landmark };
     const addr = partsArr.join(', ') + (landmark ? `, Near ${landmark}` : '');
+
+    // Try to geocode the manual address via Nominatim so the delivery
+    // partner map gets real coordinates instead of the shop location.
+    setManualSaving(true);
+    try {
+      const query = encodeURIComponent(addr);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const results = await res.json();
+      if (Array.isArray(results) && results.length > 0) {
+        const geo = results[0];
+        const lat = parseFloat(geo.lat);
+        const lng = parseFloat(geo.lon);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          setPage('home');
+          setManualSaving(false);
+          onAddressConfirm(addr, lat, lng, parts);
+          return;
+        }
+      }
+    } catch {
+      // geocoding failed — fall through to prompt user
+    }
+    setManualSaving(false);
+    // Geocoding failed — alert user so they know the address wasn't
+    // pinpointed on the map. The fallback still saves the order with
+    // shop coordinates so the flow isn't completely blocked.
+    alert('Could not locate your address on the map. Please use "Use Current Location" for accurate delivery tracking.');
     setPage('home');
     onAddressConfirm(addr, SHOP_LOCATION[1], SHOP_LOCATION[0], parts);
   };
@@ -461,9 +493,9 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
           <button
             className="da-fp-save"
             onClick={handleSaveManual}
-            disabled={!houseNo.trim() && !street.trim() && !area.trim()}
+            disabled={manualSaving || (!houseNo.trim() && !street.trim() && !area.trim())}
           >
-            ✓ Save Address
+            {manualSaving ? '📍 Locating…' : '✓ Save Address'}
           </button>
         </div>
       </div>

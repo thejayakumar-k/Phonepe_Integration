@@ -12,6 +12,11 @@ const SHOP_LOCATION = { lat: 13.0550, lng: 80.1633 };
 // Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai — fallback destination
 const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
 
+/** Check if two geo points are within a few meters of each other. */
+function isNear(a: { lat: number; lng: number }, b: { lat: number; lng: number }, meters = 50): boolean {
+  return haversineMeters(a, b) < meters;
+}
+
 interface VendorDeliveryMapProps {
   order: ItemOrder;
   delivery: VendorDeliveryState;
@@ -30,13 +35,18 @@ export function VendorDeliveryMap({ order, delivery, onClose }: VendorDeliveryMa
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 3000);
     return () => clearInterval(t);
-  }, []);
-
-// Destination: customer delivery address (falls back to a real nearby
-// landmark so the route line + pins stay meaningful, never the shop itself).
-const destination = useMemo(() => {
+  }, []);  // Destination: customer delivery address (falls back to a real nearby
+  // landmark so the route line + pins stay meaningful, never the shop itself).
+  const destination = useMemo(() => {
     if (order.deliveryAddress) {
-      return { lat: order.deliveryAddress.lat, lng: order.deliveryAddress.lng };
+      const addr = { lat: order.deliveryAddress.lat, lng: order.deliveryAddress.lng };
+      // If the saved coordinates are at/near the shop, the address was likely
+      // entered manually without proper geocoding.  Use AGS Theatre as a
+      // meaningful fallback so the route and pins stay visible.
+      if (isNear(addr, SHOP_LOCATION)) {
+        return MADURAVOYAL_AGS;
+      }
+      return addr;
     }
     return MADURAVOYAL_AGS;
   }, [order]);

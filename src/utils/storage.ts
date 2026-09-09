@@ -531,8 +531,20 @@ function itemOrderToRow(o: ItemOrder): ItemOrderRow {
   };
 }
 
+// Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai — fallback destination
+// when no valid delivery address coordinates are available.
+const FALLBACK_DEST_LAT = 13.0606;
+const FALLBACK_DEST_LNG = 80.1661;
+
 function rowToItemOrder(r: ItemOrderRow): ItemOrder {
   const rawAddr = r.delivery_address && typeof r.delivery_address === 'object' ? (r.delivery_address as Record<string, any>) : null;
+
+  // Parse lat/lng robustly — Supabase may return them as strings from JSONB.
+  const rawLat = rawAddr?.lat;
+  const rawLng = rawAddr?.lng;
+  const parsedLat = typeof rawLat === 'number' ? rawLat : (typeof rawLat === 'string' ? parseFloat(rawLat) : NaN);
+  const parsedLng = typeof rawLng === 'number' ? rawLng : (typeof rawLng === 'string' ? parseFloat(rawLng) : NaN);
+
   return {
     id: r.id,
     customerId: r.customer_id,
@@ -548,8 +560,8 @@ function rowToItemOrder(r: ItemOrderRow): ItemOrder {
     deliveryAddress: rawAddr
       ? {
           address: rawAddr.address || 'Pillaiyar Koil Street, Maduravoyal, Chennai',
-          lat: typeof rawAddr.lat === 'number' ? rawAddr.lat : 13.0550,
-          lng: typeof rawAddr.lng === 'number' ? rawAddr.lng : 80.1633,
+          lat: Number.isFinite(parsedLat) ? parsedLat : FALLBACK_DEST_LAT,
+          lng: Number.isFinite(parsedLng) ? parsedLng : FALLBACK_DEST_LNG,
         }
       : undefined,
     assignedPartnerId: rawAddr?._assignedPartnerId,

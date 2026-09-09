@@ -193,7 +193,10 @@ export function LeafletFallbackMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fit bounds: show bike + shop + destination all at once whenever destination updates
+  // Fit bounds: show bike + shop + destination all at once.
+  // Re-fit when destination or bike position changes so the full route is
+  // always visible — especially important when the vendor opens the map
+  // before GPS lock (bike at shop) and GPS arrives later.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -207,7 +210,7 @@ export function LeafletFallbackMap({
     } else {
       map.setView([destination.lat, destination.lng], 15);
     }
-  }, [destination.lat, destination.lng]);
+  }, [destination.lat, destination.lng, bike?.lat, bike?.lng]);
 
   // ── Real-time route line updates (OSRM) ──
   // Use a stable key based on length + first + last point to detect real changes
