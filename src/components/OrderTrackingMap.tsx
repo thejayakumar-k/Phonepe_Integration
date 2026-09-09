@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { LiveTrackingMap, type LiveBikeLocation, type LiveTrackingStats } from './LiveTrackingMap';
+import { LeafletFallbackMap } from './LeafletFallbackMap';
 import { useGPS } from '../hooks/useGPS';
 import { useRealtimeGPS } from '../hooks/useRealtimeGPS';
+import { useDeliveryRoute } from '../hooks/useDeliveryRoute';
+import type { LiveBikeLocation } from './LiveTrackingMap';
 import { getItemOrders } from '../utils/storage';
+import {
+  formatDistanceMeters,
+  formatEtaMinutes,
+  isFreshFix,
+  haversineMeters,
+} from '../utils/geo';
 
 // VVK WATER SUPPLY - Jeeva Complex, Alapakkam, Maduravoyal, Chennai
-const SHOP_LOCATION: { lat: number; lng: number } = { lat: 13.054, lng: 80.17 };
+const SHOP_LOCATION = { lat: 13.054, lng: 80.17 };
 
 interface OrderTrackingMapProps {
   orderId: string;
@@ -13,17 +21,18 @@ interface OrderTrackingMapProps {
 }
 
 /**
- * Customer-side live tracking for a paid order, built like the MYAPP app:
- *  - Real-time bike position from the browser GPS (the rider's phone) or,
- *    when a delivery partner streams from another device, from Supabase
- *    realtime (`bike_locations` keyed by the order id).
- *  - OSRM road route from the bike to the customer's delivery address.
- *  - Realistic motorcycle icon that follows the GPS fixes + live ETA.
+ * Swiggy/Zepto-style live order tracking:
+ *  - Full-bleed Leaflet map (CartoDB Voyager tiles, always visible)
+ *  - 3 markers: shop (green), delivery bike (yellow badge), customer address (red pin)
+ *  - Animated dashed route line (OSRM road-following)
+ *  - Real-time GPS via browser or Supabase realtime (delivery partner's device)
+ *  - ETA / distance / live status chips
+ *  - Bottom sheet info panel like Swiggy
  */
 export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [deliveryTarget, setDeliveryTarget] = useState<{ lat: number; lng: number } | null>(null);
-  const [stats, setStats] = useState<LiveTrackingStats | null>(null);
+  const [now, setNow] = useState(Date.now());
 
   const { position, error, isTracking, startTracking, stopTracking } = useGPS({
     enableHighAccuracy: true,
@@ -32,8 +41,6 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     watchPosition: true,
   });
 
-  // A delivery partner can stream the bike with bikeId = order id from
-  // another device (/track/<orderId>) → we follow that in real time.
   const { bikeLocation, isConnected } = useRealtimeGPS({
     bikeId: orderId,
     enabled: true,
@@ -44,23 +51,25 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => stopTracking();
   }, [startTracking, stopTracking]);
 
-  // Resolve the delivery destination from the saved order address.
+  // Freshness tick every 5s
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Resolve delivery destination from saved order
   useEffect(() => {
     let cancelled = false;
     getItemOrders().then((orders) => {
       if (cancelled) return;
       const order = orders.find((o) => o.id === orderId);
       const saved = order?.deliveryAddress;
-      setDeliveryTarget(
-        saved ? { lat: saved.lat, lng: saved.lng } : null
-      );
+      setDeliveryTarget(saved ? { lat: saved.lat, lng: saved.lng } : null);
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [orderId]);
 
-  // The moving bike: prefer the realtime remote partner, else this device.
+  // Bike position: prefer realtime partner, else this device's GPS
   const bike = useMemo<LiveBikeLocation | null>(() => {
     if (bikeLocation) {
       return {
@@ -83,53 +92,117 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return null;
   }, [bikeLocation, position]);
 
+  // Customer destination: saved address or fallback to shop
   const destination = deliveryTarget ?? (position ? { lat: position.latitude, lng: position.longitude } : SHOP_LOCATION);
 
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen((prev) => !prev);
-  }, []);
+  // OSRM route: bike → customer address
+  const { route } = useDeliveryRoute(bike, destination);
 
-  const formatTime = (ts: number) => new Date(ts).toLocaleTimeString();
+  // Stats
+  const distanceMeters = useMemo(() => {
+    if (!bike) return 0;
+    if (route?.isRoadRoute) return route.distanceMeters;
+    return Math.round(haversineMeters(bike, destination));
+  }, [bike, route, destination]);
+
+  const etaSeconds = useMemo(() => {
+    if (!bike) return 0;
+    if (route?.isRoadRoute) return route.durationSeconds;
+    if (isFreshFix(bike.timestamp, now)) {
+      return Math.round(haversineMeters(bike, destination) / 8.33);
+    }
+    return 0;
+  }, [bike, route, destination, now]);
+
+  const isLive = bike ? isFreshFix(bike.timestamp, now) : false;
+
+  const toggleFullscreen = useCallback(() => setIsFullscreen((p) => !p), []);
+
+  const formatTime = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const lastStamp = position?.timestamp ?? (bikeLocation?.timestamp ? Date.parse(bikeLocation.timestamp) : undefined);
 
   return (
     <div className={`otm-container ${isFullscreen ? 'otm-fullscreen' : ''}`}>
       {isFullscreen && <div className="otm-backdrop" onClick={onClose} />}
 
       <div className={`otm-panel ${isFullscreen ? 'otm-panel-full' : ''}`}>
-        {/* Header */}
+
+        {/* ── Header ── */}
         <div className="otm-header">
           <div className="otm-title">
             <span className="otm-icon">🛵</span>
             <div>
               <span className="otm-label">VVK WATER SUPPLY</span>
               <span className="otm-eta">
-                {bike && stats && stats.etaSeconds > 0
-                  ? `Arriving ${Math.max(1, Math.round(stats.etaSeconds / 60))} min`
-                  : bike
-                    ? '📍 Live tracking active'
-                    : '📍 Jeeva Complex, Alapakkam, Maduravoyal'}
+                📍 Jeeva Complex, Alapakkam, Maduravoyal
               </span>
             </div>
           </div>
           <div className="otm-header-actions">
-            <button className="otm-fullscreen-btn" onClick={toggleFullscreen}>
+            <button className="otm-fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
               {isFullscreen ? '⛶' : '⛶'}
             </button>
-            <button className="otm-close" onClick={onClose}>✕</button>
+            <button className="otm-close" onClick={onClose} title="Close">✕</button>
           </div>
         </div>
 
-        {/* Map - real-time with OSRM route + bike icon */}
-        <LiveTrackingMap
-          className={isFullscreen ? 'ltm-full' : 'ltm-size-320'}
-          bike={bike}
-          destination={destination}
-          destinationLabel="Your address"
-          partnerLabel="Delivery bike"
-          onStats={setStats}
-        />
+        {/* ── ETA / Distance chips (Swiggy-style) ── */}
+        <div className="otm-chips">
+          <div className="otm-chip otm-chip-eta">
+            <span className="otm-chip-icon">⏱</span>
+            <div>
+              <div className="otm-chip-val">{bike && etaSeconds > 0 ? formatEtaMinutes(etaSeconds) : '--'}</div>
+              <div className="otm-chip-label">ETA</div>
+            </div>
+          </div>
+          <div className="otm-chip-divider" />
+          <div className="otm-chip otm-chip-dist">
+            <span className="otm-chip-icon">📍</span>
+            <div>
+              <div className="otm-chip-val">{bike ? formatDistanceMeters(distanceMeters) : '--'}</div>
+              <div className="otm-chip-label">Distance</div>
+            </div>
+          </div>
+          <div className="otm-chip-divider" />
+          <div className="otm-chip">
+            <span className="otm-chip-icon">🕐</span>
+            <div>
+              <div className="otm-chip-val">{lastStamp ? formatTime(lastStamp) : '--'}</div>
+              <div className="otm-chip-label">Updated</div>
+            </div>
+          </div>
+        </div>
 
-        {/* Legend */}
+        {/* ── Map (full-bleed, always visible) ── */}
+        <div className="otm-map-wrapper">
+          <LeafletFallbackMap
+            className={isFullscreen ? 'ltm-full' : ''}
+            bike={bike}
+            destination={destination}
+            shopLocation={SHOP_LOCATION}
+            route={route}
+            destinationLabel="Your address"
+            shopLabel="VVK Water Supply"
+            partnerLabel="Delivery bike"
+          />
+
+          {/* Live status pill overlaid on map */}
+          <div className={`otm-live-pill ${isLive ? 'otm-live-pill-active' : ''}`}>
+            <span className={`otm-status-dot ${isLive ? 'live' : ''}`} />
+            <span className="otm-status-text">
+              {error
+                ? `⚠️ ${error}`
+                : isConnected && bikeLocation
+                  ? 'Live · Partner streaming'
+                  : isTracking
+                    ? `Live · Acquiring GPS…`
+                    : 'Waiting for GPS…'}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Legend ── */}
         <div className="otm-legend">
           <span className="otm-legend-item">
             <span className="ltm-legend-bike" /> Delivery bike
@@ -142,26 +215,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           </span>
         </div>
 
-        {/* Footer */}
-        <div className="otm-footer">
-          <span className={`otm-status-dot ${isTracking ? 'live' : ''}`} />
-          <span className="otm-status-text">
-            {error
-              ? `⚠️ ${error}`
-              : isConnected && bikeLocation
-                ? `Live · partner ${bike ? 'streaming' : 'connecting'} · ${position ? formatTime(position.timestamp) : 'GPS...'}`
-                : isTracking
-                  ? `Live · ${position ? formatTime(position.timestamp) : 'Acquiring GPS...'}`
-                  : 'Tracking paused'}
-          </span>
-          {position && (
-            <span className="otm-coords">
-              {position.latitude.toFixed(5)}, {position.longitude.toFixed(5)}
-            </span>
-          )}
-        </div>
-
-        {/* Bottom info (compact mode) */}
+        {/* ── Bottom info row ── */}
         {!isFullscreen && (
           <div className="otm-bottom-info">
             <span className="otm-order-id">Order {orderId}</span>
@@ -174,3 +228,4 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     </div>
   );
 }
+
