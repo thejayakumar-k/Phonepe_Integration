@@ -62,18 +62,25 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
   useEffect(() => {
     if (!enabled || !bikeId) return;
 
-    // ── Fetch current row immediately (delivery partner may have started before customer opened this) ──
-    supabase
-      .from('bike_locations')
-      .select('*')
-      .eq('bike_id', bikeId)
-      .order('timestamp', { ascending: false })
-      .limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setBikeLocation(data[0] as BikeLocation);
-        }
-      });
+    // ── Helper: fetch latest row for this bike ──
+    const fetchLatest = () =>
+      supabase
+        .from('bike_locations')
+        .select('*')
+        .eq('bike_id', bikeId)
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setBikeLocation(data[0] as BikeLocation);
+          }
+        });
+
+    // Fetch immediately on mount (partner may have started before customer opened tracking)
+    fetchLatest();
+
+    // Poll every 5 s as fallback — Supabase realtime can drop on mobile/poor connections
+    const pollInterval = setInterval(fetchLatest, 5000);
 
     const channel = supabase
       .channel(`bike:${bikeId}`)
@@ -95,6 +102,7 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
       });
 
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, [bikeId, enabled]);
