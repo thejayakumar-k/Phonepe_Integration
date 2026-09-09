@@ -7,8 +7,8 @@ import type { LiveBikeLocation } from './LiveTrackingMap';
 import { getItemOrders } from '../utils/storage';
 import { formatDistanceMeters, formatEtaMinutes, haversineMeters } from '../utils/geo';
 
-// Real shop/origin coordinates (Alapakkam Road, Maduravoyal)
-const SHOP_LOCATION = { lat: 13.0538, lng: 80.1635 };
+// Real shop/origin default coordinates (Bharathiyar Street / Periyar Street, Maduravoyal)
+const DEFAULT_SHOP_LOCATION = { lat: 13.0545, lng: 80.1612 };
 
 // Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
 const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
@@ -29,6 +29,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [deliveryTarget, setDeliveryTarget] = useState<{ lat: number; lng: number } | null>(null);
   const [deliveryAddressText, setDeliveryAddressText] = useState('AGS Theatre, Maduravoyal (Ward 147, Chennai)');
+  const [shopOrigin, setShopOrigin] = useState<{ lat: number; lng: number } | null>(null);
   const [now, setNow] = useState(Date.now());
 
   // Real GPS from this device (maximumAge: 0 forces real-time un-cached hardware fixes)
@@ -44,6 +45,19 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     bikeId: orderId,
     enabled: true,
   });
+
+  // Capture initial starting point of delivery as shop origin
+  useEffect(() => {
+    if (!shopOrigin) {
+      if (bikeLocation) {
+        setShopOrigin({ lat: bikeLocation.latitude, lng: bikeLocation.longitude });
+      } else if (position) {
+        setShopOrigin({ lat: position.latitude, lng: position.longitude });
+      }
+    }
+  }, [bikeLocation, position, shopOrigin]);
+
+  const shopLocation = shopOrigin ?? DEFAULT_SHOP_LOCATION;
 
   useEffect(() => {
     startTracking();
@@ -102,13 +116,13 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     }
     // GPS not yet acquired — hold bike at shop origin
     return {
-      lat: SHOP_LOCATION.lat,
-      lng: SHOP_LOCATION.lng,
+      lat: shopLocation.lat,
+      lng: shopLocation.lng,
       heading: 90,
       timestamp: Date.now(),
       speed: null,
     };
-  }, [bikeLocation, position]);
+  }, [bikeLocation, position, shopLocation]);
 
   // OSRM road route: bike → destination (updates as bike moves)
   const { route } = useDeliveryRoute(bike, destination);
@@ -199,10 +213,10 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
             className={isFullscreen ? 'ltm-full' : ''}
             bike={bike}
             destination={destination}
-            shopLocation={SHOP_LOCATION}
+            shopLocation={shopLocation}
             route={route}
             destinationLabel="AGS Theatre, Maduravoyal"
-            shopLabel="Oorunii Hub (Shop)"
+            shopLabel="Shop Origin"
             partnerLabel="Delivery Bike (Your GPS)"
           />
 

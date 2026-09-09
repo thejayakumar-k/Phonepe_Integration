@@ -260,8 +260,24 @@ export function LeafletFallbackMap({
 
   // Shop pin updates
   useEffect(() => {
-    if (shopLocation) shopMarkerRef.current?.setLatLng([shopLocation.lat, shopLocation.lng]);
-  }, [shopLocation?.lat, shopLocation?.lng]);
+    if (shopLocation && mapRef.current) {
+      if (!shopMarkerRef.current) {
+        const shopPin = shopPinElement(shopLabel);
+        shopMarkerRef.current = L.marker([shopLocation.lat, shopLocation.lng], {
+          icon: L.divIcon({
+            className: 'ltm-divicon',
+            html: shopPin,
+            iconSize: [24, 42],
+            iconAnchor: [12, 40],
+          }),
+          interactive: false,
+          zIndexOffset: 180,
+        }).addTo(mapRef.current);
+      } else {
+        shopMarkerRef.current.setLatLng([shopLocation.lat, shopLocation.lng]);
+      }
+    }
+  }, [shopLocation?.lat, shopLocation?.lng, shopLabel]);
 
   return (
     <div
