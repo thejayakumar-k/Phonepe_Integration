@@ -4,7 +4,7 @@ import { useGPS } from '../hooks/useGPS';
 import { useRealtimeGPS } from '../hooks/useRealtimeGPS';
 
 // OORUNII WATER SUPPLY - Maduravoyal, Chennai
-const SHOP_LOCATION = { lat: 13.0538, lng: 80.1635 };
+const SHOP_LOCATION = { lat: 13.0550, lng: 80.1633 };
 
 interface LiveTrackingExampleProps {
   bikeId: string;

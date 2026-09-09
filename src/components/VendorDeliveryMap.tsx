@@ -6,8 +6,8 @@ import type { ItemOrder } from '../types/payment';
 import type { VendorDeliveryState } from '../hooks/useVendorDelivery';
 import type { LiveBikeLocation } from './LiveTrackingMap';
 
-// Real fixed shop/origin coordinates (Bharathiyar Street, Maduravoyal)
-const SHOP_LOCATION = { lat: 13.0545, lng: 80.1612 };
+// Real fixed shop/origin coordinates (Pillaiyar Koil Street / 1st Cross Street, Maduravoyal)
+const SHOP_LOCATION = { lat: 13.0550, lng: 80.1633 };
 
 interface VendorDeliveryMapProps {
   order: ItemOrder;

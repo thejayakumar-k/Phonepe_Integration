@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LeafletFallbackMap } from './LeafletFallbackMap';
-import { useGPS } from '../hooks/useGPS';
 import { useRealtimeGPS } from '../hooks/useRealtimeGPS';
 import { useDeliveryRoute } from '../hooks/useDeliveryRoute';
 import type { LiveBikeLocation } from './LiveTrackingMap';
 import { getItemOrders } from '../utils/storage';
 import { formatDistanceMeters, formatEtaMinutes, haversineMeters } from '../utils/geo';
 
-// Real fixed shop/origin coordinates (Bharathiyar Street, Maduravoyal)
-const SHOP_LOCATION = { lat: 13.0545, lng: 80.1612 };
+// Real fixed shop/origin coordinates (Pillaiyar Koil Street / 1st Cross Street, Maduravoyal)
+const SHOP_LOCATION = { lat: 13.0550, lng: 80.1633 };
 
 // Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
 const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
@@ -19,11 +18,14 @@ interface OrderTrackingMapProps {
 }
 
 /**
- * Swiggy/Zepto-style live delivery tracking.
- *  🛵 Bike  = real mobile GPS (you move → bike moves) or Supabase partner stream
+ * Zepto-style live delivery tracking (customer view).
+ *  🛵 Bike  = delivery partner's live streamed GPS via Supabase realtime
  *  🗺️ Route = OSRM road-following route, updates live
  *  📍 Addr  = reverse-geocoded via OpenStreetMap Nominatim (free, no API key)
- *  🏠 Dest  = saved order address OR customer's live GPS location
+ *  🏠 Dest  = saved order address OR AGS Theatre, Maduravoyal
+ *
+ * The customer is never the bike — the marker only moves when the assigned
+ * delivery partner is streaming their GPS under this order's bike_id.
  */
 export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -31,24 +33,11 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [deliveryAddressText, setDeliveryAddressText] = useState('AGS Theatre, Maduravoyal (Ward 147, Chennai)');
   const [now, setNow] = useState(Date.now());
 
-  // Real GPS from this device (maximumAge: 0 forces real-time un-cached hardware fixes)
-  const { position, error, isTracking, startTracking, stopTracking } = useGPS({
-    enableHighAccuracy: true,
-    maximumAge: 0,
-    timeout: 30000,
-    watchPosition: true,
-  });
-
   // Supabase realtime: delivery partner streaming their GPS
   const { bikeLocation, isConnected } = useRealtimeGPS({
     bikeId: orderId,
     enabled: true,
   });
-
-  useEffect(() => {
-    startTracking();
-    return () => stopTracking();
-  }, [startTracking, stopTracking]);
 
   // Tick for ETA freshness
   useEffect(() => {
@@ -79,7 +68,9 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     [deliveryTarget]
   );
 
-  // ── Bike: partner GPS > this device GPS > shop fallback ──
+  // ── Bike: partner's live streamed GPS ONLY (Zepto-correct).
+  // The customer is never the bike. If the delivery partner isn't
+  // streaming yet, hold the bike at the shop origin.
   const bike = useMemo<LiveBikeLocation>(() => {
     if (bikeLocation) {
       return {
@@ -90,17 +81,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
         timestamp: bikeLocation.timestamp ? Date.parse(bikeLocation.timestamp) : Date.now(),
       };
     }
-    if (position) {
-      // YOUR mobile GPS = bike (walk and the icon follows you in real time)
-      return {
-        lat: position.latitude,
-        lng: position.longitude,
-        heading: position.heading ?? null,
-        timestamp: position.timestamp,
-        speed: position.speed ?? null,
-      };
-    }
-    // GPS not yet acquired — hold bike at shop origin
+    // No partner stream yet — hold bike at shop origin
     return {
       lat: SHOP_LOCATION.lat,
       lng: SHOP_LOCATION.lng,
@@ -108,7 +89,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
       timestamp: Date.now(),
       speed: null,
     };
-  }, [bikeLocation, position]);
+  }, [bikeLocation]);
 
   // OSRM road route: bike → destination (updates as bike moves)
   const { route } = useDeliveryRoute(bike, destination);
@@ -125,15 +106,16 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return d > 50 ? Math.round(d / 8.33) : null;
   }, [bike, route, destination, now]);
 
-  const hasGPS = !!position || !!bikeLocation;
+  const hasGPS = !!bikeLocation;
 
   const toggleFullscreen = useCallback(() => setIsFullscreen((p) => !p), []);
 
   const formatTime = (ts: number) =>
     new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  const lastStamp =
-    position?.timestamp ?? (bikeLocation?.timestamp ? Date.parse(bikeLocation.timestamp) : undefined);
+  const lastStamp = bikeLocation?.timestamp
+    ? Date.parse(bikeLocation.timestamp)
+    : undefined;
 
   return (
     <div className={`otm-container ${isFullscreen ? 'otm-fullscreen' : ''}`}>
@@ -203,24 +185,16 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
             route={route}
             destinationLabel="AGS Theatre, Maduravoyal"
             shopLabel="Shop (Origin)"
-            partnerLabel="Delivery Bike (Your GPS)"
+            partnerLabel="Delivery Bike (Partner GPS)"
           />
 
           {/* Live status pill */}
           <div className={`otm-live-pill ${hasGPS ? 'otm-live-pill-active' : ''}`}>
             <span className={`otm-status-dot ${hasGPS ? 'live' : ''}`} />
             <span className="otm-status-text">
-              {error
-                ? (error.toLowerCase().includes('denied')
-                    ? '🔒 Allow location access'
-                    : `⚠️ ${error}`)
-                : isConnected && bikeLocation
-                  ? '🛵 Live · Partner streaming'
-                  : position
-                    ? '🛵 Live · GPS active'
-                    : isTracking
-                      ? '📡 Acquiring GPS…'
-                      : '📡 Waiting for GPS…'}
+              {isConnected && bikeLocation
+                ? '🛵 Live · Partner streaming'
+                : '📡 Waiting for delivery partner…'}
             </span>
           </div>
         </div>
@@ -243,8 +217,8 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           <div className="otm-bottom-info">
             <span className="otm-order-id">Order {orderId}</span>
             <span className="otm-accuracy">
-              {position
-                ? `±${position.accuracy.toFixed(0)}m`
+              {bikeLocation
+                ? `±${bikeLocation.accuracy.toFixed(0)}m`
                 : hasGPS
                   ? 'Streaming'
                   : 'No GPS'}
