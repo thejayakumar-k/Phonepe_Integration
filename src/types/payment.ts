@@ -10,7 +10,7 @@ export type PaymentStatus =
 
 export type PaymentMethod = 'PHONEPE' | 'COD' | 'PAYU';
 
-export type ItemOrderStatus = 'PENDING' | 'PAID' | 'NOT_PAID' | 'CANCELLED';
+export type ItemOrderStatus = 'PENDING' | 'PAID' | 'NOT_PAID' | 'CANCELLED' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
 
 export interface ItemOrderItem {
   name: string;

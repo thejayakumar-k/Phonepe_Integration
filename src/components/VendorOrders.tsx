@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { getOrders, updateOrderStatus } from '../utils/storage';
-import type { Order, PaymentStatus } from '../types/payment';
+import { getItemOrders } from '../utils/storage';
+import type { Order, PaymentStatus, ItemOrder } from '../types/payment';
+import { useVendorDelivery } from '../hooks/useVendorDelivery';
+import { VendorDeliveryMap } from './VendorDeliveryMap';
 
 const statusLabel: Record<string, string> = {
   PENDING: 'Not Paid',
@@ -23,75 +26,83 @@ const statusColor: Record<string, string> = {
   CANCELLED: 'v-order-status-cancelled',
 };
 
+const deliveryStatusLabel: Record<string, string> = {
+  PENDING: 'Pending',
+  PAID: 'Ready to Ship',
+  OUT_FOR_DELIVERY: '🛵 Out for Delivery',
+  DELIVERED: '✅ Delivered',
+  NOT_PAID: 'Not Paid',
+  CANCELLED: 'Cancelled',
+};
+
+const deliveryStatusColor: Record<string, string> = {
+  OUT_FOR_DELIVERY: 'vdm-badge-delivering',
+  DELIVERED: 'vdm-badge-delivered',
+  PAID: 'vdm-badge-ready',
+};
+
 export function VendorOrders() {
   const { session } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [itemOrders, setItemOrders] = useState<ItemOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'notpaid' | 'paid' | 'failed'>('all');
+  const [activeDeliveryOrder, setActiveDeliveryOrder] = useState<ItemOrder | null>(null);
+
+  const delivery = useVendorDelivery();
 
   useEffect(() => {
     let cancelled = false;
     const fetchOrders = async () => {
-      const allOrders = await getOrders();
+      const [allOrders, allItemOrders] = await Promise.all([getOrders(), getItemOrders()]);
       if (cancelled) return;
-      const vendorOrders = allOrders.filter(
-        (order) => order.vendorId === session?.vendorId
-      );
+      const vendorOrders = allOrders.filter((order) => order.vendorId === session?.vendorId);
       setOrders(vendorOrders.sort((a, b) => b.createdAt - a.createdAt));
+      const vendorItemOrders = allItemOrders.filter((io) => io.vendorId === session?.vendorId);
+      setItemOrders(vendorItemOrders.sort((a, b) => b.createdAt - a.createdAt));
       setLoading(false);
     };
-
     fetchOrders();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [session?.vendorId]);
 
   const filteredOrders = orders.filter((order) => {
     if (filter === 'all') return true;
     if (filter === 'notpaid')
-      return (
-        order.paymentStatus === 'PENDING' ||
-        order.paymentStatus === 'CUSTOMER_SUBMITTED' ||
-        order.paymentStatus === 'COD_PLACED'
-      );
+      return order.paymentStatus === 'PENDING' || order.paymentStatus === 'CUSTOMER_SUBMITTED' || order.paymentStatus === 'COD_PLACED';
     if (filter === 'paid') return order.paymentStatus === 'PAID';
     if (filter === 'failed')
-      return (
-        order.paymentStatus === 'FAILED' ||
-        order.paymentStatus === 'EXPIRED' ||
-        order.paymentStatus === 'CANCELLED'
-      );
+      return order.paymentStatus === 'FAILED' || order.paymentStatus === 'EXPIRED' || order.paymentStatus === 'CANCELLED';
     return true;
   });
 
   const handleMarkPaid = async (orderId: string) => {
     await updateOrderStatus(orderId, 'PAID');
-    setOrders(orders.map((o) =>
-      o.orderId === orderId ? { ...o, paymentStatus: 'PAID' as PaymentStatus } : o
-    ));
+    setOrders(orders.map((o) => o.orderId === orderId ? { ...o, paymentStatus: 'PAID' as PaymentStatus } : o));
   };
 
   const handleMarkFailed = async (orderId: string) => {
     await updateOrderStatus(orderId, 'FAILED');
-    setOrders(orders.map((o) =>
-      o.orderId === orderId ? { ...o, paymentStatus: 'FAILED' as PaymentStatus } : o
-    ));
+    setOrders(orders.map((o) => o.orderId === orderId ? { ...o, paymentStatus: 'FAILED' as PaymentStatus } : o));
   };
 
-  const pendingCount = orders.filter(
-    (o) =>
-      o.paymentStatus === 'PENDING' ||
-      o.paymentStatus === 'CUSTOMER_SUBMITTED' ||
-      o.paymentStatus === 'COD_PLACED'
-  ).length;
+  const handleStartDelivery = (itemOrder: ItemOrder) => {
+    setActiveDeliveryOrder(itemOrder);
+    delivery.startDelivery(itemOrder);
+  };
+
+  const handleCloseDelivery = () => {
+    setActiveDeliveryOrder(null);
+    // Refresh item orders after delivery
+    getItemOrders().then((all) => {
+      const vendorItemOrders = all.filter((io) => io.vendorId === session?.vendorId);
+      setItemOrders(vendorItemOrders.sort((a, b) => b.createdAt - a.createdAt));
+    });
+  };
+
+  const pendingCount = orders.filter((o) => o.paymentStatus === 'PENDING' || o.paymentStatus === 'CUSTOMER_SUBMITTED' || o.paymentStatus === 'COD_PLACED').length;
   const paidCount = orders.filter((o) => o.paymentStatus === 'PAID').length;
-  const failedCount = orders.filter(
-    (o) =>
-      o.paymentStatus === 'FAILED' ||
-      o.paymentStatus === 'EXPIRED' ||
-      o.paymentStatus === 'CANCELLED'
-  ).length;
+  const failedCount = orders.filter((o) => o.paymentStatus === 'FAILED' || o.paymentStatus === 'EXPIRED' || o.paymentStatus === 'CANCELLED').length;
 
   if (loading) {
     return (
@@ -102,105 +113,133 @@ export function VendorOrders() {
   }
 
   return (
-    <div className="vendor-orders">
-      <div className="v-orders-head">
-        <h1 className="v-orders-title">Orders</h1>
-        <p className="v-orders-subtitle">{orders.length} total orders</p>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="filter-tabs">
-        <button
-          className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-          onClick={() => setFilter('all')}
-        >
-          All ({orders.length})
-        </button>
-        <button
-          className={`filter-tab ${filter === 'notpaid' ? 'active' : ''}`}
-          onClick={() => setFilter('notpaid')}
-        >
-          Not Paid ({pendingCount})
-        </button>
-        <button
-          className={`filter-tab ${filter === 'paid' ? 'active' : ''}`}
-          onClick={() => setFilter('paid')}
-        >
-          Paid ({paidCount})
-        </button>
-        <button
-          className={`filter-tab ${filter === 'failed' ? 'active' : ''}`}
-          onClick={() => setFilter('failed')}
-        >
-          Failed ({failedCount})
-        </button>
-      </div>
-
-      {/* Orders List */}
-      {filteredOrders.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">📋</span>
-          <p>No orders found</p>
-        </div>
-      ) : (
-        <div className="v-orders-list">
-          {filteredOrders.map((order) => (
-            <div key={order.orderId} className="v-order-card">
-              <div className="v-order-top">
-                <span className="v-order-id">#{order.orderId.slice(-8)}</span>
-                <span className={`v-order-status ${statusColor[order.paymentStatus] || ''}`}>
-                  {statusLabel[order.paymentStatus] || order.paymentStatus}
-                </span>
-              </div>
-
-              <div className="v-order-main">
-                <span className="v-order-amount">₹{order.amount.toFixed(2)}</span>
-                <span className="v-order-customer">
-                  {order.customerName || order.customerId || 'Customer'}
-                </span>
-              </div>
-
-              <div className="v-order-meta">
-                <span className="v-order-date">
-                  {new Date(order.createdAt).toLocaleString('en-IN', {
-                    day: '2-digit',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-                <span className="v-order-method">
-                  {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'PhonePe'}
-                </span>
-              </div>
-
-              {order.paymentStatus === 'PENDING' && (
-                <div className="v-order-actions">
-                  <button
-                    className="v-btn-paid"
-                    onClick={() => handleMarkPaid(order.orderId)}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    Mark Paid
-                  </button>
-                  <button
-                    className="v-btn-failed"
-                    onClick={() => handleMarkFailed(order.orderId)}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                    Mark Failed
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+    <>
+      {/* Vendor Delivery Map overlay */}
+      {activeDeliveryOrder && delivery.isDelivering && (
+        <VendorDeliveryMap
+          order={activeDeliveryOrder}
+          delivery={delivery}
+          onClose={handleCloseDelivery}
+        />
       )}
-    </div>
+
+      <div className="vendor-orders">
+        <div className="v-orders-head">
+          <h1 className="v-orders-title">Orders</h1>
+          <p className="v-orders-subtitle">{orders.length} total orders</p>
+        </div>
+
+        {/* Item Orders (with delivery) */}
+        {itemOrders.length > 0 && (
+          <div className="v-section">
+            <h2 className="v-section-title">🛵 Delivery Orders</h2>
+            <div className="v-orders-list">
+              {itemOrders.map((io) => {
+                const hasAddress = !!io.deliveryAddress;
+                const canDeliver = io.status === 'PAID' && hasAddress;
+                const isCurrentlyDelivering = delivery.isDelivering && delivery.activeOrder?.id === io.id;
+                return (
+                  <div key={io.id} className="v-order-card">
+                    <div className="v-order-top">
+                      <span className="v-order-id">#{io.id}</span>
+                      <span className={`vdm-delivery-badge ${deliveryStatusColor[io.status] ?? ''}`}>
+                        {deliveryStatusLabel[io.status] ?? io.status}
+                      </span>
+                    </div>
+
+                    <div className="v-order-main">
+                      <span className="v-order-amount">₹{io.total.toFixed(2)}</span>
+                      <span className="v-order-customer">{io.customerName ?? io.customerId}</span>
+                    </div>
+
+                    {hasAddress && (
+                      <div className="vdm-address-row">
+                        📍 {io.deliveryAddress!.address}
+                      </div>
+                    )}
+
+                    <div className="v-order-meta">
+                      <span className="v-order-date">
+                        {new Date(io.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="v-order-method">{io.paymentMethod === 'COD' ? 'Cash on Delivery' : io.paymentMethod ?? 'Online'}</span>
+                    </div>
+
+                    {canDeliver && !isCurrentlyDelivering && !delivery.isDelivering && (
+                      <button
+                        className="vdm-start-btn"
+                        onClick={() => handleStartDelivery(io)}
+                      >
+                        🛵 Start Delivery
+                      </button>
+                    )}
+
+                    {isCurrentlyDelivering && (
+                      <div className="vdm-delivering-indicator">
+                        <span className="vdm-pulse-dot" />
+                        Delivery in progress — GPS streaming live
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Filter Tabs */}
+        <div className="v-section">
+          <h2 className="v-section-title">💳 Payment Orders</h2>
+          <div className="filter-tabs">
+            <button className={`filter-tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All ({orders.length})</button>
+            <button className={`filter-tab ${filter === 'notpaid' ? 'active' : ''}`} onClick={() => setFilter('notpaid')}>Not Paid ({pendingCount})</button>
+            <button className={`filter-tab ${filter === 'paid' ? 'active' : ''}`} onClick={() => setFilter('paid')}>Paid ({paidCount})</button>
+            <button className={`filter-tab ${filter === 'failed' ? 'active' : ''}`} onClick={() => setFilter('failed')}>Failed ({failedCount})</button>
+          </div>
+
+          {filteredOrders.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">📋</span>
+              <p>No orders found</p>
+            </div>
+          ) : (
+            <div className="v-orders-list">
+              {filteredOrders.map((order) => (
+                <div key={order.orderId} className="v-order-card">
+                  <div className="v-order-top">
+                    <span className="v-order-id">#{order.orderId.slice(-8)}</span>
+                    <span className={`v-order-status ${statusColor[order.paymentStatus] || ''}`}>
+                      {statusLabel[order.paymentStatus] || order.paymentStatus}
+                    </span>
+                  </div>
+                  <div className="v-order-main">
+                    <span className="v-order-amount">₹{order.amount.toFixed(2)}</span>
+                    <span className="v-order-customer">{order.customerName || order.customerId || 'Customer'}</span>
+                  </div>
+                  <div className="v-order-meta">
+                    <span className="v-order-date">
+                      {new Date(order.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="v-order-method">{order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'PhonePe'}</span>
+                  </div>
+                  {order.paymentStatus === 'PENDING' && (
+                    <div className="v-order-actions">
+                      <button className="v-btn-paid" onClick={() => handleMarkPaid(order.orderId)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        Mark Paid
+                      </button>
+                      <button className="v-btn-failed" onClick={() => handleMarkFailed(order.orderId)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Mark Failed
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
