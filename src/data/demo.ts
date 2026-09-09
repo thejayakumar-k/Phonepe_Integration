@@ -1,4 +1,4 @@
-import type { Customer, Order, Vendor } from '../types/payment';
+import type { Customer, Order, Vendor, DeliveryPartner } from '../types/payment';
 import { getOrder, saveOrder } from '../utils/storage';
 
 export const sessionMinutes = parseFloat(
@@ -13,6 +13,11 @@ export const demoVendors: Vendor[] = [
 export const demoCustomers: Customer[] = [
   { id: 'CUST001', name: 'Ravi Kumar' },
   { id: 'CUST002', name: 'Priya Sharma' },
+];
+
+export const demoDeliveryPartners: DeliveryPartner[] = [
+  { id: 'DP001', name: 'Arun Kumar', phone: '+91 98765 43210' },
+  { id: 'DP002', name: 'Vijay Prakash', phone: '+91 98765 12345' },
 ];
 
 const minutes = (n: number) => n * 60 * 1000;

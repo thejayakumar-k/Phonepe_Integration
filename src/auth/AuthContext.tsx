@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
-export type Role = 'vendor' | 'customer';
+export type Role = 'vendor' | 'customer' | 'delivery';
 
 export interface Session {
   role: Role;
@@ -9,6 +9,8 @@ export interface Session {
   vendorName?: string;
   customerId?: string;
   customerName?: string;
+  partnerId?: string;
+  partnerName?: string;
 }
 
 interface AuthContextValue {

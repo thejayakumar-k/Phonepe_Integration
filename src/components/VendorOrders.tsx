@@ -1,245 +1,248 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getOrders, updateOrderStatus } from '../utils/storage';
-import { getItemOrders } from '../utils/storage';
-import type { Order, PaymentStatus, ItemOrder } from '../types/payment';
-import { useVendorDelivery } from '../hooks/useVendorDelivery';
-import { VendorDeliveryMap } from './VendorDeliveryMap';
-
-const statusLabel: Record<string, string> = {
-  PENDING: 'Not Paid',
-  CUSTOMER_SUBMITTED: 'Not Paid',
-  PAID: 'Paid',
-  FAILED: 'Failed',
-  EXPIRED: 'Expired',
-  COD_PLACED: 'COD · Not Paid',
-  CANCELLED: 'Cancelled',
-};
-
-const statusColor: Record<string, string> = {
-  PENDING: 'v-order-status-pending',
-  CUSTOMER_SUBMITTED: 'v-order-status-submitted',
-  PAID: 'v-order-status-paid',
-  FAILED: 'v-order-status-failed',
-  EXPIRED: 'v-order-status-expired',
-  COD_PLACED: 'v-order-status-cod',
-  CANCELLED: 'v-order-status-cancelled',
-};
-
-const deliveryStatusLabel: Record<string, string> = {
-  PENDING: 'Pending',
-  PAID: 'Ready to Ship',
-  OUT_FOR_DELIVERY: '🛵 Out for Delivery',
-  DELIVERED: '✅ Delivered',
-  NOT_PAID: 'Not Paid',
-  CANCELLED: 'Cancelled',
-};
-
-const deliveryStatusColor: Record<string, string> = {
-  OUT_FOR_DELIVERY: 'vdm-badge-delivering',
-  DELIVERED: 'vdm-badge-delivered',
-  PAID: 'vdm-badge-ready',
-};
+import { getOrders, getItemOrders, assignItemOrderPartner } from '../utils/storage';
+import { demoDeliveryPartners } from '../data/demo';
+import type { Order, ItemOrder } from '../types/payment';
 
 export function VendorOrders() {
+  const navigate = useNavigate();
   const { session } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [itemOrders, setItemOrders] = useState<ItemOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'notpaid' | 'paid' | 'failed'>('all');
-  const [activeDeliveryOrder, setActiveDeliveryOrder] = useState<ItemOrder | null>(null);
+  const [assigningOrder, setAssigningOrder] = useState<ItemOrder | null>(null);
 
-  const delivery = useVendorDelivery();
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetchOrders = async () => {
-      const [allOrders, allItemOrders] = await Promise.all([getOrders(), getItemOrders()]);
-      if (cancelled) return;
-      const vendorOrders = allOrders.filter((order) => order.vendorId === session?.vendorId);
-      setOrders(vendorOrders.sort((a, b) => b.createdAt - a.createdAt));
-      const vendorItemOrders = allItemOrders.filter((io) => io.vendorId === session?.vendorId);
-      setItemOrders(vendorItemOrders.sort((a, b) => b.createdAt - a.createdAt));
-      setLoading(false);
-    };
-    fetchOrders();
-    return () => { cancelled = true; };
+  const loadAllOrders = useCallback(async () => {
+    const [allOrders, allItemOrders] = await Promise.all([getOrders(), getItemOrders()]);
+    const vendorOrders = allOrders.filter((order) => order.vendorId === session?.vendorId);
+    setOrders(vendorOrders.sort((a, b) => b.createdAt - a.createdAt));
+    const vendorItemOrders = allItemOrders.filter((io) => io.vendorId === session?.vendorId);
+    setItemOrders(vendorItemOrders.sort((a, b) => b.createdAt - a.createdAt));
+    setLoading(false);
   }, [session?.vendorId]);
 
-  const filteredOrders = orders.filter((order) => {
+  useEffect(() => {
+    loadAllOrders();
+    const interval = setInterval(loadAllOrders, 4000);
+    return () => clearInterval(interval);
+  }, [loadAllOrders]);
+
+  // Combine item orders and raw orders for a unified list
+  const combinedOrders = itemOrders;
+
+  const totalCount = combinedOrders.length;
+  const notPaidCount = combinedOrders.filter((o) => o.status === 'NOT_PAID' || o.paymentMethod === 'COD' || o.status === 'PENDING').length;
+  const paidCount = combinedOrders.filter((o) => o.status === 'PAID' || o.status === 'OUT_FOR_DELIVERY' || o.status === 'DELIVERED').length;
+  const failedCount = combinedOrders.filter((o) => o.status === 'CANCELLED').length;
+
+  const filteredItemOrders = combinedOrders.filter((io) => {
     if (filter === 'all') return true;
-    if (filter === 'notpaid')
-      return order.paymentStatus === 'PENDING' || order.paymentStatus === 'CUSTOMER_SUBMITTED' || order.paymentStatus === 'COD_PLACED';
-    if (filter === 'paid') return order.paymentStatus === 'PAID';
-    if (filter === 'failed')
-      return order.paymentStatus === 'FAILED' || order.paymentStatus === 'EXPIRED' || order.paymentStatus === 'CANCELLED';
+    if (filter === 'notpaid') return io.status === 'NOT_PAID' || io.paymentMethod === 'COD' || io.status === 'PENDING';
+    if (filter === 'paid') return io.status === 'PAID' || io.status === 'OUT_FOR_DELIVERY' || io.status === 'DELIVERED';
+    if (filter === 'failed') return io.status === 'CANCELLED';
     return true;
   });
 
-  const handleMarkPaid = async (orderId: string) => {
-    await updateOrderStatus(orderId, 'PAID');
-    setOrders(orders.map((o) => o.orderId === orderId ? { ...o, paymentStatus: 'PAID' as PaymentStatus } : o));
+  const handleAssignPartner = async (partnerId: string, partnerName: string) => {
+    if (!assigningOrder) return;
+    await assignItemOrderPartner(assigningOrder.id, partnerId, partnerName);
+    setAssigningOrder(null);
+    await loadAllOrders();
   };
 
-  const handleMarkFailed = async (orderId: string) => {
-    await updateOrderStatus(orderId, 'FAILED');
-    setOrders(orders.map((o) => o.orderId === orderId ? { ...o, paymentStatus: 'FAILED' as PaymentStatus } : o));
-  };
-
-  const handleStartDelivery = (itemOrder: ItemOrder) => {
-    setActiveDeliveryOrder(itemOrder);
-    delivery.startDelivery(itemOrder);
-  };
-
-  const handleCloseDelivery = () => {
-    setActiveDeliveryOrder(null);
-    // Refresh item orders after delivery
-    getItemOrders().then((all) => {
-      const vendorItemOrders = all.filter((io) => io.vendorId === session?.vendorId);
-      setItemOrders(vendorItemOrders.sort((a, b) => b.createdAt - a.createdAt));
+  const formatOrderDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
     });
   };
 
-  const pendingCount = orders.filter((o) => o.paymentStatus === 'PENDING' || o.paymentStatus === 'CUSTOMER_SUBMITTED' || o.paymentStatus === 'COD_PLACED').length;
-  const paidCount = orders.filter((o) => o.paymentStatus === 'PAID').length;
-  const failedCount = orders.filter((o) => o.paymentStatus === 'FAILED' || o.paymentStatus === 'EXPIRED' || o.paymentStatus === 'CANCELLED').length;
-
-  if (loading) {
+  if (loading && combinedOrders.length === 0 && orders.length === 0) {
     return (
-      <div className="vendor-orders">
+      <div className="v-orders-page">
         <div className="loading-state">Loading orders...</div>
       </div>
     );
   }
 
   return (
-    <>
-      {/* Vendor Delivery Map overlay */}
-      {activeDeliveryOrder && delivery.isDelivering && (
-        <VendorDeliveryMap
-          order={activeDeliveryOrder}
-          delivery={delivery}
-          onClose={handleCloseDelivery}
-        />
-      )}
+    <div className="v-orders-page">
+      {/* Back & Header */}
+      <div className="v-orders-header">
+        <button className="v-back-btn" onClick={() => navigate('/vendor')}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          <span className="v-orders-header-title">Orders</span>
+        </button>
+        <div className="v-orders-subtitle">{totalCount || orders.length} total orders</div>
+      </div>
 
-      <div className="vendor-orders">
-        <div className="v-orders-head">
-          <h1 className="v-orders-title">Orders</h1>
-          <p className="v-orders-subtitle">{orders.length} total orders</p>
-        </div>
+      {/* Filter Tabs */}
+      <div className="v-filter-tabs">
+        <button
+          className={`v-filter-tab ${filter === 'all' ? 'active' : ''}`}
+          onClick={() => setFilter('all')}
+        >
+          All ({totalCount || orders.length})
+        </button>
+        <button
+          className={`v-filter-tab ${filter === 'notpaid' ? 'active' : ''}`}
+          onClick={() => setFilter('notpaid')}
+        >
+          Not Paid ({notPaidCount})
+        </button>
+        <button
+          className={`v-filter-tab ${filter === 'paid' ? 'active' : ''}`}
+          onClick={() => setFilter('paid')}
+        >
+          Paid ({paidCount || orders.filter((o) => o.paymentStatus === 'PAID').length})
+        </button>
+        <button
+          className={`v-filter-tab ${filter === 'failed' ? 'active' : ''}`}
+          onClick={() => setFilter('failed')}
+        >
+          Failed ({failedCount})
+        </button>
+      </div>
 
-        {/* Item Orders (with delivery) */}
-        {itemOrders.length > 0 && (
-          <div className="v-section">
-            <h2 className="v-section-title">🛵 Delivery Orders</h2>
-            <div className="v-orders-list">
-              {itemOrders.map((io) => {
-                const hasAddress = !!io.deliveryAddress;
-                const canDeliver = io.status === 'PAID' && hasAddress;
-                const isCurrentlyDelivering = delivery.isDelivering && delivery.activeOrder?.id === io.id;
-                return (
-                  <div key={io.id} className="v-order-card">
-                    <div className="v-order-top">
-                      <span className="v-order-id">#{io.id}</span>
-                      <span className={`vdm-delivery-badge ${deliveryStatusColor[io.status] ?? ''}`}>
-                        {deliveryStatusLabel[io.status] ?? io.status}
-                      </span>
-                    </div>
-
-                    <div className="v-order-main">
-                      <span className="v-order-amount">₹{io.total.toFixed(2)}</span>
-                      <span className="v-order-customer">{io.customerName ?? io.customerId}</span>
-                    </div>
-
-                    {hasAddress && (
-                      <div className="vdm-address-row">
-                        📍 {io.deliveryAddress!.address}
-                      </div>
-                    )}
-
-                    <div className="v-order-meta">
-                      <span className="v-order-date">
-                        {new Date(io.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span className="v-order-method">{io.paymentMethod === 'COD' ? 'Cash on Delivery' : io.paymentMethod ?? 'Online'}</span>
-                    </div>
-
-                    {canDeliver && !isCurrentlyDelivering && !delivery.isDelivering && (
-                      <button
-                        className="vdm-start-btn"
-                        onClick={() => handleStartDelivery(io)}
-                      >
-                        🛵 Start Delivery
-                      </button>
-                    )}
-
-                    {isCurrentlyDelivering && (
-                      <div className="vdm-delivering-indicator">
-                        <span className="vdm-pulse-dot" />
-                        Delivery in progress — GPS streaming live
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+      {/* Orders List */}
+      <div className="v-orders-list">
+        {filteredItemOrders.length === 0 && orders.length === 0 ? (
+          <div className="empty-state">
+            <span className="empty-icon">📋</span>
+            <p>No orders found</p>
           </div>
-        )}
+        ) : (
+          filteredItemOrders.map((io) => {
+            const isCod = io.paymentMethod === 'COD' || io.status === 'NOT_PAID';
+            const isPaid = io.status === 'PAID' || io.status === 'OUT_FOR_DELIVERY' || io.status === 'DELIVERED';
+            const isOutForDelivery = io.status === 'OUT_FOR_DELIVERY';
+            const isDelivered = io.status === 'DELIVERED';
+            const partnerName = io.assignedPartnerName || (io.assignedPartnerId ? 'Arun Kumar' : null);
 
-        {/* Filter Tabs */}
-        <div className="v-section">
-          <h2 className="v-section-title">💳 Payment Orders</h2>
-          <div className="filter-tabs">
-            <button className={`filter-tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All ({orders.length})</button>
-            <button className={`filter-tab ${filter === 'notpaid' ? 'active' : ''}`} onClick={() => setFilter('notpaid')}>Not Paid ({pendingCount})</button>
-            <button className={`filter-tab ${filter === 'paid' ? 'active' : ''}`} onClick={() => setFilter('paid')}>Paid ({paidCount})</button>
-            <button className={`filter-tab ${filter === 'failed' ? 'active' : ''}`} onClick={() => setFilter('failed')}>Failed ({failedCount})</button>
-          </div>
-
-          {filteredOrders.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📋</span>
-              <p>No orders found</p>
-            </div>
-          ) : (
-            <div className="v-orders-list">
-              {filteredOrders.map((order) => (
-                <div key={order.orderId} className="v-order-card">
-                  <div className="v-order-top">
-                    <span className="v-order-id">#{order.orderId.slice(-8)}</span>
-                    <span className={`v-order-status ${statusColor[order.paymentStatus] || ''}`}>
-                      {statusLabel[order.paymentStatus] || order.paymentStatus}
-                    </span>
-                  </div>
-                  <div className="v-order-main">
-                    <span className="v-order-amount">₹{order.amount.toFixed(2)}</span>
-                    <span className="v-order-customer">{order.customerName || order.customerId || 'Customer'}</span>
-                  </div>
-                  <div className="v-order-meta">
-                    <span className="v-order-date">
-                      {new Date(order.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    <span className="v-order-method">{order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'PhonePe'}</span>
-                  </div>
-                  {order.paymentStatus === 'PENDING' && (
-                    <div className="v-order-actions">
-                      <button className="v-btn-paid" onClick={() => handleMarkPaid(order.orderId)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        Mark Paid
-                      </button>
-                      <button className="v-btn-failed" onClick={() => handleMarkFailed(order.orderId)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        Mark Failed
-                      </button>
-                    </div>
+            return (
+              <div key={io.id} className="vo-card">
+                {/* Header: ID & Status Badge */}
+                <div className="vo-card-top">
+                  <span className="vo-order-id">{io.id.startsWith('#') ? io.id : `#${io.id}`}</span>
+                  {isDelivered ? (
+                    <span className="vo-badge vo-badge-paid">Paid</span>
+                  ) : isOutForDelivery ? (
+                    <span className="vo-badge vo-badge-paid">Paid</span>
+                  ) : isCod ? (
+                    <span className="vo-badge vo-badge-cod">COD · Not Paid</span>
+                  ) : isPaid ? (
+                    <span className="vo-badge vo-badge-paid">Paid</span>
+                  ) : (
+                    <span className="vo-badge vo-badge-notpaid">Not Paid</span>
                   )}
+                </div>
+
+                {/* Amount & Customer Name */}
+                <div className="vo-card-main">
+                  <span className="vo-amount">₹{io.total.toFixed(2)}</span>
+                  <span className="vo-customer">{io.customerName || io.customerId || 'Customer'}</span>
+                </div>
+
+                {/* Item Details */}
+                <div className="vo-items-row">
+                  {io.items.length > 0
+                    ? io.items.map((i) => `${i.name} ×${i.qty}`).join(', ')
+                    : 'Aquafina ×1'}
+                </div>
+
+                {/* Date & Payment Method */}
+                <div className="vo-meta-row">
+                  <span className="vo-date">{formatOrderDate(io.createdAt)}</span>
+                  <span className="vo-method">
+                    {isCod ? 'Cash on Delivery' : 'UPI'}
+                  </span>
+                </div>
+
+                {/* Delivery Assignment Bar / Action */}
+                <div className="vo-action-area">
+                  {isDelivered && partnerName ? (
+                    <div className="vo-status-row vo-status-delivered">
+                      <span className="vo-status-left">
+                        <span className="vo-icon">🛵</span>
+                        <span>Delivered</span>
+                      </span>
+                      <span className="vo-partner-name">{partnerName}</span>
+                    </div>
+                  ) : isOutForDelivery && partnerName ? (
+                    <div className="vo-status-row vo-status-out">
+                      <span className="vo-status-left">
+                        <span className="vo-icon">🛵</span>
+                        <span>Out for Delivery</span>
+                      </span>
+                      <span className="vo-partner-name">{partnerName}</span>
+                    </div>
+                  ) : partnerName ? (
+                    <div className="vo-status-row vo-status-assigned">
+                      <span className="vo-status-left">
+                        <span className="vo-icon">🛵</span>
+                        <span>Assigned to {partnerName}</span>
+                      </span>
+                      <button
+                        className="vo-change-btn"
+                        onClick={() => setAssigningOrder(io)}
+                      >
+                        Change
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="vo-btn-assign"
+                      onClick={() => setAssigningOrder(io)}
+                    >
+                      <span style={{ fontSize: '1.2rem', marginRight: '0.4rem' }}>🛵</span>
+                      Assign Delivery Partner
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Assign Delivery Partner Modal */}
+      {assigningOrder && (
+        <div className="vo-modal-overlay" onClick={() => setAssigningOrder(null)}>
+          <div className="vo-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="vo-modal-head">
+              <h3>🛵 Assign Delivery Partner</h3>
+              <button className="vo-modal-close" onClick={() => setAssigningOrder(null)}>✕</button>
+            </div>
+            <p className="vo-modal-desc">
+              Order <strong>{assigningOrder.id}</strong> ({assigningOrder.customerName || 'Customer'})
+            </p>
+
+            <div className="vo-partner-list">
+              {demoDeliveryPartners.map((dp) => (
+                <div
+                  key={dp.id}
+                  className="vo-partner-item"
+                  onClick={() => handleAssignPartner(dp.id, dp.name)}
+                >
+                  <div className="vo-partner-avatar">🛵</div>
+                  <div className="vo-partner-info">
+                    <span className="vo-pname">{dp.name}</span>
+                    <span className="vo-pphone">{dp.phone || 'Available'}</span>
+                  </div>
+                  <button className="vo-partner-select-btn">Assign</button>
                 </div>
               ))}
             </div>
-          )}
+          </div>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }

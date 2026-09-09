@@ -9207,3 +9207,672 @@ path.ltm-animated-dash {
   flex-shrink: 0;
   animation: vdm-pulse 1.2s ease infinite;
 }
+
+/* =====================================================================
+   DELIVERY PARTNER APP STYLES (Matching Screenshots 2 & 3)
+   ===================================================================== */
+
+.delivery-layout {
+  min-height: 100vh;
+  background-color: #f4f6fa;
+  padding-bottom: 75px;
+  display: flex;
+  flex-direction: column;
+}
+
+.delivery-main {
+  flex: 1;
+}
+
+.dp-container {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 0 16px 24px;
+}
+
+/* Top Status Bar */
+.dp-status-bar {
+  padding: 12px 4px 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.dp-status-idle {
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dp-dot-idle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+  display: inline-block;
+}
+
+.dp-status-active {
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.dp-dot-active {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #10b981;
+  display: inline-block;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+  animation: dp-pulse 1.8s infinite;
+}
+
+@keyframes dp-pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Header */
+.dp-header {
+  margin: 8px 0 16px;
+}
+
+.dp-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.dp-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
+/* Orders List */
+.dp-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dp-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 18px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e9f2;
+}
+
+.dp-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dp-order-id {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.dp-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+}
+
+.dp-badge-assigned {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.dp-badge-out {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.dp-badge-delivered {
+  color: #059669;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.dp-customer-name {
+  font-size: 0.95rem;
+  color: #4b5563;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.dp-address-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.dp-pin-icon {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.dp-address-text {
+  font-size: 0.85rem;
+  color: #374151;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Action Buttons */
+.dp-btn-start {
+  width: 100%;
+  padding: 12px;
+  background: #3b82f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dp-btn-start:hover {
+  background: #2563eb;
+}
+
+.dp-active-delivery-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dp-btn-mark-delivered {
+  width: 100%;
+  padding: 12px;
+  background: #22c55e;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dp-btn-mark-delivered:hover {
+  background: #16a34a;
+}
+
+.dp-btn-view-map {
+  width: 100%;
+  padding: 10px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Collect Cash / UPI Box */
+.dp-collect-box {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.dp-collect-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.dp-collect-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.dp-collect-btn {
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dp-btn-cash {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.dp-btn-cash:hover {
+  background: #16a34a;
+}
+
+.dp-btn-upi {
+  background: #f8fafc;
+  color: #1e293b;
+  border-color: #93c5fd;
+}
+
+.dp-btn-upi:hover {
+  background: #eff6ff;
+}
+
+/* Delivered Card Box */
+.dp-delivered-box {
+  width: 100%;
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  color: #15803d;
+  font-size: 0.92rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Bottom Nav for Delivery Partner */
+.delivery-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 65px;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.dp-nav-item {
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.dp-nav-item.active {
+  color: #3b82f6;
+}
+
+.dp-nav-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* =====================================================================
+   VENDOR ORDERS PAGE STYLES (Matching Screenshot 4)
+   ===================================================================== */
+
+.v-orders-page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px 16px 85px;
+}
+
+.v-orders-header {
+  margin-bottom: 16px;
+}
+
+.v-back-btn {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #111827;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.v-orders-header-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.v-orders-subtitle {
+  font-size: 0.88rem;
+  color: #6b7280;
+  margin-left: 28px;
+}
+
+/* Filter Tabs */
+.v-filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.v-filter-tab {
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.v-filter-tab.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+
+/* Vendor Order Card */
+.vo-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.vo-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vo-order-id {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.vo-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+}
+
+.vo-badge-paid {
+  color: #059669;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.vo-badge-cod {
+  color: #b45309;
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.vo-badge-notpaid {
+  color: #dc2626;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.vo-card-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.vo-amount {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.vo-customer {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.vo-items-row {
+  font-size: 0.88rem;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.vo-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #9ca3af;
+  margin-bottom: 14px;
+}
+
+.vo-action-area {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 14px;
+}
+
+.vo-btn-assign {
+  width: 100%;
+  padding: 12px;
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 10px;
+  color: #2563eb;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.vo-btn-assign:hover {
+  background: #dbeafe;
+}
+
+.vo-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.vo-status-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vo-status-out {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1.5px solid #bfdbfe;
+}
+
+.vo-status-delivered {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1.5px solid #bbf7d0;
+}
+
+.vo-status-assigned {
+  background: #f8fafc;
+  color: #334155;
+  border: 1.5px solid #e2e8f0;
+}
+
+.vo-partner-name {
+  font-weight: 700;
+}
+
+.vo-change-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+/* Modal */
+.vo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.vo-modal-content {
+  background: #ffffff;
+  width: 100%;
+  max-width: 540px;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 32px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  animation: slide-up 0.25s ease-out;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.vo-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vo-modal-head h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #111827;
+}
+
+.vo-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.vo-modal-desc {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.vo-partner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vo-partner-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vo-partner-item:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+}
+
+.vo-partner-avatar {
+  font-size: 1.5rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vo-partner-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.vo-pname {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.vo-pphone {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.vo-partner-select-btn {
+  background: #3b82f6;
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+

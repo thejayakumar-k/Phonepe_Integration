@@ -26,6 +26,9 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { getAddFundsOrder, getDemoOrder, sessionMinutes } from './data/demo';
 import { clearDemoOrders, clearDemoItemOrders, getActiveUpiId, linkItemOrderToPayment } from './utils/storage';
+import { DeliveryLayout } from './components/DeliveryLayout';
+import { DeliveryDashboard } from './components/DeliveryDashboard';
+import { DeliverySettings } from './components/DeliverySettings';
 import type { MerchantConfig } from './types/payment';
 import './App.css';
 
@@ -159,6 +162,19 @@ function App() {
                 </ProtectedRoute>
               }
             />
+          </Route>
+
+          {/* Delivery Partner Routes with Layout */}
+          <Route
+            path="/delivery"
+            element={
+              <ProtectedRoute role="delivery">
+                <DeliveryLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<DeliveryDashboard />} />
+            <Route path="settings" element={<DeliverySettings />} />
           </Route>
 
           {/* Bike Tracking Page */}

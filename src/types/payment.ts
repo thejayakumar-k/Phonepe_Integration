@@ -20,6 +20,12 @@ export interface ItemOrderItem {
   image?: string;
 }
 
+export interface DeliveryPartner {
+  id: string;
+  name: string;
+  phone?: string;
+}
+
 export interface ItemOrder {
   id: string;
   customerId: string;
@@ -34,6 +40,11 @@ export interface ItemOrder {
   createdAt: number;
   /** Where this order should be delivered (from the address picker). */
   deliveryAddress?: { address: string; lat: number; lng: number };
+  assignedPartnerId?: string;
+  assignedPartnerName?: string;
+  assignedAt?: number;
+  deliveredAt?: number;
+  collectedPaymentMethod?: 'CASH' | 'UPI';
 }
 
 export interface Vendor {
@@ -64,6 +75,12 @@ export interface Order {
   transactionId?: string;       // Payment transaction reference (manual entry by admin)
   orderPlacedAt?: number;       // When the order was placed by the customer
   codPlacedAt?: number;         // When COD order was placed
+  deliveryAddress?: { address: string; lat: number; lng: number };
+  assignedPartnerId?: string;
+  assignedPartnerName?: string;
+  deliveryStatus?: 'ASSIGNED' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
+  deliveredAt?: number;
+  collectedPaymentMethod?: 'CASH' | 'UPI';
 }
 
 export interface MerchantConfig {

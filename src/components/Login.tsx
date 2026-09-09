@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { demoVendors, demoCustomers } from '../data/demo';
+import { demoVendors, demoCustomers, demoDeliveryPartners } from '../data/demo';
 
 export function Login() {
   const { role } = useParams<{ role: string }>();
@@ -10,25 +10,27 @@ export function Login() {
 
   const [vendorId, setVendorId] = useState(demoVendors[0]?.id || 'VENDOR001');
   const [customerId, setCustomerId] = useState(demoCustomers[0]?.id || 'CUST001');
+  const [partnerId, setPartnerId] = useState(demoDeliveryPartners[0]?.id || 'DP001');
 
-  if (role !== 'vendor' && role !== 'customer') {
+  if (role !== 'vendor' && role !== 'customer' && role !== 'delivery') {
     return <Navigate to="/" replace />;
   }
 
-  const isVendor = role === 'vendor';
-
   // If already logged in with this role, redirect immediately
-  if (isVendor && session?.role === 'vendor') {
+  if (role === 'vendor' && session?.role === 'vendor') {
     return <Navigate to="/vendor" replace />;
   }
-  if (!isVendor && session?.role === 'customer') {
+  if (role === 'customer' && session?.role === 'customer') {
     return <Navigate to="/customer" replace />;
+  }
+  if (role === 'delivery' && session?.role === 'delivery') {
+    return <Navigate to="/delivery" replace />;
   }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    if (isVendor) {
+    if (role === 'vendor') {
       const vendor = demoVendors.find((v) => v.id === vendorId) || demoVendors[0];
       login({
         role: 'vendor',
@@ -37,6 +39,15 @@ export function Login() {
         vendorName: vendor.name,
       });
       navigate('/vendor', { replace: true });
+    } else if (role === 'delivery') {
+      const partner = demoDeliveryPartners.find((dp) => dp.id === partnerId) || demoDeliveryPartners[0];
+      login({
+        role: 'delivery',
+        username: partner.name,
+        partnerId: partner.id,
+        partnerName: partner.name,
+      });
+      navigate('/delivery', { replace: true });
     } else {
       const customer = demoCustomers.find((c) => c.id === customerId) || demoCustomers[0];
       login({
@@ -49,29 +60,53 @@ export function Login() {
     }
   };
 
+  const getSubtitle = () => {
+    if (role === 'vendor') return 'Vendor Portal';
+    if (role === 'delivery') return 'Delivery Partner';
+    return 'Customer Login';
+  };
+
+  const getCardTitle = () => {
+    if (role === 'vendor') return 'Vendor Sign In';
+    if (role === 'delivery') return 'Delivery Partner Sign In';
+    return 'Customer Sign In';
+  };
+
+  const getCardIcon = () => {
+    if (role === 'vendor') return '🛍️';
+    if (role === 'delivery') return '🛵';
+    return '🛒';
+  };
+
+  const getNote = () => {
+    if (role === 'vendor') return 'Select your vendor store to manage orders & live delivery.';
+    if (role === 'delivery') return 'Select your delivery partner profile to view assigned orders.';
+    return 'Select your account to continue shopping & tracking.';
+  };
+
   return (
     <div className="login-page">
       <header className="home-header">
         <h1 className="brand-title">OORUNII</h1>
-        <p className="brand-subtitle">{isVendor ? 'Vendor Portal' : 'Customer Login'}</p>
+        <p className="brand-subtitle">{getSubtitle()}</p>
       </header>
 
       <main className="login-content">
         <div className="login-card">
-          <span className="role-icon">{isVendor ? '🛍️' : '🛒'}</span>
-          <h2>{isVendor ? 'Vendor Sign In' : 'Customer Sign In'}</h2>
-          <p className="login-note">
-            {isVendor
-              ? 'Select your vendor store to manage orders & live delivery.'
-              : 'Select your account to continue shopping & tracking.'}
-          </p>
+          <span className="role-icon">{getCardIcon()}</span>
+          <h2>{getCardTitle()}</h2>
+          <p className="login-note">{getNote()}</p>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">
-                {isVendor ? 'Select Vendor Store' : 'Select Customer Account'}
+                {role === 'vendor'
+                  ? 'Select Vendor Store'
+                  : role === 'delivery'
+                  ? 'Select Delivery Partner'
+                  : 'Select Customer Account'}
               </label>
-              {isVendor ? (
+              {role === 'vendor' ? (
                 <select
                   className="form-input"
                   value={vendorId}
@@ -80,6 +115,18 @@ export function Login() {
                   {demoVendors.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.name} ({v.id})
+                    </option>
+                  ))}
+                </select>
+              ) : role === 'delivery' ? (
+                <select
+                  className="form-input"
+                  value={partnerId}
+                  onChange={(e) => setPartnerId(e.target.value)}
+                >
+                  {demoDeliveryPartners.map((dp) => (
+                    <option key={dp.id} value={dp.id}>
+                      {dp.name} ({dp.id})
                     </option>
                   ))}
                 </select>
@@ -99,7 +146,11 @@ export function Login() {
             </div>
 
             <button type="submit" className="btn btn-login">
-              {isVendor ? 'Sign In to Vendor Dashboard' : 'Sign In'}
+              {role === 'vendor'
+                ? 'Sign In to Vendor Dashboard'
+                : role === 'delivery'
+                ? 'Sign In as Delivery Partner'
+                : 'Sign In'}
             </button>
           </form>
 
@@ -111,4 +162,5 @@ export function Login() {
     </div>
   );
 }
+
 

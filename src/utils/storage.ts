@@ -492,6 +492,29 @@ interface ItemOrderRow {
 }
 
 function itemOrderToRow(o: ItemOrder): ItemOrderRow {
+  // Store delivery assignment metadata within delivery_address jsonb to guarantee Supabase compatibility
+  const deliveryAddressPayload = o.deliveryAddress
+    ? {
+        ...o.deliveryAddress,
+        _assignedPartnerId: o.assignedPartnerId,
+        _assignedPartnerName: o.assignedPartnerName,
+        _collectedPaymentMethod: o.collectedPaymentMethod,
+        _assignedAt: o.assignedAt,
+        _deliveredAt: o.deliveredAt,
+      }
+    : (o.assignedPartnerId
+        ? {
+            address: 'Alapakkam, Maduravoyal, Chennai',
+            lat: 13.0485,
+            lng: 80.1632,
+            _assignedPartnerId: o.assignedPartnerId,
+            _assignedPartnerName: o.assignedPartnerName,
+            _collectedPaymentMethod: o.collectedPaymentMethod,
+            _assignedAt: o.assignedAt,
+            _deliveredAt: o.deliveredAt,
+          }
+        : null);
+
   return {
     id: o.id,
     customer_id: o.customerId,
@@ -504,11 +527,12 @@ function itemOrderToRow(o: ItemOrder): ItemOrderRow {
     payment_method: o.paymentMethod ?? null,
     payment_order_id: o.paymentOrderId ?? null,
     created_at: o.createdAt,
-    delivery_address: o.deliveryAddress ?? null,
+    delivery_address: deliveryAddressPayload,
   };
 }
 
 function rowToItemOrder(r: ItemOrderRow): ItemOrder {
+  const rawAddr = r.delivery_address && typeof r.delivery_address === 'object' ? (r.delivery_address as Record<string, any>) : null;
   return {
     id: r.id,
     customerId: r.customer_id,
@@ -521,10 +545,18 @@ function rowToItemOrder(r: ItemOrderRow): ItemOrder {
     paymentMethod: (r.payment_method as ItemOrder['paymentMethod']) ?? undefined,
     paymentOrderId: r.payment_order_id ?? undefined,
     createdAt: Number(r.created_at),
-    deliveryAddress:
-      r.delivery_address && typeof r.delivery_address === 'object'
-        ? (r.delivery_address as ItemOrder['deliveryAddress'])
-        : undefined,
+    deliveryAddress: rawAddr
+      ? {
+          address: rawAddr.address || 'Karambakkam, Valasaravakkam, Chennai',
+          lat: typeof rawAddr.lat === 'number' ? rawAddr.lat : 13.0485,
+          lng: typeof rawAddr.lng === 'number' ? rawAddr.lng : 13.1632,
+        }
+      : undefined,
+    assignedPartnerId: rawAddr?._assignedPartnerId,
+    assignedPartnerName: rawAddr?._assignedPartnerName,
+    collectedPaymentMethod: rawAddr?._collectedPaymentMethod,
+    assignedAt: rawAddr?._assignedAt,
+    deliveredAt: rawAddr?._deliveredAt,
   };
 }
 
@@ -536,7 +568,8 @@ export async function getItemOrders(): Promise<ItemOrder[]> {
       .select('*')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return (data ?? []).map((r) => rowToItemOrder(r as unknown as ItemOrderRow));
+    const orders = (data ?? []).map((r) => rowToItemOrder(r as unknown as ItemOrderRow));
+    return orders;
   } catch {
     return [];
   }
@@ -548,22 +581,61 @@ export async function saveItemOrder(order: ItemOrder): Promise<void> {
   if (error) console.error('saveItemOrder failed:', error.message);
 }
 
+/** Assign a delivery partner to an item order. */
+export async function assignItemOrderPartner(
+  orderId: string,
+  partnerId: string,
+  partnerName: string
+): Promise<ItemOrder | null> {
+  const orders = await getItemOrders();
+  const target = orders.find((o) => o.id === orderId);
+  if (!target) return null;
+
+  const updated: ItemOrder = {
+    ...target,
+    assignedPartnerId: partnerId,
+    assignedPartnerName: partnerName,
+    assignedAt: Date.now(),
+  };
+  await saveItemOrder(updated);
+  return updated;
+}
+
+/** Update delivery status and collect payment. */
+export async function collectItemOrderPayment(
+  orderId: string,
+  paymentMethod: 'CASH' | 'UPI'
+): Promise<ItemOrder | null> {
+  const orders = await getItemOrders();
+  const target = orders.find((o) => o.id === orderId);
+  if (!target) return null;
+
+  const updated: ItemOrder = {
+    ...target,
+    status: 'DELIVERED',
+    collectedPaymentMethod: paymentMethod,
+    deliveredAt: Date.now(),
+  };
+  await saveItemOrder(updated);
+  return updated;
+}
+
 /** Update an item order's status. */
 export async function updateItemOrderStatus(
   id: string,
   status: ItemOrderStatus
 ): Promise<ItemOrder | null> {
-  const { data, error } = await supabase
-    .from('item_orders')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .maybeSingle();
-  if (error) {
-    console.error('updateItemOrderStatus failed:', error.message);
-    return null;
-  }
-  return data ? rowToItemOrder(data as unknown as ItemOrderRow) : null;
+  const orders = await getItemOrders();
+  const target = orders.find((o) => o.id === id);
+  if (!target) return null;
+
+  const updated: ItemOrder = {
+    ...target,
+    status,
+    ...(status === 'DELIVERED' ? { deliveredAt: Date.now() } : {}),
+  };
+  await saveItemOrder(updated);
+  return updated;
 }
 
 /** Remove previously seeded demo item orders (if any). */

@@ -29,6 +29,14 @@ export function Home() {
               View your orders and make payments
             </span>
           </Link>
+
+          <Link to="/login/delivery" className="role-card delivery-card">
+            <span className="role-icon">🛵</span>
+            <span className="role-title">Delivery Partner Login</span>
+            <span className="role-desc">
+              Deliver orders and share live location
+            </span>
+          </Link>
         </div>
 
       </main>
