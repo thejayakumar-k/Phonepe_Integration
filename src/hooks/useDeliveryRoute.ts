@@ -21,9 +21,9 @@ export interface DeliveryRoute {
 }
 
 const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving';
-const REFRESH_INTERVAL_MS = 15000;
-const MIN_MOVE_FOR_REFRESH_M = 60;
-const MIN_REQUEST_GAP_MS = 10000;
+const REFRESH_INTERVAL_MS = 3000;
+const MIN_MOVE_FOR_REFRESH_M = 3;
+const MIN_REQUEST_GAP_MS = 2000;
 const MAX_FALLBACK_AGE_MS = 45000;
 
 async function fetchRoadRoute(from: GeoPoint, to: GeoPoint): Promise<DeliveryRoute | null> {

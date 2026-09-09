@@ -19,7 +19,7 @@ function shopPinElement(label?: string): HTMLDivElement {
 }
 
 // How far (m) the bike must move before the map re-centres
-const AUTO_PAN_THRESHOLD_M = 40;
+const AUTO_PAN_THRESHOLD_M = 3;
 
 interface LeafletFallbackMapProps {
   bike: LiveBikeLocation | null;

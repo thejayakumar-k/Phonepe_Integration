@@ -24,19 +24,19 @@ export function useGPS(options: UseGPSOptions = {}) {
 
   const {
     enableHighAccuracy = true,
-    maximumAge = 5000,
-    timeout = 10000,
+    maximumAge = 0,
+    timeout = 30000,
     watchPosition = true,
   } = options;
 
-  const handleSuccess = useCallback((position: GeolocationPosition) => {
+  const handleSuccess = useCallback((pos: GeolocationPosition) => {
     const newPos: GPSPosition = {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-      accuracy: position.coords.accuracy,
-      timestamp: position.timestamp,
-      speed: position.coords.speed ?? undefined,
-      heading: position.coords.heading ?? undefined,
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+      accuracy: pos.coords.accuracy,
+      timestamp: pos.timestamp,
+      speed: pos.coords.speed ?? undefined,
+      heading: pos.coords.heading ?? undefined,
     };
     setPosition(newPos);
     setError(null);
@@ -51,12 +51,13 @@ export function useGPS(options: UseGPSOptions = {}) {
         setError('Location information unavailable.');
         break;
       case err.TIMEOUT:
-        setError('Location request timed out.');
+        // Transient timeout while moving — keep existing position & don't break tracking
+        setError((prev) => (position ? prev : 'Location request timed out. Retrying…'));
         break;
       default:
         setError('An unknown error occurred while getting location.');
     }
-  }, []);
+  }, [position]);
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {

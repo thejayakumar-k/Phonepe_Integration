@@ -52,11 +52,11 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [deliveryAddressText, setDeliveryAddressText] = useState('Locating…');
   const [now, setNow] = useState(Date.now());
 
-  // Real GPS from this device
+  // Real GPS from this device (maximumAge: 0 forces real-time un-cached hardware fixes)
   const { position, error, isTracking, startTracking, stopTracking } = useGPS({
     enableHighAccuracy: true,
-    maximumAge: 1000,
-    timeout: 10000,
+    maximumAge: 0,
+    timeout: 30000,
     watchPosition: true,
   });
 
@@ -77,10 +77,10 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => clearInterval(t);
   }, []);
 
-// Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
-const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
+  // Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
+  const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
 
-// Load real destination address from saved order
+  // Load real destination address from saved order
   useEffect(() => {
     let cancelled = false;
     getItemOrders().then((orders) => {
@@ -91,12 +91,6 @@ const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
     });
     return () => { cancelled = true; };
   }, [orderId]);
-
-  // Shop location dynamically set to user's live GPS position
-  const shop = useMemo(
-    () => (position ? { lat: position.latitude, lng: position.longitude } : SHOP_LOCATION),
-    [position]
-  );
 
   // Destination point: AGS Theatre, Maduravoyal
   const destination = useMemo(
@@ -129,7 +123,7 @@ const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
       };
     }
     if (position) {
-      // YOUR mobile GPS = bike (walk and the icon follows you)
+      // YOUR mobile GPS = bike (walk and the icon follows you in real time)
       return {
         lat: position.latitude,
         lng: position.longitude,
@@ -237,11 +231,11 @@ const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
             className={isFullscreen ? 'ltm-full' : ''}
             bike={bike}
             destination={destination}
-            shopLocation={shop}
+            shopLocation={SHOP_LOCATION}
             route={route}
             destinationLabel="AGS Theatre, Maduravoyal"
-            shopLabel="Your Location (Shop)"
-            partnerLabel="Delivery bike"
+            shopLabel="Oorunii Hub (Shop)"
+            partnerLabel="Delivery Bike (Your GPS)"
           />
 
           {/* Live status pill */}
