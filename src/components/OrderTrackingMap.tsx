@@ -34,7 +34,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [now, setNow] = useState(Date.now());
 
   // Supabase realtime: delivery partner streaming their GPS
-  const { bikeLocation, isConnected } = useRealtimeGPS({
+  const { bikeLocation } = useRealtimeGPS({
     bikeId: orderId,
     enabled: true,
   });
