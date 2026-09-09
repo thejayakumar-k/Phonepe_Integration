@@ -77,7 +77,10 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => clearInterval(t);
   }, []);
 
-  // Load real destination address from saved order
+// Meenakshi Mission Hospital, Valasaravakkam, Chennai
+const MEENAKSHI_HOSPITAL = { lat: 13.0472622, lng: 80.1815603 };
+
+// Load real destination address from saved order
   useEffect(() => {
     let cancelled = false;
     getItemOrders().then((orders) => {
@@ -89,18 +92,20 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => { cancelled = true; };
   }, [orderId]);
 
-  // Resolve real destination point
+  // Destination point (Meenakshi Hospital or saved order destination)
   const destination = useMemo(
-    () => deliveryTarget ?? (position ? { lat: position.latitude, lng: position.longitude } : SHOP_LOCATION),
-    [deliveryTarget, position]
+    () => deliveryTarget ?? MEENAKSHI_HOSPITAL,
+    [deliveryTarget]
   );
 
   // Reverse-geocode destination → show real address in header
   useEffect(() => {
     let cancelled = false;
-    setDeliveryAddressText('Locating…');
+    setDeliveryAddressText('Meenakshi Mission Hospital, Valasaravakkam');
     reverseGeocode(destination.lat, destination.lng).then((addr) => {
-      if (!cancelled) setDeliveryAddressText(addr || 'Your delivery location');
+      if (!cancelled && addr) {
+        setDeliveryAddressText(`Meenakshi Mission Hospital, ${addr}`);
+      }
     });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -76,8 +76,8 @@ export function CustomerHome() {
               🏪
             </div>
             <div className="vendor-details">
-              <h2 className="vendor-name">VVK WATER SUPPLY</h2>
-              <p className="vendor-address">📍 Jeeva Complex, Alapakkam, Maduravoyal</p>
+              <h2 className="vendor-name">OORUNII WATER SUPPLY</h2>
+              <p className="vendor-address">📍 Oorunii Outlet, Maduravoyal, Chennai</p>
             </div>
           </div>
           <a className="vendor-contact-link" href="tel:+919876543210">

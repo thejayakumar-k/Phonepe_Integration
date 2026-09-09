@@ -4,7 +4,7 @@ import { LiveTrackingMap, type LiveTrackingStats } from './LiveTrackingMap';
 import { useGPS } from '../hooks/useGPS';
 import { useRealtimeGPS } from '../hooks/useRealtimeGPS';
 
-// VVK WATER SUPPLY - Jeeva Complex, Alapakkam, Maduravoyal, Chennai
+// OORUNII WATER SUPPLY - Maduravoyal, Chennai
 const SHOP_LOCATION = { lat: 13.054, lng: 80.17 };
 
 export function TrackingPage() {

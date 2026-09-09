@@ -338,7 +338,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
             {position ? (
               <div className="da-fp-address-from">
-                🏪 Jeeva Complex, Alapakkam, Maduravoyal
+                🏪 Oorunii Water Hub, Maduravoyal
               </div>
             ) : (
               <div className="da-fp-address-from waiting">📍 Waiting for GPS...</div>
