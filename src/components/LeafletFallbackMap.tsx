@@ -205,7 +205,13 @@ export function LeafletFallbackMap({
   }, [bike?.lat, bike?.lng]);
 
   // ── Real-time route line updates (OSRM) ──
+  // Use a stable key based on length + first + last point to detect real changes
+  const routeKey = route
+    ? `${route.coordinates.length}|${route.coordinates[0]?.join()}|${route.coordinates[route.coordinates.length - 1]?.join()}`
+    : 'empty';
+
   useEffect(() => {
+    if (!mapRef.current) return;
     const coords: Array<[number, number]> =
       route && route.coordinates.length > 1
         ? route.coordinates.map((c) => [c[1], c[0]] as [number, number])
@@ -213,7 +219,9 @@ export function LeafletFallbackMap({
     casingRef.current?.setLatLngs(coords);
     lineRef.current?.setLatLngs(coords);
     animDashRef.current?.setLatLngs(coords);
-  }, [route?.coordinates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeKey]);
+
 
   // ── Real-time bike position + heading + auto-pan ──
   useEffect(() => {
