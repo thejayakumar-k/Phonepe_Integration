@@ -122,7 +122,7 @@ export function DeliveryDashboard() {
                   <span className="dp-pin-icon">📍</span>
                   <span className="dp-address-text">
                     {order.deliveryAddress?.address ||
-                      'Karambakkam, Ward 147, Zone 11 Valasaravakkam, Chennai Corporation, Ambattur, Thiruvallur, Tamil Nadu, 600095, India'}
+                      'Pillaiyar Koil Street, Maduravoyal, Chennai'}
                   </span>
                 </div>
 

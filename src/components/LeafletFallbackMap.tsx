@@ -193,21 +193,21 @@ export function LeafletFallbackMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Initial fit: show bike + shop + destination all at once
+  // Fit bounds: show bike + shop + destination all at once whenever destination updates
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || hasInitFit.current) return;
+    if (!map) return;
     const pts: Array<[number, number]> = [[destination.lat, destination.lng]];
     if (bike) pts.push([bike.lat, bike.lng]);
     if (shopLocation) pts.push([shopLocation.lat, shopLocation.lng]);
-    if (pts.length > 1) {
+    
+    const isMulti = pts.some((p) => p[0] !== pts[0][0] || p[1] !== pts[0][1]);
+    if (isMulti) {
       map.fitBounds(L.latLngBounds(pts), { padding: [55, 55], maxZoom: 16, animate: true });
     } else {
       map.setView([destination.lat, destination.lng], 15);
     }
-    hasInitFit.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bike?.lat, bike?.lng]);
+  }, [destination.lat, destination.lng]);
 
   // ── Real-time route line updates (OSRM) ──
   // Use a stable key based on length + first + last point to detect real changes
@@ -218,7 +218,7 @@ export function LeafletFallbackMap({
   useEffect(() => {
     if (!mapRef.current) return;
     let coords: Array<[number, number]> = [];
-    if (route && route.coordinates.length > 1) {
+    if (route && route.coordinates && route.coordinates.length > 1) {
       // OSRM road-following route
       coords = route.coordinates.map((c) => [c[1], c[0]] as [number, number]);
     } else if (bike) {
@@ -228,10 +228,15 @@ export function LeafletFallbackMap({
         [destination.lat, destination.lng],
       ];
     }
-    casingRef.current?.setLatLngs(coords);
-    lineRef.current?.setLatLngs(coords);
-    animDashRef.current?.setLatLngs(coords);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    if (coords.length > 0) {
+      casingRef.current?.setLatLngs(coords);
+      casingRef.current?.redraw();
+      lineRef.current?.setLatLngs(coords);
+      lineRef.current?.redraw();
+      animDashRef.current?.setLatLngs(coords);
+      animDashRef.current?.redraw();
+    }
   }, [routeKey, bike?.lat, bike?.lng, destination.lat, destination.lng]);
 
 
@@ -254,7 +259,8 @@ export function LeafletFallbackMap({
       // SVG faces East (right), so we subtract 90 to align: North→-90deg, East→0deg
       const glyph = container.querySelector<HTMLElement>('.ltm-bike-glyph');
       if (glyph) {
-        const rawHeading = typeof bike.heading === 'number' && bike.heading >= 0 ? bike.heading : 90;
+        // If heading is 90 or empty, cssRotation is 0 (straight facing right)
+        const rawHeading = typeof bike.heading === 'number' && !isNaN(bike.heading) && bike.heading > 0 ? bike.heading : 90;
         const cssRotation = rawHeading - 90; // convert GPS heading to SVG rotation
         glyph.style.transform = `rotate(${cssRotation}deg)`;
         glyph.style.transition = 'transform 0.7s cubic-bezier(0.22,1,0.36,1)';

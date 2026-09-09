@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGPS } from './useGPS';
 import { supabase } from '../lib/supabase';
 import type { ItemOrder } from '../types/payment';
@@ -65,6 +65,28 @@ export function useVendorDelivery(): VendorDeliveryState {
     setBikeId(order.id);
     setIsDelivering(true);
     startTracking();
+
+    // Instantly seed bike_locations with initial shop position so customer
+    // tracking map immediately turns "Live" without waiting for mobile GPS fix.
+    supabase
+      .from('bike_locations')
+      .upsert(
+        {
+          bike_id: order.id,
+          user_id: 'vendor',
+          latitude: 13.0550,
+          longitude: 80.1633,
+          speed: null,
+          heading: 90,
+          accuracy: 10,
+          timestamp: new Date().toISOString(),
+        },
+        { onConflict: 'bike_id' }
+      )
+      .then(({ error: err }) => {
+        if (err) console.error('[VendorDelivery] initial GPS upload failed:', err.message);
+      });
+
     supabase
       .from('item_orders')
       .update({ status: 'OUT_FOR_DELIVERY' })
