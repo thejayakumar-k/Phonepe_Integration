@@ -77,8 +77,8 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => clearInterval(t);
   }, []);
 
-// Meenakshi Mission Hospital, Valasaravakkam, Chennai
-const MEENAKSHI_HOSPITAL = { lat: 13.0472622, lng: 80.1815603 };
+// Real Meenakshi Hospital on Alapakkam Main Road, Chennai
+const MEENAKSHI_HOSPITAL_ALAPAKKAM = { lat: 13.0485, lng: 80.1645 };
 
 // Load real destination address from saved order
   useEffect(() => {
@@ -92,19 +92,25 @@ const MEENAKSHI_HOSPITAL = { lat: 13.0472622, lng: 80.1815603 };
     return () => { cancelled = true; };
   }, [orderId]);
 
-  // Destination point (Meenakshi Hospital or saved order destination)
+  // Shop location dynamically set to user's live GPS position
+  const shop = useMemo(
+    () => (position ? { lat: position.latitude, lng: position.longitude } : SHOP_LOCATION),
+    [position]
+  );
+
+  // Destination point: Meenakshi Hospital on Alapakkam Main Road
   const destination = useMemo(
-    () => deliveryTarget ?? MEENAKSHI_HOSPITAL,
+    () => deliveryTarget ?? MEENAKSHI_HOSPITAL_ALAPAKKAM,
     [deliveryTarget]
   );
 
   // Reverse-geocode destination → show real address in header
   useEffect(() => {
     let cancelled = false;
-    setDeliveryAddressText('Meenakshi Mission Hospital, Valasaravakkam');
+    setDeliveryAddressText('Meenakshi Hospital, Alapakkam Main Road');
     reverseGeocode(destination.lat, destination.lng).then((addr) => {
       if (!cancelled && addr) {
-        setDeliveryAddressText(`Meenakshi Mission Hospital, ${addr}`);
+        setDeliveryAddressText(`Meenakshi Hospital, ${addr}`);
       }
     });
     return () => { cancelled = true; };
@@ -231,10 +237,10 @@ const MEENAKSHI_HOSPITAL = { lat: 13.0472622, lng: 80.1815603 };
             className={isFullscreen ? 'ltm-full' : ''}
             bike={bike}
             destination={destination}
-            shopLocation={SHOP_LOCATION}
+            shopLocation={shop}
             route={route}
-            destinationLabel={deliveryAddressText}
-            shopLabel="Oorunii"
+            destinationLabel="Meenakshi Hospital (Alapakkam Road)"
+            shopLabel="Your Location (Shop)"
             partnerLabel="Delivery bike"
           />
 
