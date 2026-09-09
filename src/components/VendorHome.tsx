@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getOrders } from '../utils/storage';
-import type { Order } from '../types/payment';
+import { getOrders, getItemOrders } from '../utils/storage';
+import type { Order, ItemOrder } from '../types/payment';
 
 function formatDate(value: number): string {
   return new Date(value).toLocaleString('en-IN', {
@@ -17,14 +17,18 @@ export function VendorHome() {
   const navigate = useNavigate();
   const { session, logout } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [itemOrders, setItemOrders] = useState<ItemOrder[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const all = (await getOrders()).filter(
-        (o) => o.vendorId === session?.vendorId
-      );
-      if (!cancelled) setOrders(all.sort((a, b) => b.createdAt - a.createdAt));
+      const [allOrders, allItemOrders] = await Promise.all([getOrders(), getItemOrders()]);
+      if (cancelled) return;
+      const vendorOrders = allOrders.filter((o) => o.vendorId === session?.vendorId);
+      setOrders(vendorOrders.sort((a, b) => b.createdAt - a.createdAt));
+
+      const vendorItemOrders = allItemOrders.filter((io) => io.vendorId === session?.vendorId);
+      setItemOrders(vendorItemOrders.sort((a, b) => b.createdAt - a.createdAt));
     };
     load();
     const interval = setInterval(load, 5000);
@@ -35,11 +39,19 @@ export function VendorHome() {
   }, [session?.vendorId]);
 
   const paidOrders = orders.filter((o) => o.paymentStatus === 'PAID');
-  const revenue = paidOrders.reduce((sum, o) => sum + o.amount, 0);
-  const pendingCount = orders.filter(
-    (o) => o.paymentStatus === 'PENDING' || o.paymentStatus === 'CUSTOMER_SUBMITTED'
-  ).length;
-  const recent = paidOrders.slice(0, 3);
+  const paidItemOrders = itemOrders.filter((io) => io.status === 'PAID' || io.status === 'OUT_FOR_DELIVERY' || io.status === 'DELIVERED');
+
+  const totalRevenue =
+    paidOrders.reduce((sum, o) => sum + o.amount, 0) +
+    paidItemOrders.reduce((sum, io) => sum + io.total, 0);
+
+  const pendingCount =
+    orders.filter((o) => o.paymentStatus === 'PENDING' || o.paymentStatus === 'CUSTOMER_SUBMITTED').length +
+    itemOrders.filter((io) => io.status === 'PENDING' || io.status === 'NOT_PAID').length;
+
+  const totalOrdersCount = orders.length + itemOrders.length;
+  const readyForDeliveryCount = itemOrders.filter((io) => io.status === 'PAID').length;
+  const activeDeliveryCount = itemOrders.filter((io) => io.status === 'OUT_FOR_DELIVERY').length;
 
   return (
     <div className="vendor-home">
@@ -68,13 +80,30 @@ export function VendorHome() {
       <div className="vh-hero">
         <div className="vh-hero-top">
           <span className="vh-hero-label">Total Revenue</span>
-          <span className="vh-hero-badge">{paidOrders.length} payments</span>
+          <span className="vh-hero-badge">{paidOrders.length + paidItemOrders.length} payments</span>
         </div>
-        <div className="vh-hero-amount">₹{revenue.toFixed(2)}</div>
-        <div className="vh-hero-sub">Earnings from verified payments</div>
+        <div className="vh-hero-amount">₹{totalRevenue.toFixed(2)}</div>
+        <div className="vh-hero-sub">Earnings from verified store orders & payments</div>
       </div>
 
-      {/* Stats */}
+      {/* Delivery Quick Banner */}
+      {(readyForDeliveryCount > 0 || activeDeliveryCount > 0) && (
+        <button
+          className="vh-pending-banner"
+          style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', marginBottom: '1rem' }}
+          onClick={() => navigate('/vendor/orders')}
+        >
+          <span className="vhp-icon" style={{ fontSize: '1.25rem' }}>🛵</span>
+          <span className="vhp-text" style={{ fontWeight: 600 }}>
+            {activeDeliveryCount > 0
+              ? `${activeDeliveryCount} delivery currently active in progress`
+              : `${readyForDeliveryCount} order${readyForDeliveryCount > 1 ? 's' : ''} ready to deliver`}
+          </span>
+          <span className="vhp-arrow">Start →</span>
+        </button>
+      )}
+
+      {/* Stats Grid */}
       <div className="vh-stats">
         <button className="vh-stat" onClick={() => navigate('/vendor/orders')}>
           <span className="vh-stat-icon vh-stat-orders">
@@ -86,7 +115,7 @@ export function VendorHome() {
             </svg>
           </span>
           <div className="vh-stat-body">
-            <span className="vh-stat-value">{orders.length}</span>
+            <span className="vh-stat-value">{totalOrdersCount}</span>
             <span className="vh-stat-label">Total Orders</span>
           </div>
         </button>
@@ -105,52 +134,88 @@ export function VendorHome() {
         </button>
       </div>
 
-      {/* Pending banner */}
-      {pendingCount > 0 && (
-        <button className="vh-pending-banner" onClick={() => navigate('/vendor/orders')}>
-          <span className="vhp-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </span>
-          <span className="vhp-text">
-            {pendingCount} payment{pendingCount > 1 ? 's' : ''} awaiting verification
-          </span>
-          <span className="vhp-arrow">→</span>
+      {/* Quick Action Shortcuts */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <button
+          onClick={() => navigate('/vendor/orders')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            padding: '0.85rem 1rem',
+            background: 'var(--card-bg, #1a1e29)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px',
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            textAlign: 'left'
+          }}
+        >
+          <span style={{ fontSize: '1.25rem' }}>🛵</span>
+          <span>Live Delivery & Orders</span>
         </button>
-      )}
 
-      {/* Recent Payments */}
+        <button
+          onClick={() => navigate('/vendor/payments')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            padding: '0.85rem 1rem',
+            background: 'var(--card-bg, #1a1e29)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px',
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            textAlign: 'left'
+          }}
+        >
+          <span style={{ fontSize: '1.25rem' }}>💳</span>
+          <span>Payment History</span>
+        </button>
+      </div>
+
+      {/* Recent Orders / Deliveries */}
       <div className="vh-section-head">
-        <h2 className="vh-section-title">Recent Payments</h2>
-        <button className="vh-view-all" onClick={() => navigate('/vendor/payments')}>
+        <h2 className="vh-section-title">Recent Orders</h2>
+        <button className="vh-view-all" onClick={() => navigate('/vendor/orders')}>
           View All
         </button>
       </div>
 
-      {recent.length === 0 ? (
+      {itemOrders.length === 0 && orders.length === 0 ? (
         <div className="empty-state">
-          <span className="empty-icon">💳</span>
-          <p>No payments received yet</p>
+          <span className="empty-icon">🛍️</span>
+          <p>No customer orders placed yet</p>
+          <small style={{ color: '#888', marginTop: '0.25rem', display: 'block' }}>
+            Customer orders from the store will show here for real-time delivery
+          </small>
         </div>
       ) : (
         <div className="vh-payments">
-          {recent.map((order) => (
-            <div key={order.orderId} className="vh-payment">
-              <span className="vh-payment-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
+          {itemOrders.slice(0, 4).map((io) => (
+            <div
+              key={io.id}
+              className="vh-payment"
+              onClick={() => navigate('/vendor/orders')}
+              style={{ cursor: 'pointer' }}
+            >
+              <span className="vh-payment-icon" style={{ background: io.status === 'OUT_FOR_DELIVERY' ? 'rgba(16, 185, 129, 0.2)' : undefined }}>
+                {io.status === 'OUT_FOR_DELIVERY' ? '🛵' : '📦'}
               </span>
               <div className="vh-payment-info">
                 <span className="vh-payment-customer">
-                  {order.customerName || order.customerId || 'Customer'}
+                  {io.items.map((i) => `${i.qty}x ${i.name}`).join(', ')}
                 </span>
-                <span className="vh-payment-date">{formatDate(order.createdAt)}</span>
+                <span className="vh-payment-date">
+                  {formatDate(io.createdAt)} · <strong style={{ color: io.status === 'PAID' ? '#10b981' : io.status === 'OUT_FOR_DELIVERY' ? '#3b82f6' : '#f59e0b' }}>{io.status}</strong>
+                </span>
               </div>
-              <span className="vh-payment-amount">+₹{order.amount.toFixed(2)}</span>
+              <span className="vh-payment-amount">₹{io.total.toFixed(2)}</span>
             </div>
           ))}
         </div>
@@ -158,3 +223,4 @@ export function VendorHome() {
     </div>
   );
 }
+
