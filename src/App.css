@@ -8318,3 +8318,251 @@ body {
 }
 
 
+
+/* ========================================
+   Live Tracking Map (MyApp-style, OSRM + free basemap)
+   ======================================== */
+
+.ltm-root {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  min-height: 260px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.ltm-root.ltm-full {
+  height: 100%;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.ltm-map {
+  position: absolute;
+  inset: 0;
+}
+
+.ltm-map .maplibregl-canvas {
+  outline: none;
+}
+
+/* Bike badge (Rapido yellow) that glides between GPS fixes */
+.ltm-bike-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #FFD200;
+  border: 3px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 10;
+}
+
+.ltm-bike-glyph {
+  display: flex;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Destination pin */
+.ltm-dest-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ltm-dest-head {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 3px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.ltm-dest-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.ltm-dest-tail {
+  width: 0;
+  height: 0;
+  margin-top: -2px;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid #ef4444;
+}
+
+/* Overlay */
+.ltm-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ltm-legend {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.ltm-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ltm-legend-bike {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #FFD200;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.ltm-legend-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ltm-legend-dot.dest {
+  background: #ef4444;
+}
+
+.ltm-legend-dot.route {
+  background: #1A73E8;
+}
+
+/* Stats chips */
+.ltm-stats {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.ltm-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  pointer-events: auto;
+}
+
+.ltm-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ltm-stat-value {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* Re-centre button */
+.ltm-recenter {
+  position: absolute;
+  right: 10px;
+  bottom: 42px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+
+.ltm-recenter:hover {
+  background: var(--bg-secondary);
+}
+
+/* Live indicator */
+.ltm-live {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border-color);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.ltm-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9ca3af;
+}
+
+.ltm-live-dot.live {
+  background: #10b981;
+  animation: otm-pulse 2s infinite;
+}
+
+/* Route line fallback styling (casing handled by layers) */
+.ltm-route-note {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-size: 10px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 3px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.ltm-size-320 {
+  height: 320px;
+}
+
+.ltm-size-420 {
+  height: 420px;
+}

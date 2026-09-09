@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
-import { MapTracker } from './MapTracker';
+import { LiveTrackingMap } from './LiveTrackingMap';
 import { useGPS } from '../hooks/useGPS';
 import { useRealtimeGPS } from '../hooks/useRealtimeGPS';
+
+// VVK WATER SUPPLY - Jeeva Complex, Alapakkam, Maduravoyal, Chennai
+const SHOP_LOCATION = { lat: 13.054, lng: 80.17 };
 
 interface LiveTrackingExampleProps {
   bikeId: string;
@@ -31,6 +34,24 @@ export function LiveTrackingExample({ bikeId, userId }: LiveTrackingExampleProps
     }
   }, [position, isTracking, saveLocation]);
 
+  const bike = bikeLocation
+    ? {
+        lat: bikeLocation.latitude,
+        lng: bikeLocation.longitude,
+        heading: bikeLocation.heading ?? null,
+        timestamp: bikeLocation.timestamp ? Date.parse(bikeLocation.timestamp) : null,
+        speed: bikeLocation.speed ?? null,
+      }
+    : position
+      ? {
+          lat: position.latitude,
+          lng: position.longitude,
+          heading: position.heading ?? null,
+          timestamp: position.timestamp,
+          speed: position.speed ?? null,
+        }
+      : null;
+
   // Get all bike locations as array for display
   const allLocations = Array.from(allBikeLocations.values());
 
@@ -38,8 +59,8 @@ export function LiveTrackingExample({ bikeId, userId }: LiveTrackingExampleProps
     <div className="tracking-page">
       <div className="tracking-header">
         <div className="tracking-header-inner">
-          <h1>🚲 Live Bike Tracking</h1>
-          <p>Real-time location synced with Supabase</p>
+          <h1>🛵 Live Bike Tracking</h1>
+          <p>Real-time location synced with Supabase + OSRM routes</p>
         </div>
       </div>
 
@@ -51,11 +72,12 @@ export function LiveTrackingExample({ bikeId, userId }: LiveTrackingExampleProps
               <h2>Live Map - {bikeId}</h2>
             </div>
             <div className="tracking-map-container">
-              <MapTracker
-                latitude={position?.latitude || bikeLocation?.latitude}
-                longitude={position?.longitude || bikeLocation?.longitude}
-                zoom={16}
-                showUserLocation={!!position}
+              <LiveTrackingMap
+                className="ltm-size-420"
+                bike={bike}
+                destination={SHOP_LOCATION}
+                destinationLabel="VVK Water Supply"
+                partnerLabel="Bike"
               />
             </div>
           </div>
@@ -163,12 +185,11 @@ export function LiveTrackingExample({ bikeId, userId }: LiveTrackingExampleProps
       {/* Info Box */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 16px 20px' }}>
         <div className="tracking-info-box" style={{ background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-          <h3 style={{ color: '#10b981' }}>✅ Real-time Supabase Sync Active</h3>
+          <h3 style={{ color: '#10b981' }}>✅ Real-time Tracking Active</h3>
           <ul>
-            <li style={{ color: '#059669' }}>• Your bike's location is being synced to Supabase in real-time</li>
-            <li style={{ color: '#059669' }}>• Other users can see your bike on their maps</li>
-            <li style={{ color: '#059669' }}>• All bikes are tracked simultaneously</li>
-            <li style={{ color: '#059669' }}>• Data is stored securely in your Supabase database</li>
+            <li style={{ color: '#059669' }}>• Your bike's location is synced to Supabase in real-time</li>
+            <li style={{ color: '#059669' }}>• OSRM road routes shown automatically (free public server)</li>
+            <li style={{ color: '#059669' }}>• Other users can track this bike from any device</li>
           </ul>
         </div>
       </div>

@@ -488,6 +488,7 @@ interface ItemOrderRow {
   payment_method: string | null;
   payment_order_id: string | null;
   created_at: number;
+  delivery_address: unknown;
 }
 
 function itemOrderToRow(o: ItemOrder): ItemOrderRow {
@@ -503,6 +504,7 @@ function itemOrderToRow(o: ItemOrder): ItemOrderRow {
     payment_method: o.paymentMethod ?? null,
     payment_order_id: o.paymentOrderId ?? null,
     created_at: o.createdAt,
+    delivery_address: o.deliveryAddress ?? null,
   };
 }
 
@@ -519,6 +521,10 @@ function rowToItemOrder(r: ItemOrderRow): ItemOrder {
     paymentMethod: (r.payment_method as ItemOrder['paymentMethod']) ?? undefined,
     paymentOrderId: r.payment_order_id ?? undefined,
     createdAt: Number(r.created_at),
+    deliveryAddress:
+      r.delivery_address && typeof r.delivery_address === 'object'
+        ? (r.delivery_address as ItemOrder['deliveryAddress'])
+        : undefined,
   };
 }
 

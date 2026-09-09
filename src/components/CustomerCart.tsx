@@ -100,6 +100,7 @@ export function CustomerCart() {
     status,
     paymentMethod: method,
     createdAt: Date.now(),
+    deliveryAddress: deliveryAddress ?? undefined,
   });
 
   useEffect(() => {
@@ -143,7 +144,7 @@ export function CustomerCart() {
 
     window.addEventListener('triggerCheckout', handleCheckout);
     return () => window.removeEventListener('triggerCheckout', handleCheckout);
-  }, [selectedPayment, walletBalance, totalAmount, cart, navigate, session?.customerId, session?.customerName]);
+  }, [selectedPayment, walletBalance, totalAmount, cart, navigate, session?.customerId, session?.customerName, deliveryAddress]);
 
   useEffect(() => {
     return () => {

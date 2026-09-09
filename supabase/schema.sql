@@ -173,3 +173,9 @@ create policy "anon_all_upi_ids" on public.upi_ids for all using (true) with che
 create policy "anon_all_products" on public.products for all using (true) with check (true);
 create policy "anon_all_store_settings" on public.store_settings for all using (true) with check (true);
 create policy "anon_all_faqs" on public.faqs for all using (true) with check (true);
+-- -- Delivery address on item orders (for live map tracking) ----
+alter table public.item_orders
+  add column if not exists delivery_address jsonb;
+
+comment on column public.item_orders.delivery_address is
+  '{"address","lat","lng"} saved from the cart address picker so tracking can show a real route to the customer.';

@@ -102,16 +102,49 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
       m.on('load', () => {
         m.resize();
+
+        // OSRM road route source/layers (shop → you).
+        m.addSource('da-route', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] },
+        });
+        m.addLayer({
+          id: 'da-route-casing', type: 'line', source: 'da-route',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#ffffff', 'line-width': 7 },
+        });
+        m.addLayer({
+          id: 'da-route-line', type: 'line', source: 'da-route',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#2563eb', 'line-width': 4.5 },
+        });
+
         const shopEl = document.createElement('div');
         shopEl.className = 'shop-marker';
         shopEl.innerHTML = '<div class="shop-marker-pin">🏪</div>';
         shopMarkerRef.current = new maplibregl.Marker({ element: shopEl, anchor: 'center' })
           .setLngLat(SHOP_LOCATION).addTo(m);
 
-        const userEl = document.createElement('div');
-        userEl.className = 'gps-user-marker';
-        userEl.innerHTML = '<div class="gps-marker-pulse"></div><div class="gps-marker-dot"></div>';
-        userMarkerRef.current = new maplibregl.Marker({ element: userEl, anchor: 'center' })
+        // Realistic motorcycle badge for the user's live position.
+        const bikeEl = document.createElement('div');
+        bikeEl.className = 'ltm-bike-badge';
+        bikeEl.innerHTML =
+          '<div class="ltm-bike-glyph">' +
+          '<svg width="26" height="26" viewBox="0 0 40 40" aria-hidden="true" focusable="false">' +
+          '<path d="M8.5 30.5 L13.5 22.5 H22.5" stroke="#141414" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+          '<rect x="14.5" y="20.8" width="8.2" height="5" rx="1.4" fill="#141414" opacity="0.9"/>' +
+          '<path d="M11.5 21.2 Q13 17.5 16.5 17.2 H21.5 Q24 17.4 25.2 19.6" stroke="#141414" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+          '<path d="M22.5 20.5 L28.5 12.8" stroke="#141414" stroke-width="2.4" stroke-linecap="round"/>' +
+          '<path d="M25.2 11.6 L30.5 12.4" stroke="#141414" stroke-width="2.4" stroke-linecap="round"/>' +
+          '<circle cx="31" cy="13.6" r="1.7" fill="#141414"/>' +
+          '<path d="M14.5 25.6 L11 29.5" stroke="#141414" stroke-width="2" stroke-linecap="round"/>' +
+          '<circle cx="9" cy="29.5" r="4.6" fill="none" stroke="#141414" stroke-width="2.6"/><circle cx="9" cy="29.5" r="1.2" fill="#141414"/>' +
+          '<circle cx="29" cy="29.5" r="4.6" fill="none" stroke="#141414" stroke-width="2.6"/><circle cx="29" cy="29.5" r="1.2" fill="#141414"/>' +
+          '<circle cx="9" cy="29.5" r="2.6" fill="none" stroke="#141414" stroke-width="0.7" opacity="0.6"/>' +
+          '<circle cx="29" cy="29.5" r="2.6" fill="none" stroke="#141414" stroke-width="0.7" opacity="0.6"/>' +
+          '</svg>' +
+          '</div>';
+        userMarkerRef.current = new maplibregl.Marker({ element: bikeEl, anchor: 'center' })
           .setLngLat(SHOP_LOCATION).addTo(m);
       });
 
@@ -126,28 +159,57 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     return () => clearTimeout(timer);
   }, [page === 'gps']);
 
-  // ─── GPS → MAP + GEOCODE ─────────────────────────────────
+  // ─── GPS → MAP + OSRM ROUTE + GEOCODE ─────────────────────
+  const lastFixRef = useRef<{ lat: number; lng: number } | null>(null);
   useEffect(() => {
     if (!mapRef.current || !position) return;
     const lngLat: [number, number] = [position.longitude, position.latitude];
 
     userMarkerRef.current?.setLngLat(lngLat);
 
-    try {
-      const m = mapRef.current;
-      if (m.getLayer('route-line')) m.removeLayer('route-line');
-      if (m.getSource('route')) m.removeSource('route');
-      m.addSource('route', {
-        type: 'geojson',
-        data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [SHOP_LOCATION, lngLat] }, properties: {} },
-      });
-      m.addLayer({
-        id: 'route-line', type: 'line', source: 'route',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#2563eb', 'line-width': 3, 'line-dasharray': [2, 1] },
-      });
-    } catch { /* ignore */ }
+    // Rotate the bike toward travel direction.
+    const prev = lastFixRef.current;
+    if (prev) {
+      const dLat = position.latitude - prev.lat;
+      const dLng = position.longitude - prev.lng;
+      const moved = Math.hypot(dLat * 111320, dLng * 111320 * Math.cos(prev.lat * (Math.PI / 180)));
+      if (moved > 4) {
+        const bearing = (Math.atan2(dLng * Math.cos(prev.lat * (Math.PI / 180)), dLat) * 180) / Math.PI;
+        const glyph = userMarkerRef.current?.getElement().querySelector<HTMLElement>('.ltm-bike-glyph');
+        if (glyph) glyph.style.transform = `rotate(${(bearing + 360) % 360}deg)`;
+      }
+    }
+    lastFixRef.current = { lat: position.latitude, lng: position.longitude };
 
+    // OSRM road route (free public server) with straight-line fallback.
+    if (mapRef.current.getSource('da-route')) {
+      (async () => {
+        let coords: [number, number][] | null = null;
+        try {
+          const res = await fetch(
+            `https://router.project-osrm.org/route/v1/driving/${SHOP_LOCATION[0]},${SHOP_LOCATION[1]};${lngLat[0]},${lngLat[1]}?overview=full&geometries=geojson`
+          );
+          if (res.ok) {
+            const json = await res.json();
+            coords = json?.routes?.[0]?.geometry?.coordinates ?? null;
+          }
+        } catch { /* fall back to straight line */ }
+        if (!coords || coords.length < 2) coords = [SHOP_LOCATION, lngLat];
+        const source = mapRef.current!.getSource('da-route') as maplibregl.GeoJSONSource | null;
+        if (source) {
+          source.setData({
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: coords },
+                properties: {},
+              },
+            ],
+          });
+        }
+      })();
+    }
     const bounds = new maplibregl.LngLatBounds();
     bounds.extend(SHOP_LOCATION);
     bounds.extend(lngLat);
@@ -250,7 +312,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
             <div className="da-fp-legend">
               <span><span className="otm-legend-dot shop" /> Shop</span>
-              <span><span className="otm-legend-dot user" /> You</span>
+              <span><span className="ltm-legend-bike" /> You (bike)</span>
             </div>
 
             {gpsError && <p className="da-error">⚠️ {gpsError}</p>}

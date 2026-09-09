@@ -32,6 +32,8 @@ export interface ItemOrder {
   paymentMethod?: PaymentMethod;
   paymentOrderId?: string;
   createdAt: number;
+  /** Where this order should be delivered (from the address picker). */
+  deliveryAddress?: { address: string; lat: number; lng: number };
 }
 
 export interface Vendor {
