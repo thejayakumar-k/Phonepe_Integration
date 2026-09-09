@@ -7,14 +7,19 @@ import type { GeoPoint } from '../utils/geo';
 import { haversineMeters } from '../utils/geo';
 import type { LiveBikeLocation } from './LiveTrackingMap';
 
-// Green shop pin
-function shopPinElement(label?: string): HTMLDivElement {
+// Green shop pin with store icon
+function shopPinElement(label = 'Shop'): HTMLDivElement {
   const pin = document.createElement('div');
   pin.className = 'ltm-shop-pin';
   pin.innerHTML =
-    '<div class="ltm-shop-head"><div class="ltm-shop-dot"></div></div>' +
+    '<div class="ltm-shop-head">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' +
+        '<polyline points="9 22 9 12 15 12 15 22"/>' +
+      '</svg>' +
+    '</div>' +
     '<div class="ltm-shop-tail"></div>';
-  if (label) pin.title = label;
+  pin.title = label;
   return pin;
 }
 

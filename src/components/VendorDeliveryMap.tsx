@@ -6,8 +6,8 @@ import type { ItemOrder } from '../types/payment';
 import type { VendorDeliveryState } from '../hooks/useVendorDelivery';
 import type { LiveBikeLocation } from './LiveTrackingMap';
 
-// Real shop/origin default coordinates (Bharathiyar Street / Periyar Street, Maduravoyal)
-const DEFAULT_SHOP_LOCATION = { lat: 13.0545, lng: 80.1612 };
+// Real fixed shop/origin coordinates (Bharathiyar Street, Maduravoyal)
+const SHOP_LOCATION = { lat: 13.0545, lng: 80.1612 };
 
 interface VendorDeliveryMapProps {
   order: ItemOrder;
@@ -22,17 +22,7 @@ interface VendorDeliveryMapProps {
  */
 export function VendorDeliveryMap({ order, delivery, onClose }: VendorDeliveryMapProps) {
   const { position, error, isDelivering, stopDelivery } = delivery;
-  const [shopOrigin, setShopOrigin] = useState<{ lat: number; lng: number } | null>(null);
   const [now, setNow] = useState(Date.now());
-
-  // Capture initial starting point of delivery as shop origin
-  useEffect(() => {
-    if (!shopOrigin && position) {
-      setShopOrigin({ lat: position.latitude, lng: position.longitude });
-    }
-  }, [position, shopOrigin]);
-
-  const shopLocation = shopOrigin ?? DEFAULT_SHOP_LOCATION;
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 3000);
@@ -44,8 +34,8 @@ export function VendorDeliveryMap({ order, delivery, onClose }: VendorDeliveryMa
     if (order.deliveryAddress) {
       return { lat: order.deliveryAddress.lat, lng: order.deliveryAddress.lng };
     }
-    return shopLocation; // fallback
-  }, [order, shopLocation]);
+    return SHOP_LOCATION; // fallback
+  }, [order]);
 
   const destinationLabel = order.deliveryAddress?.address ?? 'Customer Location';
 
@@ -60,8 +50,8 @@ export function VendorDeliveryMap({ order, delivery, onClose }: VendorDeliveryMa
         speed: position.speed ?? null,
       };
     }
-    return { lat: shopLocation.lat, lng: shopLocation.lng, heading: 90, timestamp: Date.now(), speed: null };
-  }, [position, shopLocation]);
+    return { lat: SHOP_LOCATION.lat, lng: SHOP_LOCATION.lng, heading: 90, timestamp: Date.now(), speed: null };
+  }, [position]);
 
   const { route } = useDeliveryRoute(bike, destination);
 
@@ -137,7 +127,7 @@ export function VendorDeliveryMap({ order, delivery, onClose }: VendorDeliveryMa
           <LeafletFallbackMap
             bike={bike}
             destination={destination}
-            shopLocation={shopLocation}
+            shopLocation={SHOP_LOCATION}
             route={route}
             destinationLabel={destinationLabel}
             shopLabel="Shop (Origin)"
