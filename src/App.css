@@ -8566,3 +8566,41 @@ body {
 .ltm-size-420 {
   height: 420px;
 }
+
+/* ========================================
+   Live Tracking Map — no-WebGL (Leaflet) fallback + style-error banner
+   ======================================== */
+
+.ltm-root.da-fp-map {
+  height: 250px;
+  min-height: 250px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.ltm-root .ltm-map.leaflet-container,
+.ltm-root .leaflet-container {
+  background: var(--bg-secondary);
+}
+
+.ltm-divicon {
+  background: transparent;
+  border: none;
+}
+
+.ltm-error-banner {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 20;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #ffffff;
+  background: rgba(180, 32, 32, 0.92);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  white-space: pre-wrap;
+}

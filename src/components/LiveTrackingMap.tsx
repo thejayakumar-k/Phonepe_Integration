@@ -3,6 +3,11 @@ import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useDeliveryRoute, type DeliveryRoute } from '../hooks/useDeliveryRoute';
 import {
+  bikeBadgeElement as bikeElement,
+  destPinElement as destinationElement,
+  isWebGL2Supported,
+} from '../utils/ltmDom';
+import {
   bearingDegrees,
   formatDistanceMeters,
   formatEtaMinutes,
@@ -11,6 +16,7 @@ import {
   isFreshFix,
   type GeoPoint,
 } from '../utils/geo';
+import { LeafletFallbackMap } from './LeafletFallbackMap';
 
 const BASEMAP_STYLE = 'https://tiles.openfreemap.org/styles/bright';
 /** Rapido brand yellow for the bike badge. */
@@ -19,6 +25,9 @@ const BIKE_BADGE_COLOR = '#FFD200';
 const ROUTE_LINE_COLOR = '#1A73E8';
 
 const REFIT_DISTANCE_M = 200;
+
+/** maplibre-gl v6 requires WebGL2; older phones/in-app browsers lack it. */
+const WEBGL2_SUPPORTED = isWebGL2Supported();
 
 export interface LiveBikeLocation extends GeoPoint {
   heading?: number | null;
@@ -57,51 +66,6 @@ function routeFeatureCollection(route: DeliveryRoute | null) {
   };
 }
 
-function bikeElement(heading: number): HTMLDivElement {
-  const badge = document.createElement('div');
-  badge.className = 'ltm-bike-badge';
-  const glyph = document.createElement('div');
-  glyph.className = 'ltm-bike-glyph';
-  glyph.style.transform = `rotate(${heading}deg)`;
-  glyph.appendChild(createMotoSvg());
-  badge.appendChild(glyph);
-  return badge;
-}
-
-function createMotoSvg(): SVGElement {
-  const wrap = document.createElement('div');
-  wrap.innerHTML = MotoIconMarkup();
-  return wrap.firstElementChild as SVGElement;
-}
-
-/** Static inline SVG markup so a raw DOM marker carries no React refs. */
-function MotoIconMarkup(): string {
-  return (
-    '<svg width="26" height="26" viewBox="0 0 40 40" aria-hidden="true" focusable="false">' +
-    '<path d="M8.5 30.5 L13.5 22.5 H22.5" stroke="#141414" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-    '<rect x="14.5" y="20.8" width="8.2" height="5" rx="1.4" fill="#141414" opacity="0.9"/>' +
-    '<path d="M11.5 21.2 Q13 17.5 16.5 17.2 H21.5 Q24 17.4 25.2 19.6" stroke="#141414" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-    '<path d="M22.5 20.5 L28.5 12.8" stroke="#141414" stroke-width="2.4" stroke-linecap="round"/>' +
-    '<path d="M25.2 11.6 L30.5 12.4" stroke="#141414" stroke-width="2.4" stroke-linecap="round"/>' +
-    '<circle cx="31" cy="13.6" r="1.7" fill="#141414"/>' +
-    '<path d="M14.5 25.6 L11 29.5" stroke="#141414" stroke-width="2" stroke-linecap="round"/>' +
-    '<circle cx="9" cy="29.5" r="4.6" fill="none" stroke="#141414" stroke-width="2.6"/><circle cx="9" cy="29.5" r="1.2" fill="#141414"/>' +
-    '<circle cx="29" cy="29.5" r="4.6" fill="none" stroke="#141414" stroke-width="2.6"/><circle cx="29" cy="29.5" r="1.2" fill="#141414"/>' +
-    '<circle cx="9" cy="29.5" r="2.6" fill="none" stroke="#141414" stroke-width="0.7" opacity="0.6"/>' +
-    '<circle cx="29" cy="29.5" r="2.6" fill="none" stroke="#141414" stroke-width="0.7" opacity="0.6"/>' +
-    '</svg>'
-  );
-}
-
-function destinationElement(label?: string): HTMLDivElement {
-  const pin = document.createElement('div');
-  pin.className = 'ltm-dest-pin';
-  pin.innerHTML =
-    '<div class="ltm-dest-head"><div class="ltm-dest-dot"></div></div><div class="ltm-dest-tail"></div>';
-  if (label) pin.title = label;
-  return pin;
-}
-
 /**
  * MyApp-style live delivery map for the web:
  *  - Free OpenFreeMap basemap (no API key)
@@ -127,6 +91,7 @@ export function LiveTrackingMap({
   const headingRef = useRef<number>(0);
   const lastFitCenterRef = useRef<GeoPoint | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [styleError, setStyleError] = useState<string | null>(null);
 
   const internalRoute = useDeliveryRoute(bike, destination);
   const route = routeProp !== undefined ? routeProp : internalRoute.route;
@@ -157,6 +122,7 @@ export function LiveTrackingMap({
 
   // Init map once.
   useEffect(() => {
+    if (!WEBGL2_SUPPORTED) return;
     if (!containerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
@@ -167,6 +133,10 @@ export function LiveTrackingMap({
       attributionControl: false,
       maxZoom: 19,
     });
+    map.on('error', (e) => {
+      setStyleError((prev) => prev ?? String(e.error ?? e));
+    });
+    map.once('load', () => setStyleError(null));
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.addControl(
@@ -324,9 +294,23 @@ export function LiveTrackingMap({
     mapRef.current?.flyTo({ center: [bike.lng, bike.lat], zoom: 16, duration: 900 });
   }, [bike]);
 
+  if (!WEBGL2_SUPPORTED) {
+    return (
+      <LeafletFallbackMap
+        className={className}
+        bike={bike}
+        destination={destination}
+        destinationLabel={destinationLabel}
+        partnerLabel={partnerLabel}
+        route={route}
+      />
+    );
+  }
+
   return (
     <div className={`ltm-root ${className}`}>
       <div ref={containerRef} className="ltm-map" />
+      {styleError && <div className="ltm-error-banner">{styleError}</div>}
       <div className="ltm-overlay">
         <div className="ltm-legend">
           <span className="ltm-legend-item">

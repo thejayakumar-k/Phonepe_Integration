@@ -2,9 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useGPS } from '../hooks/useGPS';
+import { isWebGL2Supported } from '../utils/ltmDom';
+import { LeafletFallbackMap } from './LeafletFallbackMap';
+import type { LiveBikeLocation } from './LiveTrackingMap';
 
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/bright';
 const SHOP_LOCATION: [number, number] = [80.170, 13.054];
+
+/** maplibre-gl v6 needs WebGL2; fall back to a Leaflet map when missing. */
+const WEBGL2_SUPPORTED = isWebGL2Supported();
 
 interface DeliveryAddressProps {
   onAddressConfirm: (address: string, lat: number, lng: number, parts?: AddressParts | null) => void;
@@ -86,6 +92,7 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
 
   // ─── MAP INIT (GPS page only) ────────────────────────────
   useEffect(() => {
+    if (!WEBGL2_SUPPORTED) return;
     if (page !== 'gps' || !mapDivRef.current || mapInitDone.current) return;
 
     const timer = setTimeout(() => {
@@ -162,9 +169,22 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
   // ─── GPS → MAP + OSRM ROUTE + GEOCODE ─────────────────────
   const lastFixRef = useRef<{ lat: number; lng: number } | null>(null);
   useEffect(() => {
-    if (!mapRef.current || !position) return;
+    if (!position) return;
     const lngLat: [number, number] = [position.longitude, position.latitude];
 
+    // Update the picked coords + geocode regardless of which map renders.
+    setGpsLat(position.latitude);
+    setGpsLng(position.longitude);
+    reverseGeocode(position.latitude, position.longitude).then(({ parts, address }) => {
+      const filled = parts.houseNo || parts.street || parts.area || parts.city || parts.pincode;
+      if (filled) {
+        setGpsParts(parts);
+      } else if (address) {
+        setGpsParts({ houseNo: '', street: address, area: '', city: '', pincode: '', landmark: '' });
+      }
+    });
+
+    if (!mapRef.current || !WEBGL2_SUPPORTED) return;
     userMarkerRef.current?.setLngLat(lngLat);
 
     // Rotate the bike toward travel direction.
@@ -214,17 +234,6 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
     bounds.extend(SHOP_LOCATION);
     bounds.extend(lngLat);
     mapRef.current.fitBounds(bounds, { padding: 50, duration: 1000 });
-
-    setGpsLat(position.latitude);
-    setGpsLng(position.longitude);
-    reverseGeocode(position.latitude, position.longitude).then(({ parts, address }) => {
-      const filled = parts.houseNo || parts.street || parts.area || parts.city || parts.pincode;
-      if (filled) {
-        setGpsParts(parts);
-      } else if (address) {
-        setGpsParts({ houseNo: '', street: address, area: '', city: '', pincode: '', landmark: '' });
-      }
-    });
   }, [position]);
 
   // Cleanup map
@@ -308,7 +317,17 @@ export function DeliveryAddress({ onAddressConfirm }: DeliveryAddressProps) {
             <span />
           </div>
           <div className="da-fp-body">
-            <div ref={mapDivRef} className="da-fp-map" />
+            {WEBGL2_SUPPORTED ? (
+              <div ref={mapDivRef} className="da-fp-map" />
+            ) : (
+              <LeafletFallbackMap
+                className="da-fp-map"
+                bike={position ? ({ lat: position.latitude, lng: position.longitude, heading: null, timestamp: position.timestamp } as LiveBikeLocation) : null}
+                destination={position ? { lat: position.latitude, lng: position.longitude } : { lat: SHOP_LOCATION[1], lng: SHOP_LOCATION[0] }}
+                destinationLabel="Your location"
+                partnerLabel="You (bike)"
+              />
+            )}
 
             <div className="da-fp-legend">
               <span><span className="otm-legend-dot shop" /> Shop</span>
