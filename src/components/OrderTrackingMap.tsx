@@ -98,21 +98,22 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   // OSRM route: bike → customer address
   const { route } = useDeliveryRoute(bike, destination);
 
-  // Stats
+  // Only show stats when GPS has a real fresh fix
+  const hasRealFix = bike ? isFreshFix(bike.timestamp, now) : false;
+
   const distanceMeters = useMemo(() => {
-    if (!bike) return 0;
-    if (route?.isRoadRoute) return route.distanceMeters;
-    return Math.round(haversineMeters(bike, destination));
-  }, [bike, route, destination]);
+    if (!bike || !hasRealFix) return null;
+    if (route?.isRoadRoute && route.distanceMeters > 0) return route.distanceMeters;
+    const d = Math.round(haversineMeters(bike, destination));
+    return d > 0 ? d : null;
+  }, [bike, hasRealFix, route, destination]);
 
   const etaSeconds = useMemo(() => {
-    if (!bike) return 0;
-    if (route?.isRoadRoute) return route.durationSeconds;
-    if (isFreshFix(bike.timestamp, now)) {
-      return Math.round(haversineMeters(bike, destination) / 8.33);
-    }
-    return 0;
-  }, [bike, route, destination, now]);
+    if (!bike || !hasRealFix) return null;
+    if (route?.isRoadRoute && route.durationSeconds > 0) return route.durationSeconds;
+    const d = haversineMeters(bike, destination);
+    return d > 10 ? Math.round(d / 8.33) : null;
+  }, [bike, hasRealFix, route, destination, now]);
 
   const isLive = bike ? isFreshFix(bike.timestamp, now) : false;
 
@@ -152,7 +153,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           <div className="otm-chip otm-chip-eta">
             <span className="otm-chip-icon">⏱</span>
             <div>
-              <div className="otm-chip-val">{bike && etaSeconds > 0 ? formatEtaMinutes(etaSeconds) : '--'}</div>
+              <div className="otm-chip-val">{etaSeconds ? formatEtaMinutes(etaSeconds) : '--'}</div>
               <div className="otm-chip-label">ETA</div>
             </div>
           </div>
@@ -160,7 +161,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           <div className="otm-chip otm-chip-dist">
             <span className="otm-chip-icon">📍</span>
             <div>
-              <div className="otm-chip-val">{bike ? formatDistanceMeters(distanceMeters) : '--'}</div>
+              <div className="otm-chip-val">{distanceMeters != null ? formatDistanceMeters(distanceMeters) : '--'}</div>
               <div className="otm-chip-label">Distance</div>
             </div>
           </div>
@@ -188,16 +189,18 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
           />
 
           {/* Live status pill overlaid on map */}
-          <div className={`otm-live-pill ${isLive ? 'otm-live-pill-active' : ''}`}>
-            <span className={`otm-status-dot ${isLive ? 'live' : ''}`} />
+          <div className={`otm-live-pill ${hasRealFix ? 'otm-live-pill-active' : ''}`}>
+            <span className={`otm-status-dot ${hasRealFix ? 'live' : ''}`} />
             <span className="otm-status-text">
               {error
-                ? `⚠️ ${error}`
+                ? (error.includes('denied') ? '🔒 Allow location to track' : `⚠️ ${error}`)
                 : isConnected && bikeLocation
-                  ? 'Live · Partner streaming'
-                  : isTracking
-                    ? `Live · Acquiring GPS…`
-                    : 'Waiting for GPS…'}
+                  ? '🛵 Live · Partner streaming'
+                  : hasRealFix
+                    ? `🛵 Live · GPS locked`
+                    : isTracking
+                      ? '📡 Acquiring GPS…'
+                      : '📡 Waiting for GPS…'}
             </span>
           </div>
         </div>
