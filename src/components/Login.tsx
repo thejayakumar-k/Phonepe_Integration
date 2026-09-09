@@ -86,13 +86,13 @@ export function Login() {
 
   return (
     <div className="login-page">
-      <header className="home-header">
+      <header className={`home-header${role === 'vendor' ? ' vendor-login-header' : ''}`}>
         <h1 className="brand-title">OORUNII</h1>
         <p className="brand-subtitle">{getSubtitle()}</p>
       </header>
 
       <main className="login-content">
-        <div className="login-card">
+        <div className={`login-card${role === 'vendor' ? ' vendor-login-card' : ''}`}>
           <span className="role-icon">{getCardIcon()}</span>
           <h2>{getCardTitle()}</h2>
           <p className="login-note">{getNote()}</p>

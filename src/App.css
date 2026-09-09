@@ -1044,7 +1044,8 @@ body {
 }
 
 .vendor-card:hover {
-  border-color: var(--primary-color);
+  border-color: #1f2937;
+  background: var(--bg-secondary);
 }
 
 .customer-card:hover {
@@ -1155,6 +1156,34 @@ body {
 
 .login-back:hover {
   color: var(--primary-color);
+}
+
+/* Vendor Login - Match Dashboard Dark Theme */
+.vendor-login-header {
+  background: linear-gradient(135deg, #1f2937, #374151);
+}
+
+.vendor-login-header .brand-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.vendor-login-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  background: var(--bg-secondary);
+}
+
+.vendor-login-card h2 {
+  color: var(--text-primary);
+}
+
+.vendor-login-card .btn-login {
+  background: #1f2937;
+}
+
+.vendor-login-card .btn-login:hover {
+  background: #374151;
 }
 
 /* ========================================
