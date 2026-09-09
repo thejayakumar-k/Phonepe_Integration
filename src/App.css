@@ -9209,30 +9209,54 @@ path.ltm-animated-dash {
 }
 
 /* =====================================================================
-   DELIVERY PARTNER APP STYLES (Matching Screenshots 2 & 3)
+
+
+
+/* =====================================================================
+   VENDOR & DELIVERY PARTNER ALIGNED LAYOUTS (420px Centered Mobile Frame)
    ===================================================================== */
 
+.vendor-layout,
 .delivery-layout {
   min-height: 100vh;
-  background-color: #f4f6fa;
-  padding-bottom: 75px;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: #e5e7eb;
+  box-sizing: border-box;
 }
 
+.vendor-main,
 .delivery-main {
+  width: 420px;
+  max-width: 100%;
+  margin: 0 auto;
   flex: 1;
+  padding-bottom: 75px;
+  box-sizing: border-box;
+}
+
+.vendor-home {
+  width: 420px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 .dp-container {
-  max-width: 540px;
+  width: 420px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 16px 24px;
+  padding: 8px 12px 85px;
+  box-sizing: border-box;
 }
 
 /* Top Status Bar */
 .dp-status-bar {
-  padding: 12px 4px 6px;
+  padding: 10px 4px 6px;
   font-size: 0.85rem;
   font-weight: 500;
   display: flex;
@@ -9280,11 +9304,11 @@ path.ltm-animated-dash {
 
 /* Header */
 .dp-header {
-  margin: 8px 0 16px;
+  margin: 4px 0 14px;
 }
 
 .dp-title {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #111827;
   margin: 0;
@@ -9292,7 +9316,7 @@ path.ltm-animated-dash {
 }
 
 .dp-subtitle {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: #6b7280;
   margin: 4px 0 0;
 }
@@ -9301,13 +9325,13 @@ path.ltm-animated-dash {
 .dp-orders-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .dp-card {
   background: #ffffff;
   border-radius: 16px;
-  padding: 18px 18px 20px;
+  padding: 16px 16px 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid #e5e9f2;
 }
@@ -9316,11 +9340,11 @@ path.ltm-animated-dash {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .dp-order-id {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #111827;
 }
@@ -9328,7 +9352,7 @@ path.ltm-animated-dash {
 .dp-badge {
   font-size: 0.78rem;
   font-weight: 600;
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 9999px;
   border: 1px solid transparent;
 }
@@ -9362,7 +9386,7 @@ path.ltm-animated-dash {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .dp-pin-icon {
@@ -9371,7 +9395,7 @@ path.ltm-animated-dash {
 }
 
 .dp-address-text {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #374151;
   line-height: 1.4;
   font-weight: 500;
@@ -9385,7 +9409,7 @@ path.ltm-animated-dash {
   color: #ffffff;
   border: none;
   border-radius: 12px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -9398,7 +9422,7 @@ path.ltm-animated-dash {
 .dp-active-delivery-actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dp-btn-mark-delivered {
@@ -9408,7 +9432,7 @@ path.ltm-animated-dash {
   color: #ffffff;
   border: none;
   border-radius: 12px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -9420,12 +9444,12 @@ path.ltm-animated-dash {
 
 .dp-btn-view-map {
   width: 100%;
-  padding: 10px;
+  padding: 9px;
   background: #f3f4f6;
   color: #374151;
   border: 1px solid #d1d5db;
   border-radius: 10px;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -9435,26 +9459,26 @@ path.ltm-animated-dash {
   background: #fffbeb;
   border: 1.5px solid #fde68a;
   border-radius: 14px;
-  padding: 14px;
+  padding: 12px;
 }
 
 .dp-collect-title {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #92400e;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .dp-collect-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .dp-collect-btn {
-  padding: 10px;
+  padding: 9px;
   border-radius: 10px;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
@@ -9487,12 +9511,12 @@ path.ltm-animated-dash {
 /* Delivered Card Box */
 .dp-delivered-box {
   width: 100%;
-  padding: 12px;
+  padding: 11px;
   background: #f0fdf4;
   border: 1.5px solid #86efac;
   border-radius: 12px;
   color: #15803d;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -9504,9 +9528,11 @@ path.ltm-animated-dash {
 .delivery-bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  height: 65px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 420px;
+  max-width: 100%;
+  height: 60px;
   background: #ffffff;
   border-top: 1px solid #e5e7eb;
   display: flex;
@@ -9525,7 +9551,7 @@ path.ltm-animated-dash {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   color: #6b7280;
   cursor: pointer;
   transition: color 0.15s ease;
@@ -9541,17 +9567,19 @@ path.ltm-animated-dash {
 }
 
 /* =====================================================================
-   VENDOR ORDERS PAGE STYLES (Matching Screenshot 4)
+   VENDOR ORDERS PAGE STYLES (420px Centered)
    ===================================================================== */
 
 .v-orders-page {
-  max-width: 560px;
+  width: 420px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 16px 16px 85px;
+  padding: 12px 12px 85px;
+  box-sizing: border-box;
 }
 
 .v-orders-header {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .v-back-btn {
@@ -9567,13 +9595,13 @@ path.ltm-animated-dash {
 }
 
 .v-orders-header-title {
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -0.01em;
 }
 
 .v-orders-subtitle {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: #6b7280;
   margin-left: 28px;
 }
@@ -9581,18 +9609,18 @@ path.ltm-animated-dash {
 /* Filter Tabs */
 .v-filter-tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 6px;
+  margin-bottom: 16px;
   overflow-x: auto;
   padding-bottom: 4px;
 }
 
 .v-filter-tab {
-  padding: 8px 16px;
+  padding: 7px 14px;
   background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #4b5563;
   cursor: pointer;
@@ -9610,10 +9638,10 @@ path.ltm-animated-dash {
 .vo-card {
   background: #ffffff;
   border-radius: 16px;
-  padding: 18px 20px;
+  padding: 16px 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid #e5e7eb;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .vo-card-top {
@@ -9624,7 +9652,7 @@ path.ltm-animated-dash {
 }
 
 .vo-order-id {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #6b7280;
 }
@@ -9632,7 +9660,7 @@ path.ltm-animated-dash {
 .vo-badge {
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 9999px;
   border: 1px solid transparent;
 }
@@ -9663,19 +9691,19 @@ path.ltm-animated-dash {
 }
 
 .vo-amount {
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: #111827;
 }
 
 .vo-customer {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: #374151;
 }
 
 .vo-items-row {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: #6b7280;
   margin-bottom: 6px;
 }
@@ -9683,24 +9711,24 @@ path.ltm-animated-dash {
 .vo-meta-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: #9ca3af;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .vo-action-area {
   border-top: 1px solid #f3f4f6;
-  padding-top: 14px;
+  padding-top: 12px;
 }
 
 .vo-btn-assign {
   width: 100%;
-  padding: 12px;
+  padding: 11px;
   background: #eff6ff;
   border: 1.5px solid #bfdbfe;
   border-radius: 10px;
   color: #2563eb;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -9717,9 +9745,9 @@ path.ltm-animated-dash {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: 9px 12px;
   border-radius: 10px;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
@@ -9754,9 +9782,9 @@ path.ltm-animated-dash {
 .vo-change-btn {
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 6px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #475569;
   cursor: pointer;
@@ -9775,11 +9803,13 @@ path.ltm-animated-dash {
 
 .vo-modal-content {
   background: #ffffff;
-  width: 100%;
-  max-width: 540px;
+  width: 420px;
+  max-width: 100%;
+  margin: 0 auto;
   border-radius: 20px 20px 0 0;
-  padding: 24px 20px 32px;
+  padding: 22px 18px 28px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
   animation: slide-up 0.25s ease-out;
 }
 
@@ -9797,7 +9827,7 @@ path.ltm-animated-dash {
 
 .vo-modal-head h3 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   color: #111827;
 }
 
@@ -9810,22 +9840,22 @@ path.ltm-animated-dash {
 }
 
 .vo-modal-desc {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: #6b7280;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .vo-partner-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 
 .vo-partner-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 11px 12px;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   cursor: pointer;
@@ -9838,9 +9868,9 @@ path.ltm-animated-dash {
 }
 
 .vo-partner-avatar {
-  font-size: 1.5rem;
-  width: 42px;
-  height: 42px;
+  font-size: 1.4rem;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: #eff6ff;
   display: flex;
@@ -9855,13 +9885,13 @@ path.ltm-animated-dash {
 }
 
 .vo-pname {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #111827;
 }
 
 .vo-pphone {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #6b7280;
 }
 
@@ -9869,10 +9899,9 @@ path.ltm-animated-dash {
   background: #3b82f6;
   color: #ffffff;
   border: none;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
 }
-
