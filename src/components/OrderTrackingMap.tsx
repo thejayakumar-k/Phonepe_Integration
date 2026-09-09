@@ -115,7 +115,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return d > 10 ? Math.round(d / 8.33) : null;
   }, [bike, hasRealFix, route, destination, now]);
 
-  const isLive = bike ? isFreshFix(bike.timestamp, now) : false;
+
 
   const toggleFullscreen = useCallback(() => setIsFullscreen((p) => !p), []);
 
