@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { GPSPosition } from './useGPS';
 
@@ -26,6 +26,10 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
   const [allBikeLocations, setAllBikeLocations] = useState<Map<string, BikeLocation>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+
+  // Keep the freshest known location in a ref so the cross-tab bridge can
+  // compare timestamps without depending on the render cycle.
+  const bikeLocationRef = useRef<BikeLocation | null>(null);
 
   // Save GPS position to Supabase
   const saveLocation = useCallback(async (position: GPSPosition) => {
@@ -62,6 +66,49 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
   useEffect(() => {
     if (!enabled || !bikeId) return;
 
+    // ── Cross-tab bridge: vendor writes its position to localStorage, so the
+    // customer map updates instantly even if Supabase realtime hasn't landed. ──
+    const readLocalBridge = (): BikeLocation | null => {
+      try {
+        const raw = localStorage.getItem(`oorunii_bike_${bikeId}`);
+        if (!raw) return null;
+        const p = JSON.parse(raw) as {
+          latitude: number;
+          longitude: number;
+          speed?: number | null;
+          heading?: number | null;
+          accuracy: number;
+          timestamp: string;
+        };
+        return {
+          id: bikeId,
+          bike_id: bikeId,
+          user_id: 'vendor',
+          latitude: p.latitude,
+          longitude: p.longitude,
+          speed: p.speed ?? undefined,
+          heading: p.heading ?? undefined,
+          accuracy: p.accuracy ?? 10,
+          timestamp: p.timestamp,
+          created_at: p.timestamp,
+        } as BikeLocation;
+      } catch {
+        return null;
+      }
+    };
+
+    const applyLocalBridge = () => {
+      const local = readLocalBridge();
+      if (local) {
+        // Only use if fresher than what we already have (or nothing yet).
+        const currentTs = bikeLocationRef.current?.timestamp;
+        if (!currentTs || local.timestamp > currentTs) {
+          bikeLocationRef.current = local;
+          setBikeLocation(local);
+        }
+      }
+    };
+
     // ── Helper: fetch latest row for this bike ──
     const fetchLatest = () =>
       supabase
@@ -72,15 +119,31 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
         .limit(1)
         .then(({ data }) => {
           if (data && data.length > 0) {
+            bikeLocationRef.current = data[0] as BikeLocation;
             setBikeLocation(data[0] as BikeLocation);
           }
-        });
+          // Supabase empty → fall back to the cross-tab bridge.
+          else {
+            applyLocalBridge();
+          }
+        })
+        .catch(() => applyLocalBridge());
 
-    // Fetch immediately on mount (partner may have started before customer opened tracking)
+    // Fetch immediately on mount, then bridge first + poll as fallback.
+    applyLocalBridge();
     fetchLatest();
 
+    // Listen for localStorage writes from the vendor tab (instant updates).
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === `oorunii_bike_${bikeId}`) applyLocalBridge();
+    };
+    window.addEventListener('storage', onStorage);
+
     // Poll every 5 s as fallback — Supabase realtime can drop on mobile/poor connections
-    const pollInterval = setInterval(fetchLatest, 5000);
+    const pollInterval = setInterval(() => {
+      applyLocalBridge();
+      fetchLatest();
+    }, 5000);
 
     const channel = supabase
       .channel(`bike:${bikeId}`)
@@ -94,6 +157,7 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
         },
         (payload) => {
           const newLocation = payload.new as BikeLocation;
+          bikeLocationRef.current = newLocation;
           setBikeLocation(newLocation);
         }
       )
@@ -103,6 +167,7 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
 
     return () => {
       clearInterval(pollInterval);
+      window.removeEventListener('storage', onStorage);
       supabase.removeChannel(channel);
     };
   }, [bikeId, enabled]);

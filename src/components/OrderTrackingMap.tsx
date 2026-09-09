@@ -9,8 +9,11 @@ import { formatDistanceMeters, formatEtaMinutes, haversineMeters } from '../util
 // Real fixed shop/origin coordinates (Pillaiyar Koil Street / 1st Cross Street, Maduravoyal)
 const SHOP_LOCATION = { lat: 13.0550, lng: 80.1633 };
 
-// Fallback destination = same as shop (if no delivery address saved)
-const FALLBACK_DESTINATION = SHOP_LOCATION;
+// Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
+const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
+
+// Fallback destination = real nearby landmark (so route line + pins are always distinct)
+const FALLBACK_DESTINATION = MADURAVOYAL_AGS;
 
 interface OrderTrackingMapProps {
   orderId: string;
@@ -29,8 +32,9 @@ interface OrderTrackingMapProps {
  */
 export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDelivering, setIsDelivering] = useState(false);
   const [deliveryTarget, setDeliveryTarget] = useState<{ lat: number; lng: number } | null>(null);
-  const [deliveryAddressText, setDeliveryAddressText] = useState('Pillaiyar Koil Street, Maduravoyal, Chennai');
+  const [deliveryAddressText, setDeliveryAddressText] = useState('AGS Theatre, Maduravoyal');
   const [now, setNow] = useState(Date.now());
 
   // Supabase realtime: delivery partner streaming their GPS
@@ -45,18 +49,23 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => clearInterval(t);
   }, []);
 
-  // Load real destination address from saved order
+  // Load real destination address + current status from saved order
   useEffect(() => {
     let cancelled = false;
     getItemOrders().then((orders) => {
       if (cancelled) return;
       const order = orders.find((o) => o.id === orderId);
-      const saved = order?.deliveryAddress;
+      if (!order) return;
+      const saved = order.deliveryAddress;
       if (saved) {
         setDeliveryTarget({ lat: saved.lat, lng: saved.lng });
         if (saved.address) {
           setDeliveryAddressText(saved.address);
         }
+      }
+      // Reflect live delivery state even before the first GPS fix arrives.
+      if (order.status === 'OUT_FOR_DELIVERY' || order.status === 'DELIVERED') {
+        setIsDelivering(true);
       }
     });
     return () => { cancelled = true; };
@@ -189,11 +198,13 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
 
           {/* Live status pill */}
           <div className={`otm-live-pill ${hasGPS ? 'otm-live-pill-active' : ''}`}>
-            <span className={`otm-status-dot ${hasGPS ? 'live' : ''}`} />
+            <span className={`otm-status-dot ${bikeLocation || isDelivering ? 'live' : ''}`} />
             <span className="otm-status-text">
               {bikeLocation
                 ? '🛵 Live · Partner streaming'
-                : '📡 Waiting for delivery partner…'}
+                : isDelivering
+                  ? '🛵 Delivery started · waiting for GPS fix…'
+                  : '📡 Waiting for delivery partner…'}
             </span>
           </div>
         </div>

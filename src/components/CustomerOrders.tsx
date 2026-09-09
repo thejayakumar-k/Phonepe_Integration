@@ -18,6 +18,8 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   PAID: { label: 'Paid', cls: 'cstatus-paid' },
   PENDING: { label: 'Payment Pending', cls: 'cstatus-submitted' },
   NOT_PAID: { label: 'Not Paid', cls: 'cstatus-unpaid' },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery', cls: 'cstatus-out' },
+  DELIVERED: { label: 'Delivered', cls: 'cstatus-paid' },
   CANCELLED: { label: 'Cancelled', cls: 'cstatus-expired' },
 };
 
@@ -72,8 +74,11 @@ export function CustomerOrders() {
   const canCancel = (status: ItemOrderStatus) =>
     status === 'PENDING' || status === 'NOT_PAID';
 
+  // Tracking is available while the order is being prepared or on its way.
   const canTrack = (status: ItemOrderStatus) =>
-    status === 'PAID' || status === 'PENDING';
+    status === 'PAID' ||
+    status === 'PENDING' ||
+    status === 'OUT_FOR_DELIVERY';
 
   useEffect(() => {
     let cancelled = false;
@@ -96,13 +101,14 @@ export function CustomerOrders() {
   }, [session?.customerId]);
 
   const pendingCount = orders.filter(
-    (o) => o.status === 'PENDING'
+    (o) => o.status !== 'DELIVERED' && o.status !== 'CANCELLED'
   ).length;
   const historyCount = orders.length - pendingCount;
 
   const filteredOrders = orders.filter((order) => {
-    if (filter === 'pending') return order.status === 'PENDING';
-    return order.status !== 'PENDING';
+    if (filter === 'pending') return order.status !== 'DELIVERED' && order.status !== 'CANCELLED';
+    // History: delivered and cancelled orders.
+    return order.status === 'DELIVERED' || order.status === 'CANCELLED';
   });
 
   const formatDate = (timestamp: number) => {
