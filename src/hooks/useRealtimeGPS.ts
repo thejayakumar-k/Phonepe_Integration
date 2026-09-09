@@ -110,24 +110,26 @@ export function useRealtimeGPS({ bikeId, userId, enabled = true }: UseRealtimeGP
     };
 
     // ── Helper: fetch latest row for this bike ──
-    const fetchLatest = () =>
-      supabase
-        .from('bike_locations')
-        .select('*')
-        .eq('bike_id', bikeId)
-        .order('timestamp', { ascending: false })
-        .limit(1)
-        .then(({ data }) => {
-          if (data && data.length > 0) {
-            bikeLocationRef.current = data[0] as BikeLocation;
-            setBikeLocation(data[0] as BikeLocation);
-          }
-          // Supabase empty → fall back to the cross-tab bridge.
-          else {
-            applyLocalBridge();
-          }
-        })
-        .catch(() => applyLocalBridge());
+    const fetchLatest = async () => {
+      try {
+        const { data } = await supabase
+          .from('bike_locations')
+          .select('*')
+          .eq('bike_id', bikeId)
+          .order('timestamp', { ascending: false })
+          .limit(1);
+        if (data && data.length > 0) {
+          bikeLocationRef.current = data[0] as BikeLocation;
+          setBikeLocation(data[0] as BikeLocation);
+        }
+        // Supabase empty → fall back to the cross-tab bridge.
+        else {
+          applyLocalBridge();
+        }
+      } catch {
+        applyLocalBridge();
+      }
+    };
 
     // Fetch immediately on mount, then bridge first + poll as fallback.
     applyLocalBridge();
