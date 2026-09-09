@@ -77,8 +77,8 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => clearInterval(t);
   }, []);
 
-// Real Meenakshi Hospital on Alapakkam Main Road, Chennai
-const MEENAKSHI_HOSPITAL_ALAPAKKAM = { lat: 13.0485, lng: 80.1645 };
+// Real AGS Theatre (AGS Cinemas), Chennai
+const AGS_THEATRE = { lat: 13.0474821, lng: 80.2450469 };
 
 // Load real destination address from saved order
   useEffect(() => {
@@ -98,19 +98,19 @@ const MEENAKSHI_HOSPITAL_ALAPAKKAM = { lat: 13.0485, lng: 80.1645 };
     [position]
   );
 
-  // Destination point: Meenakshi Hospital on Alapakkam Main Road
+  // Destination point: AGS Theatre (AGS Cinemas)
   const destination = useMemo(
-    () => deliveryTarget ?? MEENAKSHI_HOSPITAL_ALAPAKKAM,
+    () => deliveryTarget ?? AGS_THEATRE,
     [deliveryTarget]
   );
 
   // Reverse-geocode destination → show real address in header
   useEffect(() => {
     let cancelled = false;
-    setDeliveryAddressText('Meenakshi Hospital, Alapakkam Main Road');
+    setDeliveryAddressText('AGS Theatre (AGS Cinemas)');
     reverseGeocode(destination.lat, destination.lng).then((addr) => {
       if (!cancelled && addr) {
-        setDeliveryAddressText(`Meenakshi Hospital, ${addr}`);
+        setDeliveryAddressText(`AGS Theatre, ${addr}`);
       }
     });
     return () => { cancelled = true; };
@@ -239,7 +239,7 @@ const MEENAKSHI_HOSPITAL_ALAPAKKAM = { lat: 13.0485, lng: 80.1645 };
             destination={destination}
             shopLocation={shop}
             route={route}
-            destinationLabel="Meenakshi Hospital (Alapakkam Road)"
+            destinationLabel="AGS Theatre (AGS Cinemas)"
             shopLabel="Your Location (Shop)"
             partnerLabel="Delivery bike"
           />
