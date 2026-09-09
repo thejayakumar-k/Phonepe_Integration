@@ -2791,6 +2791,11 @@ body {
   color: #3730a3;
 }
 
+.orders-list .order-status.cstatus-out {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
 .orders-list .order-status.cstatus-failed {
   background: #fee2e2;
   color: #991b1b;
@@ -8568,7 +8573,7 @@ body {
 }
 
 /* ========================================
-   Live Tracking Map — no-WebGL (Leaflet) fallback + style-error banner
+   Live Tracking Map ï¿½ no-WebGL (Leaflet) fallback + style-error banner
    ======================================== */
 
 .ltm-root.da-fp-map {
@@ -8633,6 +8638,7 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
 }
 .ltm-shop-dot {
   width: 9px;
@@ -8773,12 +8779,12 @@ body {
 }
 
 /* =========================================================
-   REAL BIKE ICON — Zepto-style scooter with pulsing ring
+   REAL BIKE ICON ï¿½ Zepto-style scooter with pulsing ring
    Overrides old .ltm-bike-badge yellow circle
    ========================================================= */
 
 .ltm-bike-badge {
-  /* Reset old yellow circle — new icon is transparent */
+  /* Reset old yellow circle ï¿½ new icon is transparent */
   width: 68px;
   height: 56px;
   background: transparent !important;
@@ -8822,7 +8828,7 @@ body {
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
 }
 
-/* Animated route dashes — stroke-dashoffset flow */
+/* Animated route dashes ï¿½ stroke-dashoffset flow */
 @keyframes ltm-dash-flow {
   0%   { stroke-dashoffset: 0; }
   100% { stroke-dashoffset: -60; }
@@ -8833,7 +8839,7 @@ svg .ltm-animated-dash {
   animation: ltm-dash-flow 1.6s linear infinite;
 }
 
-/* OSM attribution — keep compact */
+/* OSM attribution ï¿½ keep compact */
 .leaflet-control-attribution {
   font-size: 9px !important;
   background: rgba(255,255,255,0.75) !important;
@@ -9488,6 +9494,7 @@ path.ltm-animated-dash {
   justify-content: center;
   gap: 6px;
 }
+
 
 .dp-btn-cash {
   background: #22c55e;

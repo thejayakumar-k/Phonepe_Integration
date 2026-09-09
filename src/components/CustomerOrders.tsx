@@ -15,9 +15,11 @@ const PRODUCT_ID_BY_NAME: Record<string, number> = {
 type OrderFilter = 'pending' | 'history';
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
-  PAID: { label: 'Paid', cls: 'cstatus-paid' },
-  PENDING: { label: 'Payment Pending', cls: 'cstatus-submitted' },
-  NOT_PAID: { label: 'Not Paid', cls: 'cstatus-unpaid' },
+  PAID: { label: 'Pending', cls: 'cstatus-submitted' },
+  PENDING: { label: 'Pending', cls: 'cstatus-submitted' },
+  NOT_PAID: { label: 'Pending', cls: 'cstatus-submitted' },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery', cls: 'cstatus-out' },
+  DELIVERED: { label: 'Delivered', cls: 'cstatus-paid' },
   CANCELLED: { label: 'Cancelled', cls: 'cstatus-expired' },
 };
 
@@ -70,10 +72,13 @@ export function CustomerOrders() {
   };
 
   const canCancel = (status: ItemOrderStatus) =>
-    status === 'PENDING' || status === 'NOT_PAID';
+    status === 'PENDING' || status === 'NOT_PAID' || status === 'PAID';
 
+  // Tracking only makes sense once the delivery partner has picked up the
+  // order and started the trip (OUT_FOR_DELIVERY). Before that there is
+  // nothing to track.
   const canTrack = (status: ItemOrderStatus) =>
-    status === 'PAID' || status === 'PENDING';
+    status === 'OUT_FOR_DELIVERY';
 
   useEffect(() => {
     let cancelled = false;
@@ -95,13 +100,15 @@ export function CustomerOrders() {
     };
   }, [session?.customerId]);
 
-  const pendingCount = orders.filter((o) => o.status === 'PENDING').length;
+  const pendingCount = orders.filter(
+    (o) => o.status !== 'DELIVERED' && o.status !== 'CANCELLED'
+  ).length;
   const historyCount = orders.length - pendingCount;
 
   const filteredOrders = orders.filter((order) => {
-    if (filter === 'pending') return order.status === 'PENDING';
-    // History: paid, COD (not paid), and cancelled orders.
-    return order.status !== 'PENDING';
+    if (filter === 'pending') return order.status !== 'DELIVERED' && order.status !== 'CANCELLED';
+    // History: delivered and cancelled orders.
+    return order.status === 'DELIVERED' || order.status === 'CANCELLED';
   });
 
   const formatDate = (timestamp: number) => {
@@ -158,8 +165,8 @@ export function CustomerOrders() {
             <p>{filter === 'pending' ? 'No pending orders' : 'No orders in history yet'}</p>
             <p className="empty-subtext">
               {filter === 'pending'
-                ? 'Orders waiting for payment will appear here'
-                : 'Paid, COD, and cancelled orders will appear here'}
+                ? 'Orders waiting for a delivery partner will appear here'
+                : 'Delivered and cancelled orders will appear here'}
             </p>
           </div>
         ) : (
