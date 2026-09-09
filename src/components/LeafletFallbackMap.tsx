@@ -4,7 +4,6 @@ import 'leaflet/dist/leaflet.css';
 import type { DeliveryRoute } from '../hooks/useDeliveryRoute';
 import { bikeBadgeElement, destPinElement } from '../utils/ltmDom';
 import type { GeoPoint } from '../utils/geo';
-import { haversineMeters } from '../utils/geo';
 import type { LiveBikeLocation } from './LiveTrackingMap';
 
 // Green shop pin with store icon
@@ -23,8 +22,6 @@ function shopPinElement(label = 'Shop'): HTMLDivElement {
   return pin;
 }
 
-// How far (m) the bike must move before the map re-centres
-const AUTO_PAN_THRESHOLD_M = 3;
 
 interface LeafletFallbackMapProps {
   bike: LiveBikeLocation | null;
@@ -63,22 +60,25 @@ export function LeafletFallbackMap({
   const casingRef = useRef<L.Polyline | null>(null);
   const lineRef = useRef<L.Polyline | null>(null);
   const animDashRef = useRef<L.Polyline | null>(null);
-  const lastPanRef = useRef<GeoPoint | null>(null);
   const hasInitFit = useRef(false);
-  // Track user interaction so we don't fight their manual zoom/pan
-  const userInteractingRef = useRef(false);
-  const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track whether the user has manually zoomed/panned.  Once they interact,
+  // stop following the bike and only re-center when it leaves the viewport.
+  const userHasInteractedRef = useRef(false);
 
-  // Smooth pan to bike if it moved significantly — but NOT while the
-  // user is manually dragging or zooming the map.
-  const panToBike = useCallback((b: LiveBikeLocation) => {
+  /** Pan the map so the bike is visible — but only if it has left the viewport. */
+  const ensureBikeVisible = useCallback((b: LiveBikeLocation) => {
     const map = mapRef.current;
     if (!map) return;
-    if (userInteractingRef.current) return; // user is zooming/panning — leave the view alone
-    const last = lastPanRef.current;
-    if (last && haversineMeters(last, b) < AUTO_PAN_THRESHOLD_M) return;
-    map.panTo([b.lat, b.lng], { animate: true, duration: 0.8 });
-    lastPanRef.current = { lat: b.lat, lng: b.lng };
+    // If the user hasn't interacted yet, keep following the bike smoothly.
+    if (!userHasInteractedRef.current) {
+      map.panTo([b.lat, b.lng], { animate: true, duration: 0.8, noMoveStart: true });
+      return;
+    }
+    // After user interaction, only re-center when the bike leaves the visible area.
+    const bounds = map.getBounds();
+    if (bounds.contains([b.lat, b.lng])) return; // bike still visible — leave the view alone
+    // Bike left viewport — gently bring it back into view without fighting the user.
+    map.panInside(b, { padding: [60, 60], animate: true, duration: 0.8, noMoveStart: true });
   }, []);
 
   // Init map once
@@ -195,27 +195,17 @@ export function LeafletFallbackMap({
       zIndexOffset: 400,
     }).addTo(map);
 
-    // ── Track user interaction to suppress auto-pan while zooming/panning ──
-    const startInteraction = () => {
-      userInteractingRef.current = true;
-      if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current);
-    };
-    const stopInteraction = () => {
-      // Resume auto-pan 2 seconds after the user stops interacting
-      if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current);
-      interactionTimerRef.current = setTimeout(() => {
-        userInteractingRef.current = false;
-      }, 2000);
-    };
-    map.on('dragstart zoomstart', startInteraction);
-    map.on('dragend zoomend moveend', stopInteraction);
+    // ── Track user interaction — once the user manually zooms/pans, we
+    //    stop following the bike and only re-center when it leaves the viewport.
+    const onInteraction = () => { userHasInteractedRef.current = true; };
+    map.on('dragstart', onInteraction);
+    map.on('zoomstart', onInteraction);
 
     mapRef.current = map;
     // Force layout after React paints
     setTimeout(() => map.invalidateSize(), 120);
 
     return () => {
-      if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current);
       map.remove();
       mapRef.current = null;
       bikeMarkerRef.current = null;
@@ -225,7 +215,6 @@ export function LeafletFallbackMap({
       lineRef.current = null;
       animDashRef.current = null;
       hasInitFit.current = false;
-      lastPanRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -309,9 +298,10 @@ export function LeafletFallbackMap({
       if (pulse) pulse.style.display = 'block';
     }
 
-    // Auto-pan map to follow bike
-    panToBike(bike);
-  }, [bike?.lat, bike?.lng, bike?.heading, panToBike]);
+    // Keep the bike visible — follow smoothly until user interacts,
+    // then only re-center when the bike leaves the viewport.
+    ensureBikeVisible(bike);
+  }, [bike?.lat, bike?.lng, bike?.heading, ensureBikeVisible]);
 
   // Destination pin updates
   useEffect(() => {
