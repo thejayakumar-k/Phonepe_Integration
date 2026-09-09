@@ -155,16 +155,15 @@ export function LeafletFallbackMap({
       }).addTo(map);
     }
 
-    // ── Bike marker (hidden until first GPS fix) ──
+    // ── Bike marker (starts at shop, moves to GPS fix) ──
     const badge = bikeBadgeElement(0);
-    badge.style.opacity = '0';
-    badge.style.transition = 'opacity 0.5s ease';
-    bikeMarkerRef.current = L.marker([destination.lat, destination.lng], {
+    // Don't hide — show at shop location until GPS moves it
+    bikeMarkerRef.current = L.marker([shopLocation?.lat ?? destination.lat, shopLocation?.lng ?? destination.lng], {
       icon: L.divIcon({
         className: 'ltm-divicon',
         html: badge,
-        iconSize: [64, 52],   // wide enough for side-view scooter
-        iconAnchor: [32, 44], // anchor at rear wheel
+        iconSize: [70, 56],   // side-view scooter width
+        iconAnchor: [35, 50], // anchor at center-bottom (ground level)
       }),
       interactive: false,
       zIndexOffset: 400,
@@ -222,19 +221,24 @@ export function LeafletFallbackMap({
     const marker = bikeMarkerRef.current;
     if (!marker) return;
 
-    // Move the marker
+    // Move marker to real GPS position
     marker.setLatLng([bike.lat, bike.lng]);
 
-    // Rotate the scooter icon to match heading
-    const el = marker.getElement() as HTMLElement | null;
-    if (el) {
-      if (el.style.opacity !== '1') el.style.opacity = '1';
-      const glyph = el.querySelector<HTMLElement>('.ltm-bike-glyph');
+    // Find the badge element inside the Leaflet container and rotate it
+    const container = marker.getElement() as HTMLElement | null;
+    if (container) {
+      // Show the badge (it may have been hidden by Leaflet internals)
+      container.style.opacity = '1';
+      // Rotate scooter glyph to match GPS heading
+      const glyph = container.querySelector<HTMLElement>('.ltm-bike-glyph');
       if (glyph) {
         const heading = typeof bike.heading === 'number' && bike.heading >= 0 ? bike.heading : 0;
         glyph.style.transform = `rotate(${heading}deg)`;
         glyph.style.transition = 'transform 0.7s cubic-bezier(0.22,1,0.36,1)';
       }
+      // Ensure pulsing ring is visible
+      const pulse = container.querySelector<HTMLElement>('.ltm-bike-pulse');
+      if (pulse) pulse.style.display = 'block';
     }
 
     // Auto-pan map to follow bike
