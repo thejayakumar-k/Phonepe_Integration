@@ -9,8 +9,8 @@ import { formatDistanceMeters, formatEtaMinutes, haversineMeters } from '../util
 // Real fixed shop/origin coordinates (Pillaiyar Koil Street / 1st Cross Street, Maduravoyal)
 const SHOP_LOCATION = { lat: 13.0550, lng: 80.1633 };
 
-// Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
-const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
+// Fallback destination = same as shop (if no delivery address saved)
+const FALLBACK_DESTINATION = SHOP_LOCATION;
 
 interface OrderTrackingMapProps {
   orderId: string;
@@ -30,7 +30,7 @@ interface OrderTrackingMapProps {
 export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [deliveryTarget, setDeliveryTarget] = useState<{ lat: number; lng: number } | null>(null);
-  const [deliveryAddressText, setDeliveryAddressText] = useState('AGS Theatre, Maduravoyal (Ward 147, Chennai)');
+  const [deliveryAddressText, setDeliveryAddressText] = useState('Pillaiyar Koil Street, Maduravoyal, Chennai');
   const [now, setNow] = useState(Date.now());
 
   // Supabase realtime: delivery partner streaming their GPS
@@ -62,9 +62,8 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => { cancelled = true; };
   }, [orderId]);
 
-  // Destination point: AGS Theatre, Maduravoyal
   const destination = useMemo(
-    () => deliveryTarget ?? MADURAVOYAL_AGS,
+    () => deliveryTarget ?? FALLBACK_DESTINATION,
     [deliveryTarget]
   );
 
@@ -183,7 +182,7 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
             destination={destination}
             shopLocation={SHOP_LOCATION}
             route={route}
-            destinationLabel="AGS Theatre, Maduravoyal"
+            destinationLabel={deliveryAddressText}
             shopLabel="Shop (Origin)"
             partnerLabel="Delivery Bike (Partner GPS)"
           />

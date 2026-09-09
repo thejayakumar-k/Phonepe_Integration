@@ -504,9 +504,9 @@ function itemOrderToRow(o: ItemOrder): ItemOrderRow {
       }
     : (o.assignedPartnerId
         ? {
-            address: 'Alapakkam, Maduravoyal, Chennai',
-            lat: 13.0485,
-            lng: 80.1632,
+            address: 'Pillaiyar Koil Street, Maduravoyal, Chennai',
+            lat: 13.0550,
+            lng: 80.1633,
             _assignedPartnerId: o.assignedPartnerId,
             _assignedPartnerName: o.assignedPartnerName,
             _collectedPaymentMethod: o.collectedPaymentMethod,
@@ -547,9 +547,9 @@ function rowToItemOrder(r: ItemOrderRow): ItemOrder {
     createdAt: Number(r.created_at),
     deliveryAddress: rawAddr
       ? {
-          address: rawAddr.address || 'Karambakkam, Valasaravakkam, Chennai',
-          lat: typeof rawAddr.lat === 'number' ? rawAddr.lat : 13.0485,
-          lng: typeof rawAddr.lng === 'number' ? rawAddr.lng : 13.1632,
+          address: rawAddr.address || 'Pillaiyar Koil Street, Maduravoyal, Chennai',
+          lat: typeof rawAddr.lat === 'number' ? rawAddr.lat : 13.0550,
+          lng: typeof rawAddr.lng === 'number' ? rawAddr.lng : 80.1633,
         }
       : undefined,
     assignedPartnerId: rawAddr?._assignedPartnerId,
