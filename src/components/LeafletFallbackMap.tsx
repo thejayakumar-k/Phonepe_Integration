@@ -1,19 +1,25 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DeliveryRoute } from '../hooks/useDeliveryRoute';
 import { bikeBadgeElement, destPinElement } from '../utils/ltmDom';
 import type { GeoPoint } from '../utils/geo';
+import { haversineMeters } from '../utils/geo';
 import type { LiveBikeLocation } from './LiveTrackingMap';
 
-// Shop pin (green)
+// Green shop pin
 function shopPinElement(label?: string): HTMLDivElement {
   const pin = document.createElement('div');
   pin.className = 'ltm-shop-pin';
-  pin.innerHTML = `<div class="ltm-shop-head"><div class="ltm-shop-dot"></div></div><div class="ltm-shop-tail"></div>`;
+  pin.innerHTML =
+    '<div class="ltm-shop-head"><div class="ltm-shop-dot"></div></div>' +
+    '<div class="ltm-shop-tail"></div>';
   if (label) pin.title = label;
   return pin;
 }
+
+// How far (m) the bike must move before the map re-centres
+const AUTO_PAN_THRESHOLD_M = 40;
 
 interface LeafletFallbackMapProps {
   bike: LiveBikeLocation | null;
@@ -27,8 +33,13 @@ interface LeafletFallbackMapProps {
 }
 
 /**
- * Reliable Leaflet-based live delivery map.
- * CartoDB Voyager tiles (free, no API key), animated dashed route, shop+dest+bike markers.
+ * Live delivery map — Zepto / Swiggy style.
+ *  ✅ 100% free OpenStreetMap tiles (no API key, no sign-up)
+ *  ✅ Real bike icon (side-view scooter SVG with rider)
+ *  ✅ Pulsing ring around bike (Zepto-style)
+ *  ✅ Auto-follow camera — map pans to bike every GPS fix
+ *  ✅ Animated dashed route line (OSRM road-following)
+ *  ✅ 3 markers: shop (green) · bike (animated) · customer (red)
  */
 export function LeafletFallbackMap({
   bike,
@@ -47,108 +58,121 @@ export function LeafletFallbackMap({
   const casingRef = useRef<L.Polyline | null>(null);
   const lineRef = useRef<L.Polyline | null>(null);
   const animDashRef = useRef<L.Polyline | null>(null);
+  const lastPanRef = useRef<GeoPoint | null>(null);
   const hasInitFit = useRef(false);
 
+  // Smooth pan to bike if it moved significantly
+  const panToBike = useCallback((b: LiveBikeLocation) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const last = lastPanRef.current;
+    if (last && haversineMeters(last, b) < AUTO_PAN_THRESHOLD_M) return;
+    map.panTo([b.lat, b.lng], { animate: true, duration: 0.8 });
+    lastPanRef.current = { lat: b.lat, lng: b.lng };
+  }, []);
+
+  // Init map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current, {
       zoomControl: false,
       attributionControl: false,
+      // Smooth panning
+      inertia: true,
+      inertiaDeceleration: 2500,
     });
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.control.attribution({ position: 'bottomright', prefix: false }).addTo(map);
+    L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map);
 
-    // CartoDB Voyager - clean, readable, no API key
-    L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: ['a', 'b', 'c', 'd'],
-        maxZoom: 19,
-        detectRetina: true,
-      }
-    ).addTo(map);
+    // ── 100% Free OpenStreetMap tiles — zero API key ──
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      subdomains: ['a', 'b', 'c'],
+      maxZoom: 19,
+      detectRetina: true,
+    }).addTo(map);
 
-    map.setView([destination.lat, destination.lng], 14);
+    map.setView([destination.lat, destination.lng], 15);
 
-    // White casing for route contrast
+    // ── Route: white casing ──
     casingRef.current = L.polyline([], {
       color: '#ffffff',
-      weight: 9,
-      opacity: 0.85,
+      weight: 10,
+      opacity: 0.9,
       lineCap: 'round',
       lineJoin: 'round',
       interactive: false,
     }).addTo(map);
 
-    // Blue route fill
+    // ── Route: blue fill ──
     lineRef.current = L.polyline([], {
-      color: '#1a73e8',
-      weight: 5.5,
+      color: '#2563eb',
+      weight: 6,
       lineCap: 'round',
       lineJoin: 'round',
       interactive: false,
     }).addTo(map);
 
-    // Animated white dashes on top (Swiggy-style)
+    // ── Route: animated white dashes (Zepto-style flow) ──
     animDashRef.current = L.polyline([], {
       color: '#ffffff',
-      weight: 2.5,
-      opacity: 0.8,
-      dashArray: '10, 16',
+      weight: 3,
+      opacity: 0.85,
+      dashArray: '12 18',
       lineCap: 'round',
       interactive: false,
       className: 'ltm-animated-dash',
     } as L.PolylineOptions).addTo(map);
 
-    // Destination pin (red)
+    // ── Customer address pin (red) ──
     const pin = destPinElement(destinationLabel);
     destMarkerRef.current = L.marker([destination.lat, destination.lng], {
       icon: L.divIcon({
         className: 'ltm-divicon',
         html: pin,
-        iconSize: [22, 40],
-        iconAnchor: [11, 38],
+        iconSize: [24, 42],
+        iconAnchor: [12, 40],
       }),
       interactive: false,
       zIndexOffset: 200,
     }).addTo(map);
 
-    // Shop pin (green)
+    // ── Shop pin (green) ──
     if (shopLocation) {
       const shopPin = shopPinElement(shopLabel);
       shopMarkerRef.current = L.marker([shopLocation.lat, shopLocation.lng], {
         icon: L.divIcon({
           className: 'ltm-divicon',
           html: shopPin,
-          iconSize: [22, 40],
-          iconAnchor: [11, 38],
+          iconSize: [24, 42],
+          iconAnchor: [12, 40],
         }),
         interactive: false,
         zIndexOffset: 180,
       }).addTo(map);
     }
 
-    // Bike badge
+    // ── Bike marker (hidden until first GPS fix) ──
     const badge = bikeBadgeElement(0);
     badge.style.opacity = '0';
-    badge.style.transition = 'opacity 0.4s ease';
+    badge.style.transition = 'opacity 0.5s ease';
     bikeMarkerRef.current = L.marker([destination.lat, destination.lng], {
       icon: L.divIcon({
         className: 'ltm-divicon',
         html: badge,
-        iconSize: [50, 50],
-        iconAnchor: [25, 25],
+        iconSize: [64, 52],   // wide enough for side-view scooter
+        iconAnchor: [32, 44], // anchor at rear wheel
       }),
       interactive: false,
-      zIndexOffset: 300,
+      zIndexOffset: 400,
     }).addTo(map);
 
     mapRef.current = map;
-
-    setTimeout(() => map.invalidateSize(), 100);
+    // Force layout after React paints
+    setTimeout(() => map.invalidateSize(), 120);
 
     return () => {
       map.remove();
@@ -160,11 +184,12 @@ export function LeafletFallbackMap({
       lineRef.current = null;
       animDashRef.current = null;
       hasInitFit.current = false;
+      lastPanRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fit bounds once when bike is known
+  // Initial fit: show bike + shop + destination all at once
   useEffect(() => {
     const map = mapRef.current;
     if (!map || hasInitFit.current) return;
@@ -172,16 +197,15 @@ export function LeafletFallbackMap({
     if (bike) pts.push([bike.lat, bike.lng]);
     if (shopLocation) pts.push([shopLocation.lat, shopLocation.lng]);
     if (pts.length > 1) {
-      map.fitBounds(L.latLngBounds(pts), { padding: [60, 60], maxZoom: 16 });
-      hasInitFit.current = true;
+      map.fitBounds(L.latLngBounds(pts), { padding: [55, 55], maxZoom: 16, animate: true });
     } else {
       map.setView([destination.lat, destination.lng], 15);
-      hasInitFit.current = true;
     }
+    hasInitFit.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bike?.lat, bike?.lng]);
 
-  // Route line (OSRM) updates
+  // ── Real-time route line updates (OSRM) ──
   useEffect(() => {
     const coords: Array<[number, number]> =
       route && route.coordinates.length > 1
@@ -192,34 +216,47 @@ export function LeafletFallbackMap({
     animDashRef.current?.setLatLngs(coords);
   }, [route?.coordinates]);
 
-  // Bike badge follows GPS fixes
+  // ── Real-time bike position + heading + auto-pan ──
   useEffect(() => {
     if (!bike) return;
     const marker = bikeMarkerRef.current;
     if (!marker) return;
-    marker.setLatLng([bike.lat, bike.lng]);
-    const badge = marker.getElement() as HTMLElement | null;
-    if (badge) {
-      if (badge.style.opacity !== '1') badge.style.opacity = '1';
-      const glyph = badge.querySelector<HTMLElement>('.ltm-bike-glyph');
-      const heading = typeof bike.heading === 'number' ? bike.heading : 0;
-      if (glyph) glyph.style.transform = `rotate(${heading}deg)`;
-    }
-  }, [bike?.lat, bike?.lng, bike?.heading]);
 
-  // Destination changes
+    // Move the marker
+    marker.setLatLng([bike.lat, bike.lng]);
+
+    // Rotate the scooter icon to match heading
+    const el = marker.getElement() as HTMLElement | null;
+    if (el) {
+      if (el.style.opacity !== '1') el.style.opacity = '1';
+      const glyph = el.querySelector<HTMLElement>('.ltm-bike-glyph');
+      if (glyph) {
+        const heading = typeof bike.heading === 'number' && bike.heading >= 0 ? bike.heading : 0;
+        glyph.style.transform = `rotate(${heading}deg)`;
+        glyph.style.transition = 'transform 0.7s cubic-bezier(0.22,1,0.36,1)';
+      }
+    }
+
+    // Auto-pan map to follow bike
+    panToBike(bike);
+  }, [bike?.lat, bike?.lng, bike?.heading, panToBike]);
+
+  // Destination pin updates
   useEffect(() => {
     destMarkerRef.current?.setLatLng([destination.lat, destination.lng]);
   }, [destination.lat, destination.lng]);
 
-  // Shop location changes
+  // Shop pin updates
   useEffect(() => {
     if (shopLocation) shopMarkerRef.current?.setLatLng([shopLocation.lat, shopLocation.lng]);
   }, [shopLocation?.lat, shopLocation?.lng]);
 
   return (
-    <div className={`ltm-root ${className}`} style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+    <div
+      className={`ltm-root ${className}`}
+      style={{ position: 'relative', width: '100%', height: '100%', minHeight: '280px' }}
+    >
+      <div ref={containerRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
     </div>
   );
 }

@@ -1,44 +1,77 @@
-// Shared DOM helpers for the live delivery map markers, so both the
-// maplibre-gl (WebGL) and the Leaflet (no-WebGL) renderers draw the same
-// bike badge and destination pin. No React refs live inside these nodes.
+// Shared DOM helpers for the live delivery map markers.
+// All icons are pure inline SVG — zero external assets, zero API keys.
 
+/**
+ * Zepto/Swiggy-style side-view delivery scooter SVG.
+ * Rider + helmet + scooter body, rendered at 48×48.
+ */
 export const MOTO_SVG_MARKUP =
-  '<svg width="26" height="26" viewBox="0 0 40 40" aria-hidden="true" focusable="false">' +
-  '<path d="M8.5 30.5 L13.5 22.5 H22.5" stroke="#141414" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-  '<rect x="14.5" y="20.8" width="8.2" height="5" rx="1.4" fill="#141414" opacity="0.9"/>' +
-  '<path d="M11.5 21.2 Q13 17.5 16.5 17.2 H21.5 Q24 17.4 25.2 19.6" stroke="#141414" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-  '<path d="M22.5 20.5 L28.5 12.8" stroke="#141414" stroke-width="2.4" stroke-linecap="round"/>' +
-  '<path d="M25.2 11.6 L30.5 12.4" stroke="#141414" stroke-width="2.4" stroke-linecap="round"/>' +
-  '<circle cx="31" cy="13.6" r="1.7" fill="#141414"/>' +
-  '<path d="M14.5 25.6 L11 29.5" stroke="#141414" stroke-width="2" stroke-linecap="round"/>' +
-  '<circle cx="9" cy="29.5" r="4.6" fill="none" stroke="#141414" stroke-width="2.6"/><circle cx="9" cy="29.5" r="1.2" fill="#141414"/>' +
-  '<circle cx="29" cy="29.5" r="4.6" fill="none" stroke="#141414" stroke-width="2.6"/><circle cx="29" cy="29.5" r="1.2" fill="#141414"/>' +
-  '<circle cx="9" cy="29.5" r="2.6" fill="none" stroke="#141414" stroke-width="0.7" opacity="0.6"/>' +
-  '<circle cx="29" cy="29.5" r="2.6" fill="none" stroke="#141414" stroke-width="0.7" opacity="0.6"/>' +
+  '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 64 48" aria-hidden="true">' +
+  // Shadow
+  '<ellipse cx="32" cy="45" rx="22" ry="3" fill="rgba(0,0,0,0.15)"/>' +
+  // Rear wheel
+  '<circle cx="10" cy="36" r="8" fill="none" stroke="#1a1a1a" stroke-width="3"/>' +
+  '<circle cx="10" cy="36" r="4.5" fill="none" stroke="#1a1a1a" stroke-width="1.5"/>' +
+  '<circle cx="10" cy="36" r="1.5" fill="#1a1a1a"/>' +
+  // Front wheel
+  '<circle cx="52" cy="36" r="8" fill="none" stroke="#1a1a1a" stroke-width="3"/>' +
+  '<circle cx="52" cy="36" r="4.5" fill="none" stroke="#1a1a1a" stroke-width="1.5"/>' +
+  '<circle cx="52" cy="36" r="1.5" fill="#1a1a1a"/>' +
+  // Frame / body
+  '<path d="M10 36 L20 20 L36 20 L48 28 L52 36" stroke="#1e40af" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+  // Engine / belly
+  '<path d="M18 28 Q28 34 40 30 L44 36 L14 36 Z" fill="#2563eb" opacity="0.9"/>' +
+  // Seat / body top
+  '<path d="M22 20 Q28 16 36 18 L40 22 L22 22 Z" fill="#1d4ed8"/>' +
+  // Delivery box on back
+  '<rect x="6" y="14" width="18" height="12" rx="2" fill="#16a34a" stroke="#15803d" stroke-width="1"/>' +
+  '<text x="15" y="23" font-size="6" font-family="sans-serif" font-weight="bold" fill="white" text-anchor="middle">VVK</text>' +
+  // Rider body
+  '<ellipse cx="30" cy="19" rx="5" ry="7" fill="#374151"/>' +
+  // Rider arm
+  '<path d="M30 22 Q40 24 44 26" stroke="#374151" stroke-width="3" stroke-linecap="round" fill="none"/>' +
+  // Handlebar
+  '<path d="M44 26 L50 24" stroke="#6b7280" stroke-width="2.5" stroke-linecap="round"/>' +
+  // Helmet
+  '<circle cx="30" cy="12" r="7" fill="#065f46"/>' +
+  '<path d="M24 12 Q26 6 36 9" stroke="#10b981" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+  // Visor
+  '<path d="M25 14 Q30 17 35 14" stroke="#34d399" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+  // Headlight
+  '<ellipse cx="56" cy="29" rx="3" ry="2" fill="#fef08a" opacity="0.9"/>' +
   '</svg>';
 
+/** Creates the bike marker element with a pulsing ring + real scooter icon. */
 export function bikeBadgeElement(heading: number): HTMLDivElement {
-  const badge = document.createElement('div');
-  badge.className = 'ltm-bike-badge';
+  const wrapper = document.createElement('div');
+  wrapper.className = 'ltm-bike-badge';
+
+  // Pulsing ring (Zepto-style)
+  const pulse = document.createElement('div');
+  pulse.className = 'ltm-bike-pulse';
+  wrapper.appendChild(pulse);
+
+  // Icon container (rotates with heading)
   const glyph = document.createElement('div');
   glyph.className = 'ltm-bike-glyph';
   glyph.style.transform = `rotate(${heading}deg)`;
-  const wrap = document.createElement('div');
-  wrap.innerHTML = MOTO_SVG_MARKUP;
-  glyph.appendChild(wrap.firstElementChild as SVGElement);
-  badge.appendChild(glyph);
-  return badge;
+  glyph.innerHTML = MOTO_SVG_MARKUP;
+  wrapper.appendChild(glyph);
+
+  return wrapper;
 }
 
 export function bikeBadgeIcon(heading: number): HTMLDivElement {
   return bikeBadgeElement(heading);
 }
 
+/** Red destination pin (customer address). */
 export function destPinElement(label?: string): HTMLDivElement {
   const pin = document.createElement('div');
   pin.className = 'ltm-dest-pin';
   pin.innerHTML =
-    '<div class="ltm-dest-head"><div class="ltm-dest-dot"></div></div><div class="ltm-dest-tail"></div>';
+    '<div class="ltm-dest-head"><div class="ltm-dest-dot"></div></div>' +
+    '<div class="ltm-dest-tail"></div>';
   if (label) pin.title = label;
   return pin;
 }
@@ -53,9 +86,9 @@ export function isWebGL2Supported(): boolean {
   }
 }
 
-/** Free raster tile template for the no-WebGL Leaflet fallback (CARTO basemaps, no API key). */
+// OpenStreetMap tiles — 100% free, no API key, no sign-up required.
 export const CARTO_RASTER_TILE =
-  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
-export const CARTO_RASTER_SUBDOMAINS = ['a', 'b', 'c', 'd'];
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+export const CARTO_RASTER_SUBDOMAINS = ['a', 'b', 'c'];
 export const CARTO_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';

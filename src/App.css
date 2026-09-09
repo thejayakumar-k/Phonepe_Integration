@@ -8771,3 +8771,71 @@ body {
 .leaflet-control-zoom {
   z-index: 400;
 }
+
+/* =========================================================
+   REAL BIKE ICON — Zepto-style scooter with pulsing ring
+   Overrides old .ltm-bike-badge yellow circle
+   ========================================================= */
+
+.ltm-bike-badge {
+  /* Reset old yellow circle — new icon is transparent */
+  width: 68px;
+  height: 56px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Zepto-style pulsing ring around bike */
+.ltm-bike-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.25);
+  animation: ltm-pulse-ring 1.8s ease-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes ltm-pulse-ring {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0.8; }
+  70%  { transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
+}
+
+.ltm-bike-glyph {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+
+/* Animated route dashes — stroke-dashoffset flow */
+@keyframes ltm-dash-flow {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -60; }
+}
+.ltm-animated-dash path,
+.ltm-animated-dash polyline,
+svg .ltm-animated-dash {
+  animation: ltm-dash-flow 1.6s linear infinite;
+}
+
+/* OSM attribution — keep compact */
+.leaflet-control-attribution {
+  font-size: 9px !important;
+  background: rgba(255,255,255,0.75) !important;
+  padding: 2px 5px !important;
+}
