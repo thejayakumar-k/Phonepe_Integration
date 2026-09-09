@@ -9,6 +9,9 @@ import type { LiveBikeLocation } from './LiveTrackingMap';
 // Real fixed shop/origin coordinates (Pillaiyar Koil Street / 1st Cross Street, Maduravoyal)
 const SHOP_LOCATION = { lat: 13.0550, lng: 80.1633 };
 
+// Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai — fallback destination
+const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
+
 interface VendorDeliveryMapProps {
   order: ItemOrder;
   delivery: VendorDeliveryState;
@@ -29,15 +32,16 @@ export function VendorDeliveryMap({ order, delivery, onClose }: VendorDeliveryMa
     return () => clearInterval(t);
   }, []);
 
-  // Destination: customer delivery address
-  const destination = useMemo(() => {
+// Destination: customer delivery address (falls back to a real nearby
+// landmark so the route line + pins stay meaningful, never the shop itself).
+const destination = useMemo(() => {
     if (order.deliveryAddress) {
       return { lat: order.deliveryAddress.lat, lng: order.deliveryAddress.lng };
     }
-    return SHOP_LOCATION; // fallback
+    return MADURAVOYAL_AGS;
   }, [order]);
 
-  const destinationLabel = order.deliveryAddress?.address ?? 'Customer Location';
+  const destinationLabel = order.deliveryAddress?.address ?? 'AGS Theatre, Maduravoyal';
 
   // Bike: vendor live GPS or shop fallback
   const bike = useMemo<LiveBikeLocation>(() => {
