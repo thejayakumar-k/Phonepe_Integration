@@ -7,7 +7,7 @@ import { LeafletFallbackMap } from './LeafletFallbackMap';
 import type { LiveBikeLocation } from './LiveTrackingMap';
 
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/bright';
-const SHOP_LOCATION: [number, number] = [80.170, 13.054];
+const SHOP_LOCATION: [number, number] = [80.1635, 13.0538];
 
 /** maplibre-gl v6 needs WebGL2; fall back to a Leaflet map when missing. */
 const WEBGL2_SUPPORTED = isWebGL2Supported();

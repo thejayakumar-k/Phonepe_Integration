@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LeafletFallbackMap } from './LeafletFallbackMap';
 import { useDeliveryRoute } from '../hooks/useDeliveryRoute';
 import { haversineMeters, formatDistanceMeters, formatEtaMinutes } from '../utils/geo';
@@ -6,8 +6,8 @@ import type { ItemOrder } from '../types/payment';
 import type { VendorDeliveryState } from '../hooks/useVendorDelivery';
 import type { LiveBikeLocation } from './LiveTrackingMap';
 
-// Oorunii shop — fallback origin before GPS fix
-const SHOP_LOCATION = { lat: 13.054, lng: 80.17 };
+// Oorunii shop — real origin at Alapakkam Road, Maduravoyal
+const SHOP_LOCATION = { lat: 13.0538, lng: 80.1635 };
 
 interface VendorDeliveryMapProps {
   order: ItemOrder;

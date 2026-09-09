@@ -7,32 +7,11 @@ import type { LiveBikeLocation } from './LiveTrackingMap';
 import { getItemOrders } from '../utils/storage';
 import { formatDistanceMeters, formatEtaMinutes, haversineMeters } from '../utils/geo';
 
-// Real shop/origin coordinates (Oorunii delivery hub)
-const SHOP_LOCATION = { lat: 13.054, lng: 80.17 };
+// Real shop/origin coordinates (Alapakkam Road, Maduravoyal)
+const SHOP_LOCATION = { lat: 13.0538, lng: 80.1635 };
 
-/**
- * Reverse geocode lat/lng → human-readable address using OpenStreetMap Nominatim.
- * 100% free, no API key required.
- */
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
-      { headers: { 'User-Agent': 'OoruniiApp/1.0' } }
-    );
-    const data = await res.json();
-    const { road, neighbourhood, suburb, city_district, city, town, village, state_district } =
-      data.address ?? {};
-    const parts = [
-      road ?? neighbourhood,
-      suburb ?? city_district,
-      city ?? town ?? village ?? state_district,
-    ].filter(Boolean);
-    return parts.length ? parts.join(', ') : data.display_name?.split(',').slice(0, 3).join(', ') ?? '';
-  } catch {
-    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-  }
-}
+// Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
+const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
 
 interface OrderTrackingMapProps {
   orderId: string;
@@ -49,7 +28,7 @@ interface OrderTrackingMapProps {
 export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [deliveryTarget, setDeliveryTarget] = useState<{ lat: number; lng: number } | null>(null);
-  const [deliveryAddressText, setDeliveryAddressText] = useState('Locating…');
+  const [deliveryAddressText, setDeliveryAddressText] = useState('AGS Theatre, Maduravoyal (Ward 147, Chennai)');
   const [now, setNow] = useState(Date.now());
 
   // Real GPS from this device (maximumAge: 0 forces real-time un-cached hardware fixes)
@@ -77,9 +56,6 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     return () => clearInterval(t);
   }, []);
 
-  // Real AGS Theatre (AGS Cinemas), Maduravoyal, Chennai
-  const MADURAVOYAL_AGS = { lat: 13.0606, lng: 80.1661 };
-
   // Load real destination address from saved order
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +63,12 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
       if (cancelled) return;
       const order = orders.find((o) => o.id === orderId);
       const saved = order?.deliveryAddress;
-      if (saved) setDeliveryTarget({ lat: saved.lat, lng: saved.lng });
+      if (saved) {
+        setDeliveryTarget({ lat: saved.lat, lng: saved.lng });
+        if (saved.address) {
+          setDeliveryAddressText(saved.address);
+        }
+      }
     });
     return () => { cancelled = true; };
   }, [orderId]);
@@ -97,19 +78,6 @@ export function OrderTrackingMap({ orderId, onClose }: OrderTrackingMapProps) {
     () => deliveryTarget ?? MADURAVOYAL_AGS,
     [deliveryTarget]
   );
-
-  // Reverse-geocode destination → show real address in header
-  useEffect(() => {
-    let cancelled = false;
-    setDeliveryAddressText('AGS Theatre, Maduravoyal');
-    reverseGeocode(destination.lat, destination.lng).then((addr) => {
-      if (!cancelled && addr) {
-        setDeliveryAddressText(`AGS Theatre, Maduravoyal (${addr})`);
-      }
-    });
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination.lat, destination.lng]);
 
   // ── Bike: partner GPS > this device GPS > shop fallback ──
   const bike = useMemo<LiveBikeLocation>(() => {
