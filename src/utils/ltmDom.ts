@@ -53,8 +53,9 @@ export function isWebGL2Supported(): boolean {
   }
 }
 
-/** Free raster tile template shared by the no-WebGL Leaflet fallback. */
-export const FREEFMAP_RASTER_TILE =
-  'https://tiles.openfreemap.org/liberty/{z}/{x}/{y}.png';
-export const FREEFMAP_ATTRIBUTION =
-  '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> &copy; <a href="https://openmaptiles.org">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+/** Free raster tile template for the no-WebGL Leaflet fallback (CARTO basemaps, no API key). */
+export const CARTO_RASTER_TILE =
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+export const CARTO_RASTER_SUBDOMAINS = ['a', 'b', 'c', 'd'];
+export const CARTO_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';

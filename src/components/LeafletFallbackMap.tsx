@@ -3,8 +3,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DeliveryRoute } from '../hooks/useDeliveryRoute';
 import {
-  FREEFMAP_ATTRIBUTION,
-  FREEFMAP_RASTER_TILE,
+  CARTO_ATTRIBUTION,
+  CARTO_RASTER_SUBDOMAINS,
+  CARTO_RASTER_TILE,
   bikeBadgeElement,
   destPinElement,
 } from '../utils/ltmDom';
@@ -47,8 +48,9 @@ export function LeafletFallbackMap({
       attributionControl: true,
     });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.tileLayer(FREEFMAP_RASTER_TILE, {
-      attribution: FREEFMAP_ATTRIBUTION,
+    L.tileLayer(CARTO_RASTER_TILE, {
+      attribution: CARTO_ATTRIBUTION,
+      subdomains: CARTO_RASTER_SUBDOMAINS,
       maxZoom: 19,
     }).addTo(map);
     map.setView([destination.lat, destination.lng], 14);
