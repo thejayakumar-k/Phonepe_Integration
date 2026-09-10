@@ -103,7 +103,7 @@ export async function getPricingConfig(): Promise<PricingConfig> {
       .select('config')
       .eq('id', 1)
       .maybeSingle();
-    if (error) throw error;
+    if (error) return DEFAULT_PRICING;
     return normalizeConfig(data?.config);
   } catch {
     return DEFAULT_PRICING;
@@ -125,8 +125,9 @@ export async function savePricingConfig(config: PricingConfig): Promise<void> {
 export function subscribeToPricingConfig(
   onChange: (config: PricingConfig) => void
 ): () => void {
+  const channelId = `pricing-config-${Math.random().toString(36).substring(2, 9)}`;
   const channel = supabase
-    .channel('pricing-config-realtime')
+    .channel(channelId)
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'pricing_config' },
@@ -140,7 +141,11 @@ export function subscribeToPricingConfig(
     .subscribe();
 
   return () => {
-    supabase.removeChannel(channel);
+    try {
+      supabase.removeChannel(channel);
+    } catch {
+      // ignore channel cleanup errors
+    }
   };
 }
 
