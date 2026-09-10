@@ -47,12 +47,7 @@ body {
   text-align: left;
 }
 
-/* Full-screen pages must override the centering flex layout */
-#root:has(.web-login-page) {
-  align-items: stretch;
-  justify-content: stretch;
-  background: #06071a;
-}
+
 
 /* ========================================
    Payment Page
@@ -1057,6 +1052,11 @@ body {
 
 .customer-card:hover {
   border-color: var(--success-color);
+}
+
+.web-login-card:hover {
+  border-color: #6366f1;
+  background: #f5f3ff;
 }
 
 .role-icon {
@@ -10715,42 +10715,51 @@ path.ltm-animated-dash {
   margin: 0 0 10px 0;
 }
 
-/* Place Order — full screen centered */
+/* Place Order — bottom sheet popup */
 
-.place-order-screen {
+.place-order-overlay {
   position: fixed;
   inset: 0;
   z-index: 900;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  animation: po-fade 0.2s ease;
+  padding: 0 16px;
+  animation: po-overlay-fade 0.2s ease;
 }
 
-@keyframes po-fade {
+@keyframes po-overlay-fade {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.place-order-card {
+.place-order-sheet {
   width: 100%;
   max-width: 440px;
+  max-height: 50vh;
   background: white;
-  border-radius: 16px;
-  padding: 28px 24px 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  border-radius: 20px 20px 20px 20px;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
+  padding: 20px 20px 22px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  animation: po-card-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  gap: 16px;
+  animation: po-sheet-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
 }
 
-@keyframes po-card-in {
-  from { transform: scale(0.94) translateY(12px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
+@keyframes po-sheet-in {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.place-order-handle {
+  width: 36px;
+  height: 4px;
+  background: #d1d5db;
+  border-radius: 2px;
+  margin: 0 auto 6px;
 }
 
 .place-order-amounts {

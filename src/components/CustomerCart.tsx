@@ -436,9 +436,10 @@ export function CustomerCart() {
         </div>
       </div>
 
-      {/* Place Order — full screen centered */}
-      <div className="place-order-screen">
-        <div className="place-order-card">
+      {/* Place Order — bottom sheet popup */}
+      <div className="place-order-overlay">
+        <div className="place-order-sheet">
+          <div className="place-order-handle" />
           <div className="place-order-amounts">
             <span className="place-order-label">Total</span>
             <span className="place-order-amount">₹{totalAmount.toFixed(2)}</span>
