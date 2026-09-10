@@ -126,12 +126,12 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
     houseNo.trim() || street.trim() || apartment.trim() || area.trim() || city.trim() || pincode.trim();
 
   const handleSave = () => {
-    const finalFloor =
-      floor === 'Custom'
-        ? customFloor.trim()
-          ? customFloor.trim()
-          : 'Custom Floor'
-        : floor;
+    const showFloor = addressType === 'Apt' || addressType === 'House';
+    const finalFloor = showFloor
+      ? (floor === 'Custom'
+          ? (customFloor.trim() ? customFloor.trim() : 'Custom Floor')
+          : floor)
+      : '';
 
     onSave(
       {
@@ -223,8 +223,31 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
           )}
         </div>
 
-        {/* Floor — options & prices come from the web-login pricing config */}
-        {floorOptions.length > 0 && (
+        {/* Save As Pills — placed right after Apartment field */}
+        <div className="addr-field">
+          <label className="addr-label">Save As</label>
+          <div className="addr-type-pills">
+            {ADDRESS_TYPES.map(({ label, title }) => (
+              <button
+                key={label}
+                type="button"
+                className={`addr-type-pill ${addressType === label ? 'active' : ''}`}
+                onClick={() => {
+                  setAddressType(label);
+                  if (label !== 'Apt' && label !== 'House') {
+                    setFloor('');
+                    setCustomFloor('');
+                  }
+                }}
+              >
+                {title}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Floor — options & prices apply only for Apartment and House */}
+        {(addressType === 'Apt' || addressType === 'House') && floorOptions.length > 0 && (
           <div className="addr-field">
             <label className="addr-label">Floor</label>
             <div className="addr-input-wrap">
@@ -330,22 +353,6 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
             onChange={(e) => setLandmark(e.target.value)}
             placeholder="Landmark"
           />
-        </div>
-
-        <div className="addr-field">
-          <label className="addr-label">Save As</label>
-          <div className="addr-type-pills">
-            {ADDRESS_TYPES.map(({ label, title }) => (
-              <button
-                key={label}
-                type="button"
-                className={`addr-type-pill ${addressType === label ? 'active' : ''}`}
-                onClick={() => setAddressType(label)}
-              >
-                {title}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
