@@ -107,25 +107,9 @@ export function CustomerLayout() {
         <Outlet key={location.key} />
       </main>
       
-      <nav className="bottom-nav">
-        {isOnCart && !cartEmpty && selectedPayment === 'cod' ? (
-          <button className="nav-cod-btn" onClick={() => {
-            const event = new CustomEvent('triggerCheckout');
-            window.dispatchEvent(event);
-          }}>
-            <span className="nav-pay-icon">💵</span>
-            <span className="nav-pay-text">Place Order</span>
-          </button>
-        ) : isOnCart && !cartEmpty && selectedPayment && selectedPayment !== 'cod' ? (
-          <button className="nav-pay-btn" onClick={() => {
-            const event = new CustomEvent('triggerCheckout');
-            window.dispatchEvent(event);
-          }}>
-            <span className="nav-pay-icon">💳</span>
-            <span className="nav-pay-text">Click to Pay</span>
-          </button>
-        ) : (
-          navItems.map((item) => (
+      {!isOnCart || cartEmpty ? (
+        <nav className="bottom-nav">
+          {navItems.map((item) => (
             <button
               key={item.path}
               className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
@@ -134,9 +118,9 @@ export function CustomerLayout() {
               <span className="nav-icon">{item.icon}</span>
               <span className="nav-label">{item.label}</span>
             </button>
-          ))
-        )}
-      </nav>
+          ))}
+        </nav>
+      ) : null}
     </div>
   );
 }
