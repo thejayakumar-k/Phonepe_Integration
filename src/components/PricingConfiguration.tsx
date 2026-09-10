@@ -30,7 +30,7 @@ type PricingConfig = SharedPricingConfig;
 export function PricingConfiguration() {
   const navigate = useNavigate();
   const { customers: liveCustomers, loading: customersLoading } = useCustomers();
-  const { products: liveProducts, loading: productsLoading } = useProducts();
+  const { products: liveProducts } = useProducts();
 
   // Map live customers into the shape this page needs (with defaults).
   const customers: Customer[] = liveCustomers.map((c) => ({

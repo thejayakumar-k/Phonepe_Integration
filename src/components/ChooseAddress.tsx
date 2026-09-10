@@ -35,6 +35,7 @@ export function ChooseAddress({
       pincode: string;
       landmark: string;
       addressType: import('../types/customer').AddressType;
+      floor: string;
     },
     onDismiss: () => void,
   ) => {
@@ -60,6 +61,7 @@ export function ChooseAddress({
       pincode: values.pincode,
       landmark: values.landmark,
       addressType: values.addressType as CustomerAddress['addressType'],
+      floor: values.floor,
       lat: undefined,
       lng: undefined,
       createdAt: Date.now(),
