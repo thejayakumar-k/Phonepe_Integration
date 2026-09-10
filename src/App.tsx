@@ -9,6 +9,7 @@ import { VendorOrders } from './components/VendorOrders';
 import { VendorPayments } from './components/VendorPayments';
 import { VendorSettings } from './components/VendorSettings';
 import { VendorRefunds } from './components/VendorRefunds';
+import { PricingConfiguration } from './components/PricingConfiguration';
 import { CustomerLayout } from './components/CustomerLayout';
 import { CustomerHome } from './components/CustomerHome';
 import { CustomerCart } from './components/CustomerCart';
@@ -154,6 +155,7 @@ function App() {
             <Route path="orders" element={<VendorOrders />} />
             <Route path="payments" element={<VendorPayments />} />
             <Route path="settings" element={<VendorSettings />} />
+            <Route path="pricing" element={<PricingConfiguration />} />
             <Route
               path="refunds"
               element={

@@ -1,0 +1,253 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
+import type { AddressType } from '../types/customer';
+
+interface AddressDetailsProps {
+  onSave: (
+    values: {
+      houseNo: string;
+      street: string;
+      apartment: string;
+      area: string;
+      city: string;
+      pincode: string;
+      landmark: string;
+      addressType: AddressType;
+    },
+    onDismiss: () => void,
+  ) => void;
+  onDismiss: () => void;
+}
+
+const ADDRESS_TYPES: { label: AddressType; title: string }[] = [
+  { label: 'Apt', title: 'Apartment' },
+  { label: 'House', title: 'House' },
+  { label: 'Commercial', title: 'Commercial' },
+  { label: 'Others', title: 'Others' },
+];
+
+// Fake apartment suggestions for demo UX (replace with a real source later).
+const APARTMENT_SUGGESTIONS = [
+  'Pillayar Koil Apt',
+  'Bhakyalakshmi Nagar Flat',
+  'Kannaiamman Nagar Block A',
+  'SLN Colony Apartments',
+  'Rain Tree Apartments',
+  'Meenakshi Residency',
+  'Sunrise Flats',
+  'Gandhi Nagar Complex',
+];
+
+export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
+  const [houseNo, setHouseNo] = useState('');
+  const [street, setStreet] = useState('');
+  const [apartment, setApartment] = useState('');
+  const [apartmentSuggestions, setApartmentSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [city, setCity] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [area, setArea] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [addressType, setAddressType] = useState<AddressType>('Apt');
+
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
+
+  // Close suggestions when clicking outside the apartment field + list.
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (
+        listRef.current &&
+        !listRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const runSuggestions = useCallback((q: string) => {
+    const trimmed = q.trim().toLowerCase();
+    if (!trimmed) {
+      setApartmentSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const matched = APARTMENT_SUGGESTIONS.filter(
+      (s) => s.toLowerCase().includes(trimmed),
+    );
+    setApartmentSuggestions(matched.slice(0, 5));
+    setShowSuggestions(matched.length > 0);
+  }, []);
+
+  const handleApartmentChange = (value: string) => {
+    setApartment(value);
+    runSuggestions(value);
+  };
+
+  const handleSelectSuggestion = (suggestion: string) => {
+    setApartment(suggestion);
+    setShowSuggestions(false);
+    inputRef.current?.focus();
+  };
+
+  const isValid =
+    houseNo.trim() || street.trim() || apartment.trim() || area.trim() || city.trim() || pincode.trim();
+
+  const handleSave = () => {
+    onSave(
+      {
+        houseNo,
+        street,
+        apartment,
+        area,
+        city,
+        pincode,
+        landmark,
+        addressType,
+      },
+      onDismiss,
+    );
+  };
+
+  return (
+    <div className="addr-form">
+      <div className="addr-form-section">
+        <h4 className="addr-form-section-title">ADDRESS DETAILS</h4>
+
+        <div className="addr-field">
+          <label className="addr-label">House/Flat No *</label>
+          <input
+            type="text"
+            className="addr-input"
+            value={houseNo}
+            onChange={(e) => setHouseNo(e.target.value)}
+            placeholder="House/Flat No"
+          />
+        </div>
+
+        <div className="addr-field">
+          <label className="addr-label">Street *</label>
+          <input
+            type="text"
+            className="addr-input"
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+            placeholder="Street"
+          />
+        </div>
+
+        <div className="addr-field">
+          <label className="addr-label">Apartment *</label>
+          <span className="addr-hint">Type Apartment Name if not listed</span>
+          <div className="addr-input-wrap">
+            <span className="addr-input-icon">🏢</span>
+            <input
+              ref={inputRef}
+              type="text"
+              className="addr-input addr-input-search"
+              value={apartment}
+              onChange={(e) => handleApartmentChange(e.target.value)}
+              onFocus={() => apartment && setShowSuggestions(true)}
+              placeholder="Type to search apartments..."
+            />
+            <span className="addr-input-chevron">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </span>
+          </div>
+
+          {showSuggestions && apartmentSuggestions.length > 0 && (
+            <ul ref={listRef} className="addr-suggestions">
+              {apartmentSuggestions.map((s) => (
+                <li
+                  key={s}
+                  className="addr-suggestion"
+                  onClick={() => handleSelectSuggestion(s)}
+                >
+                  {s}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="addr-field-row">
+          <div className="addr-field">
+            <label className="addr-label">City *</label>
+            <input
+              type="text"
+              className="addr-input"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="City"
+            />
+          </div>
+
+          <div className="addr-field">
+            <label className="addr-label">Zipcode *</label>
+            <input
+              type="text"
+              className="addr-input"
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value)}
+              placeholder="Zipcode"
+            />
+          </div>
+        </div>
+
+        <div className="addr-field">
+          <label className="addr-label">Location / Area *</label>
+          <input
+            type="text"
+            className="addr-input"
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
+            placeholder="Location / Area"
+          />
+        </div>
+
+        <div className="addr-field">
+          <label className="addr-label">Landmark</label>
+          <input
+            type="text"
+            className="addr-input"
+            value={landmark}
+            onChange={(e) => setLandmark(e.target.value)}
+            placeholder="Landmark"
+          />
+        </div>
+
+        <div className="addr-field">
+          <label className="addr-label">Save As</label>
+          <div className="addr-type-pills">
+            {ADDRESS_TYPES.map(({ label, title }) => (
+              <button
+                key={label}
+                type="button"
+                className={`addr-type-pill ${addressType === label ? 'active' : ''}`}
+                onClick={() => setAddressType(label)}
+              >
+                {title}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="addr-form-actions">
+        <button
+          type="button"
+          className="addr-btn-primary"
+          onClick={handleSave}
+          disabled={!isValid}
+        >
+          Save Address
+        </button>
+      </div>
+    </div>
+  );
+}

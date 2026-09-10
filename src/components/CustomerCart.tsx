@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getMargin, subtractMargin, saveItemOrder, generateItemOrderId } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus, PaymentMethod } from '../types/payment';
+import type { OrderType, CustomerAddress } from '../types/customer';
 import { supabase } from '../lib/supabase';
 import { getStoreInfo, type StoreInfo } from '../utils/store';
 
-const DeliveryAddress = lazy(() => import('./DeliveryAddress').then(m => ({ default: m.DeliveryAddress })));
+const ChooseAddress = lazy(() => import('./ChooseAddress').then(m => ({ default: m.ChooseAddress })));
 
 type CatalogProduct = { id: number; name: string; price: number; unit: string; image: string };
 
@@ -59,8 +60,13 @@ export function CustomerCart() {
   });
   const [selectedPayment, setSelectedPayment] = useState<CartPaymentMethod>('upi');
   const [paymentSuccess, setPaymentSuccess] = useState<{ amount: number; balance: number } | null>(null);
-  const [deliveryAddress, setDeliveryAddress] = useState<{ address: string; lat: number; lng: number } | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<{
+    addr: CustomerAddress;
+    onDone: () => void;
+  } | null>(null);
+  const [orderType, setOrderType] = useState<OrderType>('Standard');
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
   const getProduct = (id: number) => products.find((p) => p.id === id);
 
@@ -100,7 +106,9 @@ export function CustomerCart() {
     status,
     paymentMethod: method,
     createdAt: Date.now(),
-    deliveryAddress: deliveryAddress ?? undefined,
+    deliveryAddress: selectedAddress?.addr.lat && selectedAddress?.addr.lng
+      ? { address: selectedAddress.addr.address, lat: selectedAddress.addr.lat, lng: selectedAddress.addr.lng }
+      : undefined,
   });
 
   useEffect(() => {
@@ -144,7 +152,7 @@ export function CustomerCart() {
 
     window.addEventListener('triggerCheckout', handleCheckout);
     return () => window.removeEventListener('triggerCheckout', handleCheckout);
-  }, [selectedPayment, walletBalance, totalAmount, cart, navigate, session?.customerId, session?.customerName, deliveryAddress]);
+  }, [selectedPayment, walletBalance, totalAmount, cart, navigate, session?.customerId, session?.customerName, selectedAddress]);
 
   useEffect(() => {
     return () => {
@@ -240,36 +248,131 @@ export function CustomerCart() {
       </div>
 
       <div className="cart-summary">
-        {/* Delivery Address */}
-        {!deliveryAddress ? (
-          <Suspense fallback={<div className="da-loading">Loading address picker...</div>}>
-            <DeliveryAddress
-              onAddressConfirm={(addr, lat, lng) => setDeliveryAddress({ address: addr, lat, lng })}
-            />
-          </Suspense>
-        ) : (
-          <div className="da-confirmed">
-            <div className="da-confirmed-header">
-              <span className="da-confirmed-icon">📍</span>
-              <div className="da-confirmed-info">
-                <span className="da-confirmed-label">Delivering to</span>
-                <span className="da-confirmed-address">{deliveryAddress.address}</span>
-              </div>
-              <button className="da-confirmed-edit" onClick={() => setDeliveryAddress(null)}>Change</button>
+        {/* Order type */}
+        <div className="cart-section">
+          <div className="cart-section-header">
+            <span className="cart-section-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </span>
+            <span className="cart-section-title">Order Type</span>
+          </div>
+          <div className="order-type-toggle">
+            <button
+              type="button"
+              className={`order-type-btn ${orderType === 'Standard' ? 'active' : ''}`}
+              onClick={() => setOrderType('Standard')}
+            >
+              <span className="order-type-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1"/>
+                  <circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+              </span>
+              <span className="order-type-label">Standard</span>
+            </button>
+            <button
+              type="button"
+              className={`order-type-btn ${orderType === 'Recurring' ? 'active' : ''}`}
+              onClick={() => setOrderType('Recurring')}
+            >
+              <span className="order-type-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <polyline points="1 20 1 14 7 14"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+              </span>
+              <span className="order-type-label">Recurring</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Delivery address (modal trigger) */}
+        {!selectedAddress ? (
+          <button type="button" className="cart-address-picker" onClick={() => setShowAddressModal(true)}>
+            <span className="cart-address-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </span>
+            <div className="cart-address-text">
+              <span className="cart-address-label">Delivery to</span>
+              <span className="cart-address-badge">Apt</span>
+              <span className="cart-address-placeholder">Tap to choose address</span>
             </div>
+            <svg className="cart-address-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        ) : (
+          <div className="cart-address-confirmed">
+            <span className="cart-address-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </span>
+            <div className="cart-address-text">
+              <span className="cart-address-label">Delivering to</span>
+              <span className="cart-address-address">{selectedAddress.addr.address}</span>
+            </div>
+            <button type="button" className="cart-address-edit" onClick={() => setShowAddressModal(true)}>
+              Change
+            </button>
           </div>
         )}
 
-        <div className="summary-row">
-          <span>Items ({totalItems})</span>
-          <span>₹{totalAmount.toFixed(2)}</span>
+        {/* Bill summary */}
+        <div className="bill-summary">
+          <div className="bill-row">
+            <span className="bill-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </span>
+            <span className="bill-label">Subtotal</span>
+            <span className="bill-value">₹{totalAmount.toFixed(2)}</span>
+          </div>
+          <div className="bill-row">
+            <span className="bill-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="3" width="15" height="13"/>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                <circle cx="5.5" cy="18.5" r="2.5"/>
+                <circle cx="18.5" cy="18.5" r="2.5"/>
+              </svg>
+            </span>
+            <span className="bill-label">Delivery Charges</span>
+            <span className="bill-value">₹0</span>
+          </div>
+          <div className="bill-row">
+            <span className="bill-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                <line x1="7" y1="7" x2="7.01" y2="7"/>
+              </svg>
+            </span>
+            <span className="bill-label">Discount</span>
+            <span className="bill-value bill-value-discount">-₹0</span>
+          </div>
+          <div className="bill-row bill-row-total">
+            <span className="bill-label">Total Amount</span>
+            <span className="bill-value bill-value-bold">₹{totalAmount.toFixed(2)}</span>
+          </div>
         </div>
-        <div className="summary-row total">
-          <span>Total</span>
-          <span>₹{totalAmount.toFixed(2)}</span>
-        </div>
-        <div className="payment-methods">
-          <h3 className="payment-title">Select Payment Method</h3>
+
+        {/* Payment methods */}
+        <div className="cart-payment">
+          <h3 className="cart-payment-title">Select Payment Method</h3>
+          
           
           <button 
             className="payment-option disabled"
@@ -331,9 +434,38 @@ export function CustomerCart() {
             <span className="payment-check">{selectedPayment === 'cod' && '✓'}</span>
           </button>
         </div>
-
-
       </div>
+
+      {/* Sticky Place Order footer */}
+      <div className="cart-footer">
+        <div className="cart-footer-amounts">
+          <span className="cart-footer-label">Total</span>
+          <span className="cart-footer-amount">₹{totalAmount.toFixed(2)}</span>
+        </div>
+        <button
+          type="button"
+          className="cart-footer-placeorder"
+          onClick={() => {
+            const event = new CustomEvent('triggerCheckout');
+            window.dispatchEvent(event);
+          }}
+        >
+          Place Order
+        </button>
+      </div>
+
+      {/* Address picker modal */}
+      {showAddressModal && (
+        <Suspense fallback={<div className="ca-modal-loading">Loading...</div>}>
+          <ChooseAddress
+            onAddressConfirm={(addr, onDone) => {
+              setSelectedAddress({ addr, onDone });
+              setShowAddressModal(false);
+            }}
+            onDone={() => setShowAddressModal(false)}
+          />
+        </Suspense>
+      )}
 
       {paymentSuccess && (
         <div className="pay-success-overlay">

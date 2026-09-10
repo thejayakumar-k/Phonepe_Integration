@@ -23,3 +23,5 @@ export { VendorRefunds } from './VendorRefunds';
 export { PayUCheckout } from './PayUCheckout';
 export { PayUCallback, PayUSuccess, PayUFailure } from './PayUCallback';
 export { CustomerBankMapping } from './CustomerBankMapping';
+export { AddressDetails } from './AddressDetails';
+export { ChooseAddress } from './ChooseAddress';
