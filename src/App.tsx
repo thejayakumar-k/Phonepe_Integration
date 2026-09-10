@@ -117,6 +117,9 @@ function App() {
           {/* Login */}
           <Route path="/login/:role" element={<Login />} />
 
+          {/* Web Login — Pricing Configuration UI */}
+          <Route path="/web-login" element={<PricingConfiguration />} />
+
           {/* Payment Page (PhonePe direct UPI) */}
           <Route path="/pay" element={<PaymentRoute />} />
 

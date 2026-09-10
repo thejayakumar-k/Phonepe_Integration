@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Customer {
@@ -72,7 +71,6 @@ const defaultPricing: PricingConfig = {
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export function PricingConfiguration() {
   const navigate = useNavigate();
-  useAuth();
 
   const [selectedCustomerId, _setSelectedCustomerId] = useState(demoCustomers[0].id);
   const [selectedProductId, setSelectedProductId] = useState(demoProducts[0].id);
@@ -116,12 +114,12 @@ export function PricingConfiguration() {
           <h2 className="pricing-page-title">Pricing Configuration</h2>
           <p className="pricing-page-subtitle">Set delivery prices for this customer based on location type.</p>
         </div>
-        <button className="pricing-back-btn" onClick={() => navigate('/vendor')}>
+        <button className="pricing-back-btn" onClick={() => navigate('/')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"/>
             <polyline points="12 19 5 12 12 5"/>
           </svg>
-          Back to Customer
+          Back to Home
         </button>
       </div>
 
@@ -463,7 +461,7 @@ export function PricingConfiguration() {
 
         {/* Action Buttons */}
         <div className="pricing-actions">
-          <button className="pricing-cancel-btn" onClick={() => navigate('/vendor')}>
+          <button className="pricing-cancel-btn" onClick={() => navigate('/')}>
             Cancel
           </button>
           <button className={`pricing-save-btn ${saved ? 'pricing-save-btn-success' : ''}`} onClick={handleSave}>
