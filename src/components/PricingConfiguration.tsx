@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCustomers } from '../hooks/useCustomers';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Customer {
@@ -38,12 +39,10 @@ interface PricingConfig {
   };
 }
 
-// ─── Demo Data ──────────────────────────────────────────────────────────────────
-const demoCustomers: Customer[] = [
-  { id: 'CUST001', name: 'ABC Enterprises', status: 'Active', locationType: 'Commercial', address: 'GST Road, Chennai – 600032', phone: '+91 98765 43210' },
-  { id: 'CUST002', name: 'Sunrise Apartments', status: 'Active', locationType: 'Residential', address: 'Anna Nagar, Chennai – 600040', phone: '+91 98765 11111' },
-  { id: 'CUST003', name: 'City Hostel Block B', status: 'Inactive', locationType: 'Other', address: 'T Nagar, Chennai – 600017', phone: '+91 98765 22222' },
-];
+// ─── Live Customer Data ─────────────────────────────────────────────────────────
+// Customers come from the shared `customers` table (same source as the
+// customer login) and update in real time — an account edited in the
+// database appears here instantly, with its address and phone.
 
 const demoProducts = [
   { id: 'P001', name: '20L CAN', description: 'Standard 20 litre drinking water can', status: 'Active' },
@@ -71,13 +70,36 @@ const defaultPricing: PricingConfig = {
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export function PricingConfiguration() {
   const navigate = useNavigate();
+  const { customers: liveCustomers, loading: customersLoading } = useCustomers();
 
-  const [selectedCustomerId, _setSelectedCustomerId] = useState(demoCustomers[0].id);
+  // Map live customers into the shape this page needs (with defaults).
+  const customers: Customer[] = liveCustomers.map((c) => ({
+    id: c.id,
+    name: c.name,
+    status: c.status ?? 'Active',
+    locationType: c.locationType ?? 'Residential',
+    address: c.address || '—',
+    phone: c.phone || '—',
+  }));
+
+  const [selectedCustomerId, _setSelectedCustomerId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState(demoProducts[0].id);
   const [pricing, setPricing] = useState<PricingConfig>(defaultPricing);
   const [saved, setSaved] = useState(false);
 
-  const customer = demoCustomers.find((c) => c.id === selectedCustomerId)!;
+  // Default the customer selection to the first live account once loaded.
+  useEffect(() => {
+    if (
+      !customersLoading &&
+      customers.length > 0 &&
+      !customers.some((c) => c.id === selectedCustomerId)
+    ) {
+      _setSelectedCustomerId(customers[0].id);
+    }
+  }, [customers, customersLoading, selectedCustomerId]);
+
+  const customer =
+    customers.find((c) => c.id === selectedCustomerId) ?? customers[0];
   const product = demoProducts.find((p) => p.id === selectedProductId)!;
 
   const updateFloor = (field: keyof FloorPricing, value: number | string) => {
@@ -123,7 +145,7 @@ export function PricingConfiguration() {
         </button>
       </div>
 
-      {/* Customer Info Bar */}
+      {/* Customer Info Bar — live from the customers table */}
       <div className="pricing-customer-bar">
         <div className="pricing-customer-left">
           <div className="pricing-cust-avatar">
@@ -134,29 +156,35 @@ export function PricingConfiguration() {
           </div>
           <div className="pricing-cust-info">
             <div className="pricing-cust-name-row">
-              <h3 className="pricing-cust-name">{customer.name}</h3>
-              <span className={`pricing-status-badge ${customer.status === 'Active' ? 'active' : 'inactive'}`}>
-                {customer.status}
-              </span>
+              <h3 className="pricing-cust-name">{customer ? customer.name : customersLoading ? 'Loading…' : 'No customer selected'}</h3>
+              {customer && (
+                <span className={`pricing-status-badge ${customer.status === 'Active' ? 'active' : 'inactive'}`}>
+                  {customer.status}
+                </span>
+              )}
             </div>
-            <p className="pricing-cust-loc">Location Type: <strong>{customer.locationType}</strong></p>
+            {customer && (
+              <p className="pricing-cust-loc">Location Type: <strong>{customer.locationType}</strong></p>
+            )}
           </div>
         </div>
-        <div className="pricing-customer-meta">
-          <div className="pricing-meta-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-            {customer.address}
+        {customer && (
+          <div className="pricing-customer-meta">
+            <div className="pricing-meta-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              {customer.address}
+            </div>
+            <div className="pricing-meta-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              {customer.phone}
+            </div>
           </div>
-          <div className="pricing-meta-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            {customer.phone}
-          </div>
-        </div>
+        )}
         <button className="pricing-view-details-btn">View Customer Details</button>
       </div>
 

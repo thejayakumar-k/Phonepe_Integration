@@ -5,7 +5,7 @@ export function CustomerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [cartCount, setCartCount] = useState(0);
-  const [selectedPayment, setSelectedPayment] = useState<string>('');
+  const [, setSelectedPayment] = useState<string>('');
 
   useEffect(() => {
     const updateCartCount = () => {

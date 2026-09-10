@@ -55,6 +55,14 @@ export interface Vendor {
 export interface Customer {
   id: string;
   name: string;
+  /** Saved login address (from the customers table). */
+  address?: string;
+  /** Contact number. */
+  phone?: string;
+  /** Account status: Active | Inactive. */
+  status?: 'Active' | 'Inactive';
+  /** Delivery location type: Residential | Commercial | Other. */
+  locationType?: 'Residential' | 'Commercial' | 'Other';
 }
 
 export interface Order {

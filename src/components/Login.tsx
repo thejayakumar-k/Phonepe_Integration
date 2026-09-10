@@ -1,16 +1,25 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { demoVendors, demoCustomers, demoDeliveryPartners } from '../data/demo';
+import { demoVendors, demoDeliveryPartners } from '../data/demo';
+import { useCustomers } from '../hooks/useCustomers';
 
 export function Login() {
   const { role } = useParams<{ role: string }>();
   const navigate = useNavigate();
   const { session, login } = useAuth();
+  const { customers, loading: customersLoading } = useCustomers();
 
   const [vendorId, setVendorId] = useState(demoVendors[0]?.id || 'VENDOR001');
-  const [customerId, setCustomerId] = useState(demoCustomers[0]?.id || 'CUST001');
+  const [customerId, setCustomerId] = useState('');
   const [partnerId, setPartnerId] = useState(demoDeliveryPartners[0]?.id || 'DP001');
+
+  // Default the customer select to the first live account once loaded.
+  useEffect(() => {
+    if (!customersLoading && customers.length > 0 && !customers.some((c) => c.id === customerId)) {
+      setCustomerId(customers[0].id);
+    }
+  }, [customers, customersLoading, customerId]);
 
   if (role !== 'vendor' && role !== 'customer' && role !== 'delivery') {
     return <Navigate to="/" replace />;
@@ -49,7 +58,11 @@ export function Login() {
       });
       navigate('/delivery', { replace: true });
     } else {
-      const customer = demoCustomers.find((c) => c.id === customerId) || demoCustomers[0];
+      // Only real accounts from the customers table can log in.
+      const customer = customers.find((c) => c.id === customerId);
+      if (!customer) {
+        return;
+      }
       login({
         role: 'customer',
         username: customer.name,
@@ -81,7 +94,7 @@ export function Login() {
   const getNote = () => {
     if (role === 'vendor') return 'Select your vendor store to manage orders & live delivery.';
     if (role === 'delivery') return 'Select your delivery partner profile to view assigned orders.';
-    return 'Select your account to continue shopping & tracking.';
+    return 'Select your account to continue shopping & tracking. Accounts load live from the server.';
   };
 
   return (
@@ -135,10 +148,15 @@ export function Login() {
                   className="form-input"
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
+                  disabled={customersLoading || customers.length === 0}
                 >
-                  {demoCustomers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.id})
+                  {customersLoading && <option value="">Loading accounts...</option>}
+                  {!customersLoading && customers.length === 0 && (
+                    <option value="">No accounts available</option>
+                  )}
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id} disabled={c.status === 'Inactive'}>
+                      {c.name} ({c.id}){c.status === 'Inactive' ? ' — inactive' : ''}
                     </option>
                   ))}
                 </select>
