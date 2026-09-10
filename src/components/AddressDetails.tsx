@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { AddressType } from '../types/customer';
+import {
+  getPricingConfig,
+  subscribeToPricingConfig,
+  getFloorOptions,
+  DEFAULT_PRICING,
+  type PricingConfig,
+  type FloorOption,
+} from '../utils/pricing';
 
 interface AddressDetailsProps {
   onSave: (
@@ -12,6 +20,7 @@ interface AddressDetailsProps {
       pincode: string;
       landmark: string;
       addressType: AddressType;
+      floor: string;
     },
     onDismiss: () => void,
   ) => void;
@@ -48,6 +57,25 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
   const [area, setArea] = useState('');
   const [landmark, setLandmark] = useState('');
   const [addressType, setAddressType] = useState<AddressType>('Apt');
+  // Floor list comes from the web-login pricing configuration — live.
+  const [pricing, setPricing] = useState<PricingConfig>(DEFAULT_PRICING);
+  const [floor, setFloor] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    getPricingConfig().then((config) => {
+      if (!cancelled) setPricing(config);
+    });
+    const unsubscribe = subscribeToPricingConfig((config) => {
+      if (!cancelled) setPricing(config);
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
+
+  const floorOptions: FloorOption[] = getFloorOptions(pricing);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
@@ -107,6 +135,7 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
         pincode,
         landmark,
         addressType,
+        floor,
       },
       onDismiss,
     );
@@ -174,6 +203,34 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
             </ul>
           )}
         </div>
+
+        {/* Floor — options & prices come from the web-login pricing config */}
+        {floorOptions.length > 0 && (
+          <div className="addr-field">
+            <label className="addr-label">Floor</label>
+            <div className="addr-input-wrap">
+              <span className="addr-input-icon">🪜</span>
+              <select
+                className="addr-input addr-input-search"
+                value={floor}
+                onChange={(e) => setFloor(e.target.value)}
+              >
+                <option value="">Select floor</option>
+                {floorOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label} — ₹{opt.price}
+                  </option>
+                ))}
+              </select>
+              <span className="addr-input-chevron">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </div>
+            <span className="addr-hint">Floor list & delivery price set in web login</span>
+          </div>
+        )}
 
         <div className="addr-field-row">
           <div className="addr-field">

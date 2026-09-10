@@ -485,7 +485,11 @@ export function PricingConfiguration() {
           <button className="pricing-cancel-btn" onClick={() => navigate('/')}>
             Cancel
           </button>
-          <button className={`pricing-save-btn ${saved ? 'pricing-save-btn-success' : ''}`} onClick={handleSave}>
+          <button
+            className={`pricing-save-btn ${saved ? 'pricing-save-btn-success' : ''}`}
+            onClick={handleSave}
+            disabled={savingConfig}
+          >
             {saved ? (
               <>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

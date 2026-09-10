@@ -12,6 +12,8 @@ export interface CustomerAddress {
   pincode: string;
   landmark: string;
   addressType: AddressType;
+  /** Delivery floor, chosen from the web-login floor list (e.g. "1st Floor"). */
+  floor?: string;
   lat?: number | null;
   lng?: number | null;
   createdAt: number;
