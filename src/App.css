@@ -10033,6 +10033,10 @@ path.ltm-animated-dash {
   top: 50%;
   transform: translateY(-50%);
   font-size: 14px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 

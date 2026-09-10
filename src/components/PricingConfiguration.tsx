@@ -381,37 +381,17 @@ export function PricingConfiguration() {
                       </td>
                     </tr>
                     <tr>
-                      <td colSpan={2}>
-                        <div className="pricing-more-floors">
-                          <span className="pricing-more-label">More than 3rd Floor</span>
-                          <div className="pricing-more-options">
-                            <label className="pricing-radio-inline">
-                              <input
-                                type="radio"
-                                name="moreThan3"
-                                checked={fp.moreThan3Mode === 'use3rdFloor'}
-                                onChange={() => updateFloor('moreThan3Mode', 'use3rdFloor')}
-                              />
-                              Use 3rd Floor Price (₹{fp.floor3})
-                            </label>
-                            <label className="pricing-radio-inline">
-                              <input
-                                type="radio"
-                                name="moreThan3"
-                                checked={fp.moreThan3Mode === 'custom'}
-                                onChange={() => updateFloor('moreThan3Mode', 'custom')}
-                              />
-                              Custom Price
-                              <input
-                                type="number"
-                                className="pricing-inline-input"
-                                value={fp.customPrice}
-                                onChange={(e) => updateFloor('customPrice', parseFloat(e.target.value) || 0)}
-                                disabled={fp.moreThan3Mode !== 'custom'}
-                              />
-                            </label>
-                          </div>
-                        </div>
+                      <td>More than 3rd Floor (Custom)</td>
+                      <td>
+                        <input
+                          type="number"
+                          className="pricing-floor-input"
+                          value={fp.customPrice}
+                          onChange={(e) => {
+                            updateFloor('customPrice', parseFloat(e.target.value) || 0);
+                            updateFloor('moreThan3Mode', 'custom');
+                          }}
+                        />
                       </td>
                     </tr>
                   </tbody>

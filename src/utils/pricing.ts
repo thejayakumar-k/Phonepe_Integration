@@ -154,11 +154,9 @@ export interface FloorOption {
   price: number;
 }
 
-/** Floor list + price for each, straight from the web-login configuration. */
 export function getFloorOptions(config: PricingConfig): FloorOption[] {
   const fp = config.houseApartment.floorPricing;
-  const moreThan3Price =
-    fp.moreThan3Mode === 'use3rdFloor' ? fp.floor3 : fp.customPrice;
+  const moreThan3Price = fp.customPrice;
   return [
     { value: 'Ground Floor', label: 'Ground Floor', price: fp.groundFloor },
     { value: '1st Floor', label: '1st Floor', price: fp.floor1 },
