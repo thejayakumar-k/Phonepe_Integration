@@ -23,6 +23,24 @@ interface Customer {
   phone: string;
 }
 
+const defaultPricing: PricingConfig = {
+  houseApartment: {
+    enabled: true,
+    useFloorWise: true,
+    floorPricing: { groundFloor: 20, floor1: 25, floor2: 30, floor3: 35, moreThan3Mode: 'custom', customPrice: 40 },
+  },
+  commercial: {
+    enabled: true,
+    useCustomerSpecific: true,
+    price: 30,
+  },
+  other: {
+    enabled: true,
+    useDefaultPrice: true,
+    defaultPrice: 20,
+  },
+};
+
 type FloorPricing = SharedFloorPricing;
 type PricingConfig = SharedPricingConfig;
 
@@ -30,7 +48,7 @@ type PricingConfig = SharedPricingConfig;
 export function PricingConfiguration() {
   const navigate = useNavigate();
   const { customers: liveCustomers, loading: customersLoading } = useCustomers();
-  const { products: liveProducts } = useProducts();
+  const { products: liveProducts, loading: productsLoading } = useProducts();
 
   // Map live customers into the shape this page needs (with defaults).
   const customers: Customer[] = liveCustomers.map((c) => ({
@@ -44,7 +62,7 @@ export function PricingConfiguration() {
 
   const [selectedCustomerId, _setSelectedCustomerId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | number>('');
-  const [pricing, setPricing] = useState<PricingConfig>(DEFAULT_PRICING);
+  const [pricing, setPricing] = useState<PricingConfig>(defaultPricing);
   const [saved, setSaved] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -53,10 +71,26 @@ export function PricingConfiguration() {
   useEffect(() => {
     let cancelled = false;
     getPricingConfig().then((config) => {
-      if (!cancelled) setPricing(config);
+      if (!cancelled) {
+        setPricing({
+          ...config,
+          other: {
+            ...config.other,
+            useDefaultPrice: true,
+          },
+        });
+      }
     });
     const unsubscribe = subscribeToPricingConfig((config) => {
-      if (!cancelled) setPricing(config);
+      if (!cancelled) {
+        setPricing({
+          ...config,
+          other: {
+            ...config.other,
+            useDefaultPrice: true,
+          },
+        });
+      }
     });
     return () => {
       cancelled = true;
@@ -86,6 +120,20 @@ export function PricingConfiguration() {
     customers.find((c) => c.id === selectedCustomerId) ?? customers[0];
   const product =
     liveProducts.find((p) => String(p.id) === String(selectedProductId)) ?? liveProducts[0] ?? DEFAULT_PRODUCTS[0];
+
+  // Sync product price into defaultPrice when product changes
+  useEffect(() => {
+    if (product && product.price) {
+      setPricing((prev) => ({
+        ...prev,
+        other: {
+          ...prev.other,
+          useDefaultPrice: true,
+          defaultPrice: prev.other.defaultPrice || product.price,
+        },
+      }));
+    }
+  }, [product?.id, product?.price]);
 
   const updateFloor = (field: keyof FloorPricing, value: number | string) => {
     setPricing((prev) => ({
@@ -119,7 +167,8 @@ export function PricingConfiguration() {
   const commercialSummary = pricing.commercial.useCustomerSpecific
     ? `₹${pricing.commercial.price} (Single price)`
     : 'Default price';
-  const otherSummary = `₹${pricing.other.defaultPrice} (Default price)`;
+  const otherPrice = pricing.other.defaultPrice || product.price;
+  const otherSummary = `₹${otherPrice} (Default price)`;
 
   return (
     <div className="pricing-page">
@@ -198,7 +247,21 @@ export function PricingConfiguration() {
                 <select
                   className="pricing-select"
                   value={String(selectedProductId)}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    setSelectedProductId(newId);
+                    const newProd = liveProducts.find((p) => String(p.id) === String(newId));
+                    if (newProd) {
+                      setPricing((prev) => ({
+                        ...prev,
+                        other: {
+                          ...prev.other,
+                          useDefaultPrice: true,
+                          defaultPrice: newProd.price,
+                        },
+                      }));
+                    }
+                  }}
                 >
                   {liveProducts.map((p) => (
                     <option key={p.id} value={String(p.id)}>
@@ -266,7 +329,7 @@ export function PricingConfiguration() {
               </label>
 
               {pricing.houseApartment.useFloorWise && (
-                <table className="pricing-floor-table">
+                <table className="pricing-table">
                   <thead>
                     <tr>
                       <th>Floor</th>
@@ -274,56 +337,81 @@ export function PricingConfiguration() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { label: 'Ground Floor', field: 'groundFloor' as keyof FloorPricing },
-                      { label: '1st Floor', field: 'floor1' as keyof FloorPricing },
-                      { label: '2nd Floor', field: 'floor2' as keyof FloorPricing },
-                      { label: '3rd Floor', field: 'floor3' as keyof FloorPricing },
-                    ].map(({ label, field }) => (
-                      <tr key={field}>
-                        <td>{label}</td>
-                        <td>
-                          <input
-                            type="number"
-                            className="pricing-floor-input"
-                            value={fp[field] as number}
-                            onChange={(e) => updateFloor(field, parseFloat(e.target.value) || 0)}
-                          />
-                        </td>
-                      </tr>
-                    ))}
                     <tr>
-                      <td>More than 3rd Floor</td>
+                      <td>Ground Floor</td>
                       <td>
-                        <div className="pricing-more-floor">
-                          <label className="pricing-radio-label pricing-radio-sm">
-                            <input
-                              type="radio"
-                              name="more3"
-                              checked={fp.moreThan3Mode === 'use3rdFloor'}
-                              onChange={() => updateFloor('moreThan3Mode', 'use3rdFloor')}
-                              className="pricing-radio"
-                            />
-                            Use 3rd Floor Price (₹{fp.floor3})
-                          </label>
-                          <label className="pricing-radio-label pricing-radio-sm">
-                            <input
-                              type="radio"
-                              name="more3"
-                              checked={fp.moreThan3Mode === 'custom'}
-                              onChange={() => updateFloor('moreThan3Mode', 'custom')}
-                              className="pricing-radio"
-                            />
-                            Custom Price
-                            {fp.moreThan3Mode === 'custom' && (
+                        <input
+                          type="number"
+                          className="pricing-floor-input"
+                          value={fp.groundFloor}
+                          onChange={(e) => updateFloor('groundFloor', parseFloat(e.target.value) || 0)}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>1st Floor</td>
+                      <td>
+                        <input
+                          type="number"
+                          className="pricing-floor-input"
+                          value={fp.floor1}
+                          onChange={(e) => updateFloor('floor1', parseFloat(e.target.value) || 0)}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>2nd Floor</td>
+                      <td>
+                        <input
+                          type="number"
+                          className="pricing-floor-input"
+                          value={fp.floor2}
+                          onChange={(e) => updateFloor('floor2', parseFloat(e.target.value) || 0)}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>3rd Floor</td>
+                      <td>
+                        <input
+                          type="number"
+                          className="pricing-floor-input"
+                          value={fp.floor3}
+                          onChange={(e) => updateFloor('floor3', parseFloat(e.target.value) || 0)}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan={2}>
+                        <div className="pricing-more-floors">
+                          <span className="pricing-more-label">More than 3rd Floor</span>
+                          <div className="pricing-more-options">
+                            <label className="pricing-radio-inline">
+                              <input
+                                type="radio"
+                                name="moreThan3"
+                                checked={fp.moreThan3Mode === 'use3rdFloor'}
+                                onChange={() => updateFloor('moreThan3Mode', 'use3rdFloor')}
+                              />
+                              Use 3rd Floor Price (₹{fp.floor3})
+                            </label>
+                            <label className="pricing-radio-inline">
+                              <input
+                                type="radio"
+                                name="moreThan3"
+                                checked={fp.moreThan3Mode === 'custom'}
+                                onChange={() => updateFloor('moreThan3Mode', 'custom')}
+                              />
+                              Custom Price
                               <input
                                 type="number"
-                                className="pricing-floor-input pricing-inline-input"
+                                className="pricing-inline-input"
                                 value={fp.customPrice}
                                 onChange={(e) => updateFloor('customPrice', parseFloat(e.target.value) || 0)}
+                                disabled={fp.moreThan3Mode !== 'custom'}
                               />
-                            )}
-                          </label>
+                            </label>
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -404,16 +492,19 @@ export function PricingConfiguration() {
                   onChange={() => setPricing(p => ({ ...p, other: { ...p.other, useDefaultPrice: true } }))}
                   className="pricing-radio"
                 />
-                Use default price
+                Use default price (₹{product.price.toFixed(2)})
               </label>
 
               <div className="pricing-field-group" style={{ marginTop: '1rem' }}>
-                <label className="pricing-label">Default Price (₹)</label>
+                <label className="pricing-label">
+                  Default Price (₹) <span className="pricing-required">*</span>
+                </label>
                 <input
                   type="number"
-                  className="pricing-text-input pricing-text-input-muted"
+                  className="pricing-text-input"
                   value={pricing.other.defaultPrice}
-                  readOnly
+                  onChange={(e) => setPricing(p => ({ ...p, other: { ...p.other, defaultPrice: parseFloat(e.target.value) || 0, useDefaultPrice: true } }))}
+                  placeholder={String(product.price)}
                 />
               </div>
 
@@ -423,7 +514,7 @@ export function PricingConfiguration() {
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                This price will be used if the customer's location type is Other.
+                This price (₹{pricing.other.defaultPrice}) will be used if the customer's location type is Other.
               </div>
             </div>
           </div>
