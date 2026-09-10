@@ -16,5 +16,3 @@ export interface CustomerAddress {
   lng?: number | null;
   createdAt: number;
 }
-
-export type OrderType = 'Standard' | 'Recurring';
