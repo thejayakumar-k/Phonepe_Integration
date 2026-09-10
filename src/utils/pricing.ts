@@ -161,13 +161,12 @@ export interface FloorOption {
 
 export function getFloorOptions(config: PricingConfig): FloorOption[] {
   const fp = config.houseApartment.floorPricing;
-  const fmt = (val: number) => (val > 0 ? ` (+₹${val})` : ' (+₹0)');
   return [
-    { value: 'Ground Floor', label: `Ground Floor${fmt(fp.groundFloor)}`, price: fp.groundFloor },
-    { value: '1st Floor', label: `1st Floor${fmt(fp.floor1)}`, price: fp.floor1 },
-    { value: '2nd Floor', label: `2nd Floor${fmt(fp.floor2)}`, price: fp.floor2 },
-    { value: '3rd Floor', label: `3rd Floor${fmt(fp.floor3)}`, price: fp.floor3 },
-    { value: 'Custom', label: `Custom${fmt(fp.customPrice)}`, price: fp.customPrice },
+    { value: 'Ground Floor', label: 'Ground Floor', price: fp.groundFloor },
+    { value: '1st Floor', label: '1st Floor', price: fp.floor1 },
+    { value: '2nd Floor', label: '2nd Floor', price: fp.floor2 },
+    { value: '3rd Floor', label: '3rd Floor', price: fp.floor3 },
+    { value: 'Custom', label: 'Custom', price: fp.customPrice },
   ];
 }
 

@@ -118,8 +118,8 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
 
   const handleSelectSuggestion = (suggestion: string) => {
     setApartment(suggestion);
+    setApartmentSuggestions([]);
     setShowSuggestions(false);
-    inputRef.current?.focus();
   };
 
   const isValid =
@@ -198,7 +198,7 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
               className="addr-input addr-input-search"
               value={apartment}
               onChange={(e) => handleApartmentChange(e.target.value)}
-              onFocus={() => apartment && setShowSuggestions(true)}
+              onFocus={() => apartment.trim() && apartmentSuggestions.length > 0 && setShowSuggestions(true)}
               placeholder="Type to search apartments..."
             />
             <span className="addr-input-chevron">
