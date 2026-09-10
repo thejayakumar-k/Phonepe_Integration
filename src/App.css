@@ -4216,14 +4216,15 @@ body {
 /* Revenue Hero */
 .vh-hero {
   margin: 0 12px;
-  background: linear-gradient(135deg, #2563eb, #6366f1);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 18px;
-  color: white;
+  color: #111827;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
 }
 
 .vh-hero-top {
@@ -4234,14 +4235,16 @@ body {
 
 .vh-hero-label {
   font-size: 13px;
-  font-weight: 500;
-  opacity: 0.9;
+  font-weight: 600;
+  color: #4b5563;
 }
 
 .vh-hero-badge {
   font-size: 11px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
   padding: 4px 10px;
   border-radius: 12px;
 }
@@ -4249,12 +4252,13 @@ body {
 .vh-hero-amount {
   font-size: 28px;
   font-weight: 800;
+  color: #111827;
   line-height: 1.2;
 }
 
 .vh-hero-sub {
   font-size: 12px;
-  opacity: 0.85;
+  color: #6b7280;
 }
 
 /* Stats */
@@ -4266,7 +4270,7 @@ body {
 
 .vh-stat {
   flex: 1;
-  background: white;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
   padding: 14px;
@@ -4276,6 +4280,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .vh-stat:hover {
@@ -4327,42 +4332,71 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
+  background: #ffffff;
+  border: 1px solid #10b981;
   border-radius: 12px;
   padding: 12px 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 
 .vh-pending-banner:hover {
-  border-color: #f59e0b;
-  background: #fef3c7;
+  border-color: #059669;
+  background: #f0fdf4;
 }
 
 .vhp-icon {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #fcd34d;
-  color: #92400e;
+  background: #ecfdf5;
+  color: #059669;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  font-size: 1.2rem;
 }
 
 .vhp-text {
   flex: 1;
   font-size: 13px;
   font-weight: 600;
-  color: #92400e;
+  color: #065f46;
 }
 
 .vhp-arrow {
-  color: #92400e;
-  font-size: 16px;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 700;
+  background: #ecfdf5;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.vh-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  color: #111827;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.vh-quick-btn:hover {
+  border-color: #2563eb;
+  background: #f8fafc;
+  transform: translateY(-1px);
 }
 
 /* Recent payments section */

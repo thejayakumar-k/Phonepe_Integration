@@ -463,20 +463,9 @@ export function PricingConfiguration() {
                 </div>
               </div>
 
-              <label className="pricing-radio-label">
-                <input
-                  type="radio"
-                  name="other-mode"
-                  checked={pricing.other.useDefaultPrice}
-                  onChange={() => setPricing(p => ({ ...p, other: { ...p.other, useDefaultPrice: true } }))}
-                  className="pricing-radio"
-                />
-                Use default price (₹{product.price.toFixed(2)})
-              </label>
-
-              <div className="pricing-field-group" style={{ marginTop: '1rem' }}>
+              <div className="pricing-field-group">
                 <label className="pricing-label">
-                  Default Price (₹) <span className="pricing-required">*</span>
+                  Other Price (₹) <span className="pricing-required">*</span>
                 </label>
                 <input
                   type="number"

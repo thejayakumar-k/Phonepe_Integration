@@ -90,11 +90,10 @@ export function VendorHome() {
       {(readyForDeliveryCount > 0 || activeDeliveryCount > 0) && (
         <button
           className="vh-pending-banner"
-          style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', marginBottom: '1rem' }}
           onClick={() => navigate('/vendor/orders')}
         >
-          <span className="vhp-icon" style={{ fontSize: '1.25rem' }}>🛵</span>
-          <span className="vhp-text" style={{ fontWeight: 600 }}>
+          <span className="vhp-icon">🛵</span>
+          <span className="vhp-text">
             {activeDeliveryCount > 0
               ? `${activeDeliveryCount} delivery currently active in progress`
               : `${readyForDeliveryCount} order${readyForDeliveryCount > 1 ? 's' : ''} ready to deliver`}
@@ -135,44 +134,18 @@ export function VendorHome() {
       </div>
 
       {/* Quick Action Shortcuts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', margin: '0.75rem 12px 1.5rem 12px' }}>
         <button
+          className="vh-quick-btn"
           onClick={() => navigate('/vendor/orders')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            padding: '0.85rem 1rem',
-            background: 'var(--card-bg, #1a1e29)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '12px',
-            color: '#fff',
-            cursor: 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            textAlign: 'left'
-          }}
         >
           <span style={{ fontSize: '1.25rem' }}>🛵</span>
           <span>Live Delivery & Orders</span>
         </button>
 
         <button
+          className="vh-quick-btn"
           onClick={() => navigate('/vendor/payments')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            padding: '0.85rem 1rem',
-            background: 'var(--card-bg, #1a1e29)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '12px',
-            color: '#fff',
-            cursor: 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            textAlign: 'left'
-          }}
         >
           <span style={{ fontSize: '1.25rem' }}>💳</span>
           <span>Payment History</span>
