@@ -58,7 +58,7 @@ export function CustomerCart() {
     const saved = localStorage.getItem('customer_cart');
     return saved ? (JSON.parse(saved) as {id: number; qty: number}[]) : [];
   });
-  const [selectedPayment, setSelectedPayment] = useState<CartPaymentMethod>('upi');
+  const [selectedPayment, setSelectedPayment] = useState<CartPaymentMethod>('cod');
   const [paymentSuccess, setPaymentSuccess] = useState<{ amount: number; balance: number } | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<{
     addr: CustomerAddress;
@@ -111,48 +111,45 @@ export function CustomerCart() {
       : undefined,
   });
 
-  useEffect(() => {
-    // Listen for checkout trigger from navbar
-    const handleCheckout = async () => {
-      if (selectedPayment === 'wallet') {
-        if (walletBalance < totalAmount) {
-          alert('Insufficient wallet balance!');
-          return;
-        }
-        const newBalance = session?.customerId
-          ? await subtractMargin(session.customerId, totalAmount)
-          : walletBalance;
-        await saveItemOrder(buildItemOrder(await generateItemOrderId(), 'PAID'));
-        localStorage.removeItem('customer_cart');
-        setWalletBalance(newBalance);
-        setPaymentSuccess({ amount: totalAmount, balance: newBalance });
-        if (redirectTimer.current) clearTimeout(redirectTimer.current);
-        redirectTimer.current = setTimeout(() => {
-          navigate('/customer/orders');
-        }, 1800);
-      } else if (selectedPayment === 'qr') {
-        if (session?.customerId) {
-          await subtractMargin(session.customerId, totalAmount);
-        }
-        const itemOrder = buildItemOrder(await generateItemOrderId(), 'PENDING', 'PHONEPE');
-        await saveItemOrder(itemOrder);
-        // encodeURIComponent: order ids now start with "#", which would
-        // otherwise be read as a URL fragment and lost.
-        navigate(`/pay?mode=addfunds&amount=${totalAmount}&io=${encodeURIComponent(itemOrder.id)}`);
-      } else {
-        if (session?.customerId) {
-          await subtractMargin(session.customerId, totalAmount);
-        }
-        await saveItemOrder(buildItemOrder(await generateItemOrderId(), 'NOT_PAID', 'COD'));
-        alert('Order placed with Cash on Delivery!');
-        localStorage.removeItem('customer_cart');
-        navigate('/customer/orders');
+  const handlePlaceOrder = async () => {
+    if (cart.length === 0) return;
+    if (selectedPayment === 'wallet') {
+      if (walletBalance < totalAmount) {
+        alert('Insufficient wallet balance! Please add funds or choose another payment method.');
+        return;
       }
-    };
-
-    window.addEventListener('triggerCheckout', handleCheckout);
-    return () => window.removeEventListener('triggerCheckout', handleCheckout);
-  }, [selectedPayment, walletBalance, totalAmount, cart, navigate, session?.customerId, session?.customerName, selectedAddress]);
+      const newBalance = session?.customerId
+        ? await subtractMargin(session.customerId, totalAmount)
+        : walletBalance;
+      await saveItemOrder(buildItemOrder(await generateItemOrderId(), 'PAID'));
+      localStorage.removeItem('customer_cart');
+      setCart([]);
+      setWalletBalance(newBalance);
+      setPaymentSuccess({ amount: totalAmount, balance: newBalance });
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+      redirectTimer.current = setTimeout(() => {
+        navigate('/customer/orders');
+      }, 1800);
+    } else if (selectedPayment === 'qr') {
+      if (session?.customerId) {
+        await subtractMargin(session.customerId, totalAmount);
+      }
+      const itemOrder = buildItemOrder(await generateItemOrderId(), 'PENDING', 'PHONEPE');
+      await saveItemOrder(itemOrder);
+      // encodeURIComponent: order ids now start with "#", which would
+      // otherwise be read as a URL fragment and lost.
+      navigate(`/pay?mode=addfunds&amount=${totalAmount}&io=${encodeURIComponent(itemOrder.id)}`);
+    } else {
+      // COD — default
+      if (session?.customerId) {
+        await subtractMargin(session.customerId, totalAmount);
+      }
+      await saveItemOrder(buildItemOrder(await generateItemOrderId(), 'NOT_PAID', 'COD'));
+      localStorage.removeItem('customer_cart');
+      setCart([]);
+      navigate('/customer/orders');
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -447,10 +444,7 @@ export function CustomerCart() {
           <button
             type="button"
             className="place-order-btn"
-            onClick={() => {
-              const event = new CustomEvent('triggerCheckout');
-              window.dispatchEvent(event);
-            }}
+            onClick={handlePlaceOrder}
           >
             Place Order
           </button>
