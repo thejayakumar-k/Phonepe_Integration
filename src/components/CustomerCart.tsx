@@ -4,45 +4,18 @@ import { useAuth } from '../auth/AuthContext';
 import { getMargin, subtractMargin, saveItemOrder, generateItemOrderId } from '../utils/storage';
 import type { ItemOrder, ItemOrderStatus, PaymentMethod } from '../types/payment';
 import type { CustomerAddress } from '../types/customer';
-import { supabase } from '../lib/supabase';
 import { getStoreInfo, type StoreInfo } from '../utils/store';
+import { useProducts } from '../hooks/useProducts';
 
 const ChooseAddress = lazy(() => import('./ChooseAddress').then(m => ({ default: m.ChooseAddress })));
-
-type CatalogProduct = { id: number; name: string; price: number; unit: string; image: string };
-
-/** Seed catalog, used until the products table is reachable. */
-const DEFAULT_PRODUCTS: CatalogProduct[] = [
-  { id: 1, name: 'Aquafina', price: 20.00, unit: 'PACK (LITER)', image: '💧' },
-  { id: 2, name: 'Bisleri', price: 40.00, unit: 'CAN (LITER)', image: '🧊' },
-  { id: 3, name: 'Kinley', price: 25.00, unit: 'PACK (LITER)', image: '💧' },
-];
 
 type CartPaymentMethod = 'upi' | 'qr' | 'wallet' | 'cod';
 
 export function CustomerCart() {
   const navigate = useNavigate();
   const { session } = useAuth();
-  const [products, setProducts] = useState<CatalogProduct[]>(DEFAULT_PRODUCTS);
+  const { products } = useProducts();
   const [store, setStore] = useState<StoreInfo>({ vendorId: 'VENDOR001', vendorName: 'OORUNII Store' });
-
-  // Load the live catalog from the products table so a product added in
-  // the database shows up here automatically — no code changes needed.
-  useEffect(() => {
-    let cancelled = false;
-    supabase
-      .from('products')
-      .select('id, name, price, unit, image')
-      .order('id')
-      .then(({ data, error }) => {
-        if (!error && data && data.length > 0 && !cancelled) {
-          setProducts(data as CatalogProduct[]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Store identity from the store_settings table (fallback to defaults).
   useEffect(() => {
@@ -67,7 +40,7 @@ export function CustomerCart() {
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showAddressModal, setShowAddressModal] = useState(false);
 
-  const getProduct = (id: number) => products.find((p) => p.id === id);
+  const getProduct = (id: number | string) => products.find((p) => String(p.id) === String(id));
 
   const totalAmount = cart.reduce((sum, item) => {
     const product = getProduct(item.id);

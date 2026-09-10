@@ -158,7 +158,6 @@ function App() {
             <Route path="orders" element={<VendorOrders />} />
             <Route path="payments" element={<VendorPayments />} />
             <Route path="settings" element={<VendorSettings />} />
-            <Route path="pricing" element={<PricingConfiguration />} />
             <Route
               path="refunds"
               element={

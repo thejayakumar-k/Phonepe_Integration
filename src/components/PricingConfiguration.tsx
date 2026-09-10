@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomers } from '../hooks/useCustomers';
+import { useProducts, DEFAULT_PRODUCTS } from '../hooks/useProducts';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Customer {
@@ -39,16 +40,6 @@ interface PricingConfig {
   };
 }
 
-// ─── Live Customer Data ─────────────────────────────────────────────────────────
-// Customers come from the shared `customers` table (same source as the
-// customer login) and update in real time — an account edited in the
-// database appears here instantly, with its address and phone.
-
-const demoProducts = [
-  { id: 'P001', name: '20L CAN', description: 'Standard 20 litre drinking water can', status: 'Active' },
-  { id: 'P002', name: '10L CAN', description: 'Compact 10 litre water can', status: 'Active' },
-];
-
 const defaultPricing: PricingConfig = {
   houseApartment: {
     enabled: true,
@@ -71,6 +62,7 @@ const defaultPricing: PricingConfig = {
 export function PricingConfiguration() {
   const navigate = useNavigate();
   const { customers: liveCustomers, loading: customersLoading } = useCustomers();
+  const { products: liveProducts, loading: productsLoading } = useProducts();
 
   // Map live customers into the shape this page needs (with defaults).
   const customers: Customer[] = liveCustomers.map((c) => ({
@@ -83,7 +75,7 @@ export function PricingConfiguration() {
   }));
 
   const [selectedCustomerId, _setSelectedCustomerId] = useState('');
-  const [selectedProductId, setSelectedProductId] = useState(demoProducts[0].id);
+  const [selectedProductId, setSelectedProductId] = useState<string | number>('');
   const [pricing, setPricing] = useState<PricingConfig>(defaultPricing);
   const [saved, setSaved] = useState(false);
 
@@ -98,9 +90,17 @@ export function PricingConfiguration() {
     }
   }, [customers, customersLoading, selectedCustomerId]);
 
+  // Default product selection once products are loaded.
+  useEffect(() => {
+    if (liveProducts.length > 0 && !liveProducts.some((p) => String(p.id) === String(selectedProductId))) {
+      setSelectedProductId(liveProducts[0].id);
+    }
+  }, [liveProducts, selectedProductId]);
+
   const customer =
     customers.find((c) => c.id === selectedCustomerId) ?? customers[0];
-  const product = demoProducts.find((p) => p.id === selectedProductId)!;
+  const product =
+    liveProducts.find((p) => String(p.id) === String(selectedProductId)) ?? liveProducts[0] ?? DEFAULT_PRODUCTS[0];
 
   const updateFloor = (field: keyof FloorPricing, value: number | string) => {
     setPricing((prev) => ({
@@ -204,11 +204,13 @@ export function PricingConfiguration() {
               <div className="pricing-select-wrapper">
                 <select
                   className="pricing-select"
-                  value={selectedProductId}
+                  value={String(selectedProductId)}
                   onChange={(e) => setSelectedProductId(e.target.value)}
                 >
-                  {demoProducts.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
+                  {liveProducts.map((p) => (
+                    <option key={p.id} value={String(p.id)}>
+                      {p.name} ({p.unit} - ₹{p.price.toFixed(2)})
+                    </option>
                   ))}
                 </select>
                 <div className="pricing-select-caret">
@@ -220,19 +222,17 @@ export function PricingConfiguration() {
             </div>
 
             <div className="pricing-product-preview">
-              <div className="pricing-product-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 3h18l-2 13H5L3 3z"/>
-                  <path d="M8 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                  <path d="M16 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                </svg>
+              <div className="pricing-product-icon-wrap" style={{ fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {product.image || '💧'}
               </div>
               <div className="pricing-product-preview-info">
                 <p className="pricing-product-preview-name">{product.name}</p>
-                <p className="pricing-product-preview-desc">{product.description}</p>
+                <p className="pricing-product-preview-desc">
+                  {product.description || `${product.unit} · Base Price: ₹${product.price.toFixed(2)}`}
+                </p>
               </div>
-              <span className={`pricing-status-badge ${product.status === 'Active' ? 'active' : 'inactive'}`}>
-                {product.status}
+              <span className={`pricing-status-badge ${(product.status || 'Active') === 'Active' ? 'active' : 'inactive'}`}>
+                {product.status || 'Active'}
               </span>
             </div>
           </div>
