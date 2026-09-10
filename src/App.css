@@ -2356,7 +2356,7 @@ body {
 }
 
 .btn-view-cart {
-  padding: 10px 24px;
+  padding: 10px 22px;
   background: #2563eb;
   color: white;
   border: none;
@@ -2365,6 +2365,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-right: 54px;
 }
 
 .btn-view-cart:hover {

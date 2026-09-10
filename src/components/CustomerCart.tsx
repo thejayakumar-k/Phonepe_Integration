@@ -68,12 +68,19 @@ export function CustomerCart() {
     return calculateUnitPrice(basePrice, selectedAddress?.addr, pricingConfig);
   };
 
-  const totalAmount = cart.reduce((sum, item) => {
+  const baseSubtotal = cart.reduce((sum, item) => {
+    const product = getProduct(item.id);
+    return sum + (product ? product.price * item.qty : 0);
+  }, 0);
+
+  const totalFloorCharges = cart.reduce((sum, item) => {
     const product = getProduct(item.id);
     if (!product) return sum;
-    const { unitPrice } = getItemPriceInfo(product.price);
-    return sum + unitPrice * item.qty;
+    const { floorCharge } = getItemPriceInfo(product.price);
+    return sum + floorCharge * item.qty;
   }, 0);
+
+  const totalAmount = baseSubtotal + totalFloorCharges;
 
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -223,21 +230,13 @@ export function CustomerCart() {
         {cart.map((item) => {
           const product = getProduct(item.id);
           if (!product) return null;
-          const { unitPrice, floorCharge } = getItemPriceInfo(product.price);
           return (
             <div key={item.id} className="cart-item">
               <div className="cart-item-image">{product.image}</div>
               <div className="cart-item-info">
                 <h3 className="cart-item-name">{product.name}</h3>
                 <p className="cart-item-unit">{product.unit}</p>
-                <p className="cart-item-price">
-                  ₹{unitPrice.toFixed(2)}
-                  {floorCharge > 0 && (
-                    <span style={{ fontSize: '11px', color: '#6b7280', display: 'block', fontWeight: 400 }}>
-                      (Base ₹{product.price.toFixed(2)} + ₹{floorCharge.toFixed(2)} floor)
-                    </span>
-                  )}
-                </p>
+                <p className="cart-item-price">₹{product.price.toFixed(2)}</p>
               </div>
               <div className="cart-item-actions">
                 <div className="quantity-selector">
@@ -245,7 +244,7 @@ export function CustomerCart() {
                   <span className="qty-value">{item.qty}</span>
                   <button className="qty-btn plus" onClick={() => handleAdd(item.id)}>+</button>
                 </div>
-                <p className="cart-item-total">₹{(unitPrice * item.qty).toFixed(2)}</p>
+                <p className="cart-item-total">₹{(product.price * item.qty).toFixed(2)}</p>
               </div>
             </div>
           );
@@ -301,7 +300,7 @@ export function CustomerCart() {
               </svg>
             </span>
             <span className="bill-label">Subtotal</span>
-            <span className="bill-value">₹{totalAmount.toFixed(2)}</span>
+            <span className="bill-value">₹{baseSubtotal.toFixed(2)}</span>
           </div>
           <div className="bill-row">
             <span className="bill-icon">
@@ -314,6 +313,20 @@ export function CustomerCart() {
             </span>
             <span className="bill-label">Delivery Charges</span>
             <span className="bill-value">₹0</span>
+          </div>
+          <div className="bill-row">
+            <span className="bill-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                <polyline points="2 17 12 22 22 17"/>
+                <polyline points="2 12 12 17 22 12"/>
+              </svg>
+            </span>
+            <span className="bill-label">
+              Floor Charges
+              {selectedAddress?.addr.floor ? ` (${selectedAddress.addr.floor})` : ''}
+            </span>
+            <span className="bill-value">₹{totalFloorCharges.toFixed(2)}</span>
           </div>
           <div className="bill-row">
             <span className="bill-icon">
