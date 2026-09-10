@@ -22,7 +22,6 @@ import { CustomerSettings } from './components/CustomerSettings';
 import { ManageUpi } from './components/ManageUpi';
 import { CustomerBankMapping } from './components/CustomerBankMapping';
 import { TrackingPage } from './components/TrackingPage';
-import { ChatWidget } from './components/ChatWidget';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { getAddFundsOrder, getDemoOrder, sessionMinutes } from './data/demo';
@@ -204,7 +203,6 @@ function App() {
             <Route path="bank-mapping" element={<CustomerBankMapping />} />
           </Route>
         </Routes>
-        <ChatWidget />
       </BrowserRouter>
     </AuthProvider>
   );

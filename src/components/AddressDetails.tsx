@@ -218,7 +218,7 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
                 <option value="">Select floor</option>
                 {floorOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {opt.label} — ₹{opt.price}
+                    {opt.label}
                   </option>
                 ))}
               </select>

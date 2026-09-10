@@ -164,13 +164,6 @@ export function getFloorOptions(config: PricingConfig): FloorOption[] {
     { value: '1st Floor', label: '1st Floor', price: fp.floor1 },
     { value: '2nd Floor', label: '2nd Floor', price: fp.floor2 },
     { value: '3rd Floor', label: '3rd Floor', price: fp.floor3 },
-    {
-      value: 'More than 3rd Floor',
-      label:
-        fp.moreThan3Mode === 'custom'
-          ? `More than 3rd Floor (custom ₹${fp.customPrice})`
-          : 'More than 3rd Floor',
-      price: moreThan3Price,
-    },
+    { value: 'Custom', label: 'Custom', price: moreThan3Price },
   ];
 }
