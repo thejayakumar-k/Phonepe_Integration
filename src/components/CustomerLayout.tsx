@@ -107,20 +107,18 @@ export function CustomerLayout() {
         <Outlet key={location.key} />
       </main>
       
-      {!isOnCart || cartEmpty ? (
-        <nav className="bottom-nav">
-          {navItems.map((item) => (
-            <button
-              key={item.path}
-              className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      ) : null}
+      <nav className="bottom-nav">
+        {navItems.map((item) => (
+          <button
+            key={item.path}
+            className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
+            onClick={() => navigate(item.path)}
+          >
+            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-label">{item.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

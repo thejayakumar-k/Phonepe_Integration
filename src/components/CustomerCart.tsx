@@ -178,7 +178,7 @@ export function CustomerCart() {
   }
 
   return (
-    <div className="customer-cart" style={{ paddingBottom: '60px' }}>
+    <div className="customer-cart">
       <div className="cart-header">
         <div className="cart-header-left">
           <button className="back-btn" onClick={() => navigate('/customer')}>
@@ -358,24 +358,21 @@ export function CustomerCart() {
             </div>
             <span className="payment-check">{selectedPayment === 'cod' && '✓'}</span>
           </button>
-        </div>
-      </div>
 
-      {/* Fixed Place Order Section at Bottom */}
-      <div className="place-order-fixed-bar">
-        <div className="place-order-card">
-          <div className="place-order-handle" />
-          <div className="place-order-row">
-            <span className="place-order-total-label">TOTAL</span>
-            <span className="place-order-total-amount">₹{totalAmount.toFixed(2)}</span>
+          {/* Inline Place Order Section directly after Cash on Delivery */}
+          <div className="cart-inline-checkout">
+            <div className="cart-inline-total-row">
+              <span className="cart-inline-total-label">TOTAL</span>
+              <span className="cart-inline-total-amount">₹{totalAmount.toFixed(2)}</span>
+            </div>
+            <button
+              type="button"
+              className="cart-inline-place-order-btn"
+              onClick={handlePlaceOrder}
+            >
+              Place Order
+            </button>
           </div>
-          <button
-            type="button"
-            className="place-order-submit-btn"
-            onClick={handlePlaceOrder}
-          >
-            Place Order
-          </button>
         </div>
       </div>
 

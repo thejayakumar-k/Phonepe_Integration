@@ -367,19 +367,19 @@ export function ChatWidget() {
     }
   };
 
-  // Hidden before login, on the login/home pages, and on settings screens.
+  // Customer login only — never shown to vendors or delivery partners.
+  if (!session || session.role !== 'customer') return null;
+
+  // Hidden on the login/home pages and on settings screens.
   const HIDDEN_PATHS = [
     '/',
     '/login',
     '/login/customer',
-    '/login/vendor',
     '/customer/settings',
-    '/vendor/settings',
     '/customer/manage-upi',
     '/customer/bank-mapping',
   ];
   if (HIDDEN_PATHS.includes(location.pathname)) return null;
-  if (!session) return null;
 
   return (
     <div className="chat-widget">
