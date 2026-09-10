@@ -178,7 +178,7 @@ export function CustomerCart() {
   }
 
   return (
-    <div className="customer-cart" style={{ paddingBottom: '35px' }}>
+    <div className="customer-cart" style={{ paddingBottom: '60px' }}>
       <div className="cart-header">
         <div className="cart-header-left">
           <button className="back-btn" onClick={() => navigate('/customer')}>
