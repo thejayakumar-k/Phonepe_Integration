@@ -60,6 +60,7 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
   // Floor list comes from the web-login pricing configuration — live.
   const [pricing, setPricing] = useState<PricingConfig>(DEFAULT_PRICING);
   const [floor, setFloor] = useState('');
+  const [customFloor, setCustomFloor] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -125,6 +126,13 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
     houseNo.trim() || street.trim() || apartment.trim() || area.trim() || city.trim() || pincode.trim();
 
   const handleSave = () => {
+    const finalFloor =
+      floor === 'Custom'
+        ? customFloor.trim()
+          ? customFloor.trim()
+          : 'Custom Floor'
+        : floor;
+
     onSave(
       {
         houseNo,
@@ -135,7 +143,7 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
         pincode,
         landmark,
         addressType,
-        floor,
+        floor: finalFloor,
       },
       onDismiss,
     );
@@ -213,7 +221,12 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
               <select
                 className="addr-input addr-input-search"
                 value={floor}
-                onChange={(e) => setFloor(e.target.value)}
+                onChange={(e) => {
+                  setFloor(e.target.value);
+                  if (e.target.value !== 'Custom') {
+                    setCustomFloor('');
+                  }
+                }}
               >
                 <option value="">Select floor</option>
                 {floorOptions.map((opt) => (
@@ -228,7 +241,20 @@ export function AddressDetails({ onSave, onDismiss }: AddressDetailsProps) {
                 </svg>
               </span>
             </div>
-            <span className="addr-hint">Floor list & delivery price set in web login</span>
+
+            {floor === 'Custom' && (
+              <div className="addr-input-wrap" style={{ marginTop: '8px' }}>
+                <span className="addr-input-icon">🏢</span>
+                <input
+                  type="text"
+                  className="addr-input"
+                  value={customFloor}
+                  onChange={(e) => setCustomFloor(e.target.value)}
+                  placeholder="Enter floor number (e.g. 4th Floor, 47th Floor)"
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
         )}
 
