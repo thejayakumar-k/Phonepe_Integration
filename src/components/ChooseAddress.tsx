@@ -51,11 +51,12 @@ export function ChooseAddress({
 
   // ── Confirm current location ───────────────────────────────────
   const handleConfirmCurrentLocation = () => {
-    if (!position) return;
+    const lat = position?.latitude || 13.0827;
+    const lng = position?.longitude || 80.2707;
     const addr: CustomerAddress = {
       id: `cur-${Date.now()}`,
       customerId: '',
-      address: `Current location (${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)})`,
+      address: `Current Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
       houseNo: '',
       street: '',
       apartment: '',
@@ -64,8 +65,8 @@ export function ChooseAddress({
       pincode: '',
       landmark: '',
       addressType: 'Apt',
-      lat: position.latitude,
-      lng: position.longitude,
+      lat,
+      lng,
       createdAt: Date.now(),
     };
     onAddressConfirm(addr, onDone);
@@ -78,11 +79,12 @@ export function ChooseAddress({
 
   // ── GPS page "Save" ────────────────────────────────────────────
   const handleGpsSave = () => {
-    if (!position) return;
+    const lat = position?.latitude || 13.0827;
+    const lng = position?.longitude || 80.2707;
     const addr: CustomerAddress = {
       id: `gps-${Date.now()}`,
       customerId: '',
-      address: `Current location (${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)})`,
+      address: `Current Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
       houseNo: '',
       street: '',
       apartment: '',
@@ -91,8 +93,8 @@ export function ChooseAddress({
       pincode: '',
       landmark: '',
       addressType: 'Apt',
-      lat: position.latitude,
-      lng: position.longitude,
+      lat,
+      lng,
       createdAt: Date.now(),
     };
     onAddressConfirm(addr, onDone);
@@ -208,7 +210,7 @@ export function ChooseAddress({
                       </svg>
                     </div>
                     <div className="ca-address-info">
-                      <span className="ca-address-label">APARTMENT</span>
+                      <span className="ca-address-label">{addr.addressType ? addr.addressType.toUpperCase() : 'ADDRESS'}</span>
                       <span className="ca-address-text">
                         {addr.address}
                         {addr.address.length > 48 ? '...' : ''}
@@ -228,9 +230,8 @@ export function ChooseAddress({
                 type="button"
                 className="ca-btn-primary"
                 onClick={handleConfirmCurrentLocation}
-                disabled={!position && !gpsError}
               >
-                Confirm Current Location
+                {position ? 'Confirm Current Location' : 'Detect & Confirm Current Location'}
               </button>
 
               <span className="ca-actions-or">(Or)</span>
