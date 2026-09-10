@@ -6788,14 +6788,8 @@ body {
 /* â•â•â•â•â•â•â•â•â•â•â• Chat Assistant Widget â•â•â•â•â•â•â•â•â•â•â• */
 .chat-widget {
   position: fixed;
-  /* Anchor to the right edge of the centered app frame (max-width 420px):
-     (100vw - 420px)/2 is the empty margin on each side of the frame,
-     +20px places the button inside the frame's right edge. Falls back to
-     20px from the screen edge on narrow/mobile screens. */
   right: max(20px, calc((100vw - 420px) / 2 + 20px));
-  /* 80px above the bottom navigation bar (~60px tall).
-     env(safe-area-inset-bottom) keeps it clear of the iOS home indicator. */
-  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(145px + env(safe-area-inset-bottom, 0px));
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -10490,48 +10484,6 @@ path.ltm-animated-dash {
   color: #111827;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.order-type-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.order-type-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 10px;
-  background: white;
-  font-size: 13px;
-  font-weight: 600;
-  color: #4b5563;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.order-type-btn.active {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: white;
-}
-
-.order-type-btn.active .order-type-icon {
-  color: white;
-}
-
-.order-type-icon {
-  display: flex;
-  align-items: center;
-  color: #6b7280;
-}
-
-.order-type-label {
-  font-size: 13px;
 }
 
 /* Delivery address picker trigger */
