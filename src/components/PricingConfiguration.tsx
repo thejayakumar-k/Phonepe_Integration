@@ -2,8 +2,18 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomers } from '../hooks/useCustomers';
 import { useProducts, DEFAULT_PRODUCTS } from '../hooks/useProducts';
+import {
+  getPricingConfig,
+  savePricingConfig,
+  subscribeToPricingConfig,
+  DEFAULT_PRICING,
+  type PricingConfig as SharedPricingConfig,
+  type FloorPricing as SharedFloorPricing,
+} from '../utils/pricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
+// PricingConfig/FloorPricing are shared with the customer address form via
+// src/utils/pricing.ts — web login edits them, the address form reads them.
 interface Customer {
   id: string;
   name: string;
@@ -13,50 +23,8 @@ interface Customer {
   phone: string;
 }
 
-interface FloorPricing {
-  groundFloor: number;
-  floor1: number;
-  floor2: number;
-  floor3: number;
-  moreThan3Mode: 'use3rdFloor' | 'custom';
-  customPrice: number;
-}
-
-interface PricingConfig {
-  houseApartment: {
-    enabled: boolean;
-    useFloorWise: boolean;
-    floorPricing: FloorPricing;
-  };
-  commercial: {
-    enabled: boolean;
-    useCustomerSpecific: boolean;
-    price: number;
-  };
-  other: {
-    enabled: boolean;
-    useDefaultPrice: boolean;
-    defaultPrice: number;
-  };
-}
-
-const defaultPricing: PricingConfig = {
-  houseApartment: {
-    enabled: true,
-    useFloorWise: true,
-    floorPricing: { groundFloor: 20, floor1: 25, floor2: 30, floor3: 35, moreThan3Mode: 'custom', customPrice: 40 },
-  },
-  commercial: {
-    enabled: true,
-    useCustomerSpecific: true,
-    price: 30,
-  },
-  other: {
-    enabled: true,
-    useDefaultPrice: false,
-    defaultPrice: 25,
-  },
-};
+type FloorPricing = SharedFloorPricing;
+type PricingConfig = SharedPricingConfig;
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export function PricingConfiguration() {
@@ -76,8 +44,25 @@ export function PricingConfiguration() {
 
   const [selectedCustomerId, _setSelectedCustomerId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | number>('');
-  const [pricing, setPricing] = useState<PricingConfig>(defaultPricing);
+  const [pricing, setPricing] = useState<PricingConfig>(DEFAULT_PRICING);
   const [saved, setSaved] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  // Load the saved web-login pricing config once, then keep it live —
+  // edits from another session update this page instantly.
+  useEffect(() => {
+    let cancelled = false;
+    getPricingConfig().then((config) => {
+      if (!cancelled) setPricing(config);
+    });
+    const unsubscribe = subscribeToPricingConfig((config) => {
+      if (!cancelled) setPricing(config);
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   // Default the customer selection to the first live account once loaded.
   useEffect(() => {
@@ -112,9 +97,17 @@ export function PricingConfiguration() {
     }));
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  // Save the config to Supabase — the customer address form reads these
+  // floors live, so changes apply without a redeploy.
+  const handleSave = async () => {
+    setSavingConfig(true);
+    try {
+      await savePricingConfig(pricing);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSavingConfig(false);
+    }
   };
 
   const fp = pricing.houseApartment.floorPricing;

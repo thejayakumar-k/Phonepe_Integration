@@ -3215,7 +3215,7 @@ body {
 .cart-summary {
   background: white;
   border-radius: 12px;
-  padding: 16px;
+  padding: 16px 16px 14px 16px;
   border: 1px solid #e5e7eb;
 }
 
@@ -10664,7 +10664,11 @@ path.ltm-animated-dash {
 /* Cart payment methods */
 
 .cart-payment {
-  padding: 12px 0;
+  padding: 12px 0 0 0;
+}
+
+.cart-payment .payment-option:last-child {
+  margin-bottom: 0;
 }
 
 .cart-payment-title {
