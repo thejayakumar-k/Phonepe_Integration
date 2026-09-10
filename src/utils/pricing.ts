@@ -37,16 +37,16 @@ export const DEFAULT_PRICING: PricingConfig = {
     enabled: true,
     useFloorWise: true,
     floorPricing: {
-      groundFloor: 20,
-      floor1: 25,
-      floor2: 30,
-      floor3: 35,
+      groundFloor: 0,
+      floor1: 5,
+      floor2: 10,
+      floor3: 15,
       moreThan3Mode: 'custom',
-      customPrice: 40,
+      customPrice: 20,
     },
   },
   commercial: { enabled: true, useCustomerSpecific: true, price: 30 },
-  other: { enabled: true, useDefaultPrice: false, defaultPrice: 25 },
+  other: { enabled: true, useDefaultPrice: false, defaultPrice: 20 },
 };
 
 function normalizeConfig(raw: unknown): PricingConfig {
@@ -156,12 +156,57 @@ export interface FloorOption {
 
 export function getFloorOptions(config: PricingConfig): FloorOption[] {
   const fp = config.houseApartment.floorPricing;
-  const moreThan3Price = fp.customPrice;
+  const fmt = (val: number) => (val > 0 ? ` (+₹${val})` : ' (+₹0)');
   return [
-    { value: 'Ground Floor', label: 'Ground Floor', price: fp.groundFloor },
-    { value: '1st Floor', label: '1st Floor', price: fp.floor1 },
-    { value: '2nd Floor', label: '2nd Floor', price: fp.floor2 },
-    { value: '3rd Floor', label: '3rd Floor', price: fp.floor3 },
-    { value: 'Custom', label: 'Custom', price: moreThan3Price },
+    { value: 'Ground Floor', label: `Ground Floor${fmt(fp.groundFloor)}`, price: fp.groundFloor },
+    { value: '1st Floor', label: `1st Floor${fmt(fp.floor1)}`, price: fp.floor1 },
+    { value: '2nd Floor', label: `2nd Floor${fmt(fp.floor2)}`, price: fp.floor2 },
+    { value: '3rd Floor', label: `3rd Floor${fmt(fp.floor3)}`, price: fp.floor3 },
+    { value: 'Custom', label: `Custom${fmt(fp.customPrice)}`, price: fp.customPrice },
   ];
+}
+
+/** Get floor additional charge from floor string */
+export function getFloorCharge(floorValue: string | undefined | null, config: PricingConfig): number {
+  if (!floorValue) return 0;
+  const val = floorValue.toLowerCase();
+  const fp = config.houseApartment.floorPricing;
+  if (val.includes('ground') || val === '0' || val.includes('0th')) {
+    return fp.groundFloor;
+  }
+  if (val.includes('1st') || val === '1' || val.includes('1st floor')) {
+    return fp.floor1;
+  }
+  if (val.includes('2nd') || val === '2' || val.includes('2nd floor')) {
+    return fp.floor2;
+  }
+  if (val.includes('3rd') || val === '3' || val.includes('3rd floor')) {
+    return fp.floor3;
+  }
+  return fp.customPrice;
+}
+
+/**
+ * Calculate effective unit price by adding floor / location additional charges
+ * to base product price.
+ */
+export function calculateUnitPrice(
+  basePrice: number,
+  address: { addressType?: string; floor?: string } | null | undefined,
+  config: PricingConfig
+): { unitPrice: number; floorCharge: number } {
+  if (!address) return { unitPrice: basePrice, floorCharge: 0 };
+  
+  if (address.addressType === 'Commercial') {
+    const price = config.commercial.price > 0 ? config.commercial.price : basePrice;
+    return { unitPrice: price, floorCharge: 0 };
+  }
+  if (address.addressType === 'Others') {
+    const price = config.other.defaultPrice > 0 ? config.other.defaultPrice : basePrice;
+    return { unitPrice: price, floorCharge: 0 };
+  }
+
+  // Apartment or House -> Base Product Price + Floor Additional Charge
+  const floorCharge = getFloorCharge(address.floor, config);
+  return { unitPrice: basePrice + floorCharge, floorCharge };
 }

@@ -328,74 +328,84 @@ export function PricingConfiguration() {
               </label>
 
               {pricing.houseApartment.useFloorWise && (
-                <table className="pricing-table">
-                  <thead>
-                    <tr>
-                      <th>Floor</th>
-                      <th>Price (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Ground Floor</td>
-                      <td>
-                        <input
-                          type="number"
-                          className="pricing-floor-input"
-                          value={fp.groundFloor}
-                          onChange={(e) => updateFloor('groundFloor', parseFloat(e.target.value) || 0)}
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>1st Floor</td>
-                      <td>
-                        <input
-                          type="number"
-                          className="pricing-floor-input"
-                          value={fp.floor1}
-                          onChange={(e) => updateFloor('floor1', parseFloat(e.target.value) || 0)}
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>2nd Floor</td>
-                      <td>
-                        <input
-                          type="number"
-                          className="pricing-floor-input"
-                          value={fp.floor2}
-                          onChange={(e) => updateFloor('floor2', parseFloat(e.target.value) || 0)}
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>3rd Floor</td>
-                      <td>
-                        <input
-                          type="number"
-                          className="pricing-floor-input"
-                          value={fp.floor3}
-                          onChange={(e) => updateFloor('floor3', parseFloat(e.target.value) || 0)}
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>More than 3rd Floor (Custom)</td>
-                      <td>
-                        <input
-                          type="number"
-                          className="pricing-floor-input"
-                          value={fp.customPrice}
-                          onChange={(e) => {
-                            updateFloor('customPrice', parseFloat(e.target.value) || 0);
-                            updateFloor('moreThan3Mode', 'custom');
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                <>
+                  <table className="pricing-table">
+                    <thead>
+                      <tr>
+                        <th>Floor</th>
+                        <th>Additional Charge (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Ground Floor</td>
+                        <td>
+                          <input
+                            type="number"
+                            className="pricing-floor-input"
+                            value={fp.groundFloor}
+                            onChange={(e) => updateFloor('groundFloor', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>1st Floor</td>
+                        <td>
+                          <input
+                            type="number"
+                            className="pricing-floor-input"
+                            value={fp.floor1}
+                            onChange={(e) => updateFloor('floor1', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>2nd Floor</td>
+                        <td>
+                          <input
+                            type="number"
+                            className="pricing-floor-input"
+                            value={fp.floor2}
+                            onChange={(e) => updateFloor('floor2', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>3rd Floor</td>
+                        <td>
+                          <input
+                            type="number"
+                            className="pricing-floor-input"
+                            value={fp.floor3}
+                            onChange={(e) => updateFloor('floor3', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>More than 3rd Floor (Custom)</td>
+                        <td>
+                          <input
+                            type="number"
+                            className="pricing-floor-input"
+                            value={fp.customPrice}
+                            onChange={(e) => {
+                              updateFloor('customPrice', parseFloat(e.target.value) || 0);
+                              updateFloor('moreThan3Mode', 'custom');
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div className="pricing-info-box" style={{ marginTop: '12px' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Additional floor charge will be added to the base product price at checkout (e.g. Base Price ₹{product.price.toFixed(2)} + 1st Floor ₹{fp.floor1} = ₹{(product.price + fp.floor1).toFixed(2)} Total).
+                  </div>
+                </>
               )}
             </div>
 

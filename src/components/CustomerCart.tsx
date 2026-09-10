@@ -6,6 +6,13 @@ import type { ItemOrder, ItemOrderStatus, PaymentMethod } from '../types/payment
 import type { CustomerAddress } from '../types/customer';
 import { getStoreInfo, type StoreInfo } from '../utils/store';
 import { useProducts } from '../hooks/useProducts';
+import {
+  getPricingConfig,
+  subscribeToPricingConfig,
+  calculateUnitPrice,
+  DEFAULT_PRICING,
+  type PricingConfig,
+} from '../utils/pricing';
 
 const ChooseAddress = lazy(() => import('./ChooseAddress').then(m => ({ default: m.ChooseAddress })));
 
@@ -16,6 +23,21 @@ export function CustomerCart() {
   const { session } = useAuth();
   const { products } = useProducts();
   const [store, setStore] = useState<StoreInfo>({ vendorId: 'VENDOR001', vendorName: 'OORUNII Store' });
+  const [pricingConfig, setPricingConfig] = useState<PricingConfig>(DEFAULT_PRICING);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPricingConfig().then((config) => {
+      if (!cancelled) setPricingConfig(config);
+    });
+    const unsubscribe = subscribeToPricingConfig((config) => {
+      if (!cancelled) setPricingConfig(config);
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   // Store identity from the store_settings table (fallback to defaults).
   useEffect(() => {
@@ -42,9 +64,15 @@ export function CustomerCart() {
 
   const getProduct = (id: number | string) => products.find((p) => String(p.id) === String(id));
 
+  const getItemPriceInfo = (basePrice: number) => {
+    return calculateUnitPrice(basePrice, selectedAddress?.addr, pricingConfig);
+  };
+
   const totalAmount = cart.reduce((sum, item) => {
     const product = getProduct(item.id);
-    return sum + (product ? product.price * item.qty : 0);
+    if (!product) return sum;
+    const { unitPrice } = getItemPriceInfo(product.price);
+    return sum + unitPrice * item.qty;
   }, 0);
 
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -69,9 +97,9 @@ export function CustomerCart() {
     items: cart
       .map((item) => {
         const product = getProduct(item.id);
-        return product
-          ? { name: product.name, qty: item.qty, price: product.price, unit: product.unit, image: product.image }
-          : null;
+        if (!product) return null;
+        const { unitPrice } = getItemPriceInfo(product.price);
+        return { name: product.name, qty: item.qty, price: unitPrice, unit: product.unit, image: product.image };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null),
     total: totalAmount,
@@ -195,13 +223,21 @@ export function CustomerCart() {
         {cart.map((item) => {
           const product = getProduct(item.id);
           if (!product) return null;
+          const { unitPrice, floorCharge } = getItemPriceInfo(product.price);
           return (
             <div key={item.id} className="cart-item">
               <div className="cart-item-image">{product.image}</div>
               <div className="cart-item-info">
                 <h3 className="cart-item-name">{product.name}</h3>
                 <p className="cart-item-unit">{product.unit}</p>
-                <p className="cart-item-price">₹{product.price.toFixed(2)}</p>
+                <p className="cart-item-price">
+                  ₹{unitPrice.toFixed(2)}
+                  {floorCharge > 0 && (
+                    <span style={{ fontSize: '11px', color: '#6b7280', display: 'block', fontWeight: 400 }}>
+                      (Base ₹{product.price.toFixed(2)} + ₹{floorCharge.toFixed(2)} floor)
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="cart-item-actions">
                 <div className="quantity-selector">
@@ -209,7 +245,7 @@ export function CustomerCart() {
                   <span className="qty-value">{item.qty}</span>
                   <button className="qty-btn plus" onClick={() => handleAdd(item.id)}>+</button>
                 </div>
-                <p className="cart-item-total">₹{(product.price * item.qty).toFixed(2)}</p>
+                <p className="cart-item-total">₹{(unitPrice * item.qty).toFixed(2)}</p>
               </div>
             </div>
           );
