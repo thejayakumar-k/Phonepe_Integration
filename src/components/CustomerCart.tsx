@@ -248,6 +248,42 @@ export function CustomerCart() {
       </div>
 
       <div className="cart-summary">
+        {/* Delivery address (modal trigger) */}
+        {!selectedAddress ? (
+          <button type="button" className="cart-address-picker" onClick={() => setShowAddressModal(true)}>
+            <span className="cart-address-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </span>
+            <div className="cart-address-text">
+              <span className="cart-address-label">Delivery to</span>
+              <span className="cart-address-badge">Apt</span>
+              <span className="cart-address-placeholder">Tap to choose address</span>
+            </div>
+            <svg className="cart-address-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        ) : (
+          <div className="cart-address-confirmed">
+            <span className="cart-address-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </span>
+            <div className="cart-address-text">
+              <span className="cart-address-label">Delivering to</span>
+              <span className="cart-address-address">{selectedAddress.addr.address}</span>
+            </div>
+            <button type="button" className="cart-address-edit" onClick={() => setShowAddressModal(true)}>
+              Change
+            </button>
+          </div>
+        )}
+
         {/* Order type */}
         <div className="cart-section">
           <div className="cart-section-header">
@@ -290,42 +326,6 @@ export function CustomerCart() {
             </button>
           </div>
         </div>
-
-        {/* Delivery address (modal trigger) */}
-        {!selectedAddress ? (
-          <button type="button" className="cart-address-picker" onClick={() => setShowAddressModal(true)}>
-            <span className="cart-address-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-            </span>
-            <div className="cart-address-text">
-              <span className="cart-address-label">Delivery to</span>
-              <span className="cart-address-badge">Apt</span>
-              <span className="cart-address-placeholder">Tap to choose address</span>
-            </div>
-            <svg className="cart-address-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-        ) : (
-          <div className="cart-address-confirmed">
-            <span className="cart-address-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-            </span>
-            <div className="cart-address-text">
-              <span className="cart-address-label">Delivering to</span>
-              <span className="cart-address-address">{selectedAddress.addr.address}</span>
-            </div>
-            <button type="button" className="cart-address-edit" onClick={() => setShowAddressModal(true)}>
-              Change
-            </button>
-          </div>
-        )}
 
         {/* Bill summary */}
         <div className="bill-summary">
@@ -436,22 +436,24 @@ export function CustomerCart() {
         </div>
       </div>
 
-      {/* Sticky Place Order footer */}
-      <div className="cart-footer">
-        <div className="cart-footer-amounts">
-          <span className="cart-footer-label">Total</span>
-          <span className="cart-footer-amount">₹{totalAmount.toFixed(2)}</span>
+      {/* Place Order — full screen centered */}
+      <div className="place-order-screen">
+        <div className="place-order-card">
+          <div className="place-order-amounts">
+            <span className="place-order-label">Total</span>
+            <span className="place-order-amount">₹{totalAmount.toFixed(2)}</span>
+          </div>
+          <button
+            type="button"
+            className="place-order-btn"
+            onClick={() => {
+              const event = new CustomEvent('triggerCheckout');
+              window.dispatchEvent(event);
+            }}
+          >
+            Place Order
+          </button>
         </div>
-        <button
-          type="button"
-          className="cart-footer-placeorder"
-          onClick={() => {
-            const event = new CustomEvent('triggerCheckout');
-            window.dispatchEvent(event);
-          }}
-        >
-          Place Order
-        </button>
       </div>
 
       {/* Address picker modal */}
