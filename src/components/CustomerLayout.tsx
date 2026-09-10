@@ -5,7 +5,6 @@ export function CustomerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [cartCount, setCartCount] = useState(0);
-  const [, setSelectedPayment] = useState<string>('');
 
   useEffect(() => {
     const updateCartCount = () => {
@@ -19,20 +18,13 @@ export function CustomerLayout() {
     window.addEventListener('storage', updateCartCount);
     const interval = setInterval(updateCartCount, 500);
 
-    const handlePaymentChange = (e: CustomEvent) => {
-      setSelectedPayment(e.detail);
-    };
-    window.addEventListener('paymentMethodChanged', handlePaymentChange as EventListener);
-
     return () => {
       window.removeEventListener('storage', updateCartCount);
-      window.removeEventListener('paymentMethodChanged', handlePaymentChange as EventListener);
       clearInterval(interval);
     };
   }, []);
 
-  const isOnCart = location.pathname === '/customer/cart';
-  const cartEmpty = cartCount === 0;
+
 
   const navItems = [
     {
@@ -114,7 +106,12 @@ export function CustomerLayout() {
             className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
             onClick={() => navigate(item.path)}
           >
-            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-icon" style={{ position: 'relative' }}>
+              {item.icon}
+              {item.path === '/customer/cart' && cartCount > 0 && (
+                <span className="nav-badge">{cartCount}</span>
+              )}
+            </span>
             <span className="nav-label">{item.label}</span>
           </button>
         ))}
